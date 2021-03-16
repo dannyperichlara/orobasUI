@@ -20,7 +20,7 @@
     <button style="padding: 20px;" onclick="computerMove()">Mover (AI)</button>
     <button style="padding: 20px;" onclick="undo()">Deshacer</button>
     <button style="padding: 20px;" onclick="board.flip()">Flip</button>
-    <input value="0.5" id="seconds" />
+    <input value="1" id="seconds" />
     <div id="score"></div>
 
     <script>
@@ -45,7 +45,7 @@
 
           let wr = (white + draw / 2)
           let br = (black + draw / 2)
-          let refElo = 1500
+          let refElo = 1800
           let ELO = (games*refElo + 400*(wr-br))/games | 0
           let ELOInc = ELO - refElo | 0
 
@@ -60,6 +60,7 @@
         
         var board = null
 var game = new Chess()
+
 var $status = $('#status')
 var $fen = $('#fen')
 var $pgn = $('#pgn')
@@ -122,22 +123,22 @@ let computerMove = function () {
 
     let result = JSON.parse(localStorage.results)
 
-    if (game.history().length > 100) {
-      if (res.score >= 400) {
-        result.win++
-      } else if (res.score <= -400) {
-        result.loss++
-      } else {
-        result.draw++
-      }
+    // if (game.history().length > 100) {
+    //   if (res.score >= 400) {
+    //     result.win++
+    //   } else if (res.score <= -400) {
+    //     result.loss++
+    //   } else {
+    //     result.draw++
+    //   }
 
-      localStorage.results = JSON.stringify(result)
+    //   localStorage.results = JSON.stringify(result)
 
-      if (reload) {
-        location.reload()
-        return
-      }
-    }
+    //   if (reload) {
+    //     location.reload()
+    //     return
+    //   }
+    // }
 
     if (!game.game_over()){ 
       computerMove()
@@ -151,13 +152,13 @@ let computerMove = function () {
       }
 
       if (game.in_draw()) {
-        if (res.score >= 400) {
-          result.win++
-        } else if (res.score <= -400) {
-          result.loss++
-        } else {
+        // if (res.score >= 400) {
+        //   result.win++
+        // } else if (res.score <= -400) {
+        //   result.loss++
+        // } else {
           result.draw++
-        }
+        // }
       }
 
 			localStorage.results = JSON.stringify(result)
@@ -216,7 +217,8 @@ var config = {
   position: 'start',
   onDragStart: onDragStart,
   onDrop: onDrop,
-  onSnapEnd: onSnapEnd
+  onSnapEnd: onSnapEnd,
+  // moveSpeed: 0,
 }
 board = Chessboard('board', config)
 
@@ -226,9 +228,6 @@ let analyze = function(callback) {
     let turn = game.turn() === 'w'? 0 : 1
 
     let fen = game.fen()
-
-    console.log(fen)
-
     
     fetch(turn === 0?'http://' + location.hostname + ':3666?fen=' + fen + '&turn=' + turn + '&seconds=' + $('#seconds').val():
     'http://' + location.hostname + ':3667?fen=' + fen + '&turn=' + turn + '&seconds=' + $('#seconds').val(),
@@ -248,7 +247,114 @@ let undo = function () {
   game.undo(); board.position(game.fen()); updateStatus()
 }
 
-  computerMove()
+
+let loadfen = function(fen){
+  game.load(fen)
+  board.position(game.fen())
+  updateStatus()
+}
+
+/************************/
+
+let randomfen = function(n){
+  console.log('Random FEN')
+  let pieces = 'RBNrbn'.split('')
+  let wpawns = 'PPPPP'.split('')
+  let bpawns = 'ppppp'.split('')
+  let kings = 'Kk'.split('')
+
+  let fenarray = new Array(64)
+
+  while (pieces.length) {
+    let index = Math.random()*64 | 0
+
+    if (!fenarray[index]) fenarray[index] = pieces.pop()
+  }
+
+  while (wpawns.length) {
+    let index = (Math.random() * 32 ) + 24 | 0
+
+    if (!fenarray[index]) fenarray[index] = wpawns.pop()
+  }
+
+  while (bpawns.length) {
+    let index = (Math.random() * 32 ) + 8 | 0
+
+    if (!fenarray[index]) fenarray[index] = bpawns.pop()
+  }
+
+  while (kings.length) {
+    let index
+
+    if (kings.length === 2) {
+      index = Math.random() * 16 | 0
+    } else {
+      index = (Math.random() * 16 ) + 47 | 0
+    }
+
+    if (!fenarray[index]) fenarray[index] = kings.pop()
+  }
+
+  let emptycount = 0
+  let fen = ''
+
+  for (let i = 0; i < 64; i++) {
+
+
+    if (i % 8 === 0 && i > 0) {
+      fen += (emptycount? emptycount : '') + '/'
+      emptycount = 0
+    }
+        
+    if (fenarray[i]) {
+      fen = fen + (emptycount > 0? emptycount : '') + fenarray[i]
+      emptycount = 0
+    } else {
+      emptycount++
+    }
+  }
+
+  fen += (emptycount? emptycount : '')
+
+  let turn = ('w', 'b')[Math.random(2) | 0]
+
+  fen += ' ' + turn + ' - - 0 1'
+
+  console.log(fen)
+  
+  if (game.validate_fen(fen).valid) {
+    let fenflip
+    if (turn === 'w') {
+      fenflip = fen.replace(' w ', ' b ')
+    } else {
+      fenflip = fen.replace(' b ', ' w ')
+    }
+
+    // if (game.in_check() || game.in_checkmate() || game.in_draw()) {
+    //   console.log('no :(')
+    //   return randomfen()
+    // }
+    
+    game.load(fenflip)
+  
+    if (game.in_check() || game.in_checkmate() || game.in_draw()) {
+      console.log('no :(')
+      return randomfen()
+    } else {
+      return fen
+    }
+  } else {
+    console.log('Inválido')
+    return randomfen()
+  }
+
+}
+
+
+// loadfen(randomfen())
+// loadfen(randomfen())
+
+computerMove()
 
 </script>
 </body>
