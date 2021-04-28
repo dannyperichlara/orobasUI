@@ -45,12 +45,13 @@
 
           let wr = (white + draw / 2)
           let br = (black + draw / 2)
-          let refElo = 1800
+          let refElo = 2000
           let ELO = (games*refElo + 400*(wr-br))/games | 0
           let ELOInc = ELO - refElo | 0
 
           console.log('%cw:' + wr + ` (${Math.round(wr*100/games*10)/10}%)`, 'font-size: 2rem')
           console.log('%cb:' + br + ` (${Math.round(br*100/games*10)/10}%)`, 'font-size: 2rem')
+          console.log('%cWin/Loss ratio: ' + Math.round(100*white/black)/100, 'font-size: 1.8rem')
           console.log('%cELO Delta Tester: ' + ELOInc, 'font-size: 1.5rem')
           console.log('%cTotal: ' + games + ' juegos', 'font-size: 1.5rem')
           console.log('%cWins: ' + white, 'font-size: 1.5rem')
@@ -115,12 +116,15 @@ let computerMove = function () {
       promotion: 'q' // NOTE: always promote to a queen for example simplicity
     })
 
-    board.position(game.fen())
 
-    updateStatus()
 
-    if ((game.history().length - 1)%10 === 0) printresults()
+    if ((game.history().length - 1) % 20 === 0) {
+      printresults()
+      board.position(game.fen())
+      updateStatus()
+    }
 
+    
     let result = JSON.parse(localStorage.results)
 
     // if (game.history().length > 100) {
@@ -231,13 +235,17 @@ let analyze = function(callback) {
     
     fetch(turn === 0?'http://' + location.hostname + ':3666?fen=' + fen + '&turn=' + turn + '&seconds=' + $('#seconds').val():
     'http://' + location.hostname + ':3667?fen=' + fen + '&turn=' + turn + '&seconds=' + $('#seconds').val(),
+    //'http://' + location.hostname + ':3666?fen=' + fen + '&turn=' + turn + '&seconds=' + $('#seconds').val(),
     {
       method: 'GET',
     }).then(res=>{
       return res.json()
     }).then(res=>{
-      console.log(res)
-      $('#score').html(res.score)
+      if (turn === 0) {
+        // console.log(game.turn(), `Depth ${res.depth}`,`Score: ${res.score}`, `Phase ${res.phase}`, `Nodes ${res.nodes + res.qsnodes}`, res.FHF)
+
+        $('#score').html(`Score: ${res.sigmoid} FHF: ${res.FHF} Phase: ${res.phase} Depth: ${res.depth}`)
+      }
 
         if (callback) callback(res)
     })
@@ -258,9 +266,9 @@ let loadfen = function(fen){
 
 let randomfen = function(n){
   console.log('Random FEN')
-  let pieces = 'RBNrbn'.split('')
-  let wpawns = 'PPPPP'.split('')
-  let bpawns = 'ppppp'.split('')
+  let pieces = 'BNRQbnrq'.split('')
+  let wpawns = 'P'.split('')
+  let bpawns = 'p'.split('')
   let kings = 'Kk'.split('')
 
   let fenarray = new Array(64)
@@ -351,7 +359,6 @@ let randomfen = function(n){
 }
 
 
-// loadfen(randomfen())
 // loadfen(randomfen())
 
 computerMove()

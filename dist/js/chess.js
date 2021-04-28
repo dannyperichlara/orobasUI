@@ -1290,8 +1290,13 @@ var Chess = function(fen) {
       reset: function() {
         return reset()
       },
+
+      getMoves: function(options){
+        return generate_moves(options)
+      },
   
       moves: function(options) {
+        console.log('moves')
         /* The internal representation of a chess move is in 0x88 format, and
          * not meant to be human-readable.  The code below converts the 0x88
          * square coordinates to algebraic coordinates.  It also prunes an
