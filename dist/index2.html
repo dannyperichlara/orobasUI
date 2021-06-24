@@ -8,10 +8,14 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="/js/chessboard-1.0.0.min.js"></script>
     <script src="/js/chess.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
 
 </head>
 <body>
-    <div id="board" style="max-width: 100%; width: 600px; margin-bottom: 10px;"></div>
+    <div id="board" style="max-width: 100%; width: 600px; margin-bottom: 5px;"></div>
+    <div style="width: 594px; background-color: #000; margin-bottom: 5px; border: 1px solid #000">
+      <div id="sigmoid" style="width: 50%; background-color: #FFF; height: 10px;"></div>
+    </div>
     <button style="padding: 20px;" onclick="analyze()">Evaluar Posición (consola)</button>
     <button style="padding: 20px;" onclick="computerMove()">Mover (AI)</button>
     <button style="padding: 20px;" onclick="undo()">Deshacer</button>
@@ -163,17 +167,20 @@ let analyze = function(callback) {
 
     let seconds = $('#seconds').val()
 
-    fetch('http://' + location.hostname + ':3666?fen=' + fen
-                                        + '&turn=' + turn
-                                        + '&seconds=' + seconds,
-    {
-        method: 'GET',
+    axios({
+      url: 'http://'
+            + location.hostname + ':3666?fen=' + fen
+            + '&turn=' + turn
+            + '&seconds=' + seconds,
+      method: 'GET',
     }).then(res=>{
-        return res.json()
-    }).then(res=>{
-        console.log(res)
+      console.log(res)
 
-        if (callback) callback(res)
+      document.getElementById("sigmoid").style.width = (res.data.sigmoid*100 | 0) + "%";
+
+      if (callback) callback(res.data)
+      
+      return res.data
     })
 }
 
