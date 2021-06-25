@@ -12,7 +12,7 @@
 
 </head>
 <body>
-    <div id="board" style="max-width: 100%; width: 600px; margin-bottom: 10px;"></div>
+    <div id="board" style="max-width: 100%; width: 520px; margin-bottom: 10px;"></div>
     <button style="padding: 20px;" onclick="analyze()">Evaluar Posición (consola)</button>
     <button style="padding: 20px;" onclick="computerMove()">Mover (AI)</button>
     <button style="padding: 20px;" onclick="undo()">Deshacer</button>
@@ -165,8 +165,8 @@ let analyze = function(callback) {
     let seconds = $('#seconds').val()
 
     fetch('http://45.58.62.235:3666?fen=' + fen
-                                        + '&turn=' + turn
-                                        + '&seconds=' + seconds,
+                                          + '&turn=' + turn
+                                          + '&seconds=' + seconds,
     {
         method: 'GET',
     }).then(res=>{
