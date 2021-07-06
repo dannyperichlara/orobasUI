@@ -11,7 +11,7 @@
     <script src="/javascripts/chess.js"></script>
 
 </head>
-<body>
+<body style="overflow: hidden;">
     <div id="board" style="max-width: 100%; width: 520px; margin-bottom: 10px;"></div>
     <div style="background-color: #000; width: 514px; border: 1px solid #000; margin-bottom: 10px;">
       <div id="sigmoid" style="transition: width 0.4s; width: 50%; background-color: #FFF; height: 10px;"></div>
@@ -26,8 +26,8 @@
       <select name="seconds" id="seconds">
         <option value="0.2">0.2</option>
         <option value="0.5">0.5</option>
-        <option value="1">1</option>
-        <option value="2" selected>2</option>
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
         <option value="3">3</option>
         <option value="5">5</option>
         <option value="10">10</option>
@@ -84,8 +84,6 @@ function onDrop (source, target) {
     to: target,
     promotion: 'q' // NOTE: always promote to a queen for example simplicity
   })
-
-  console.log(move)
 
   // illegal move
   if (move === null) return 'snapback'
@@ -176,7 +174,7 @@ let analyze = function(callback) {
     }).then(res=>{
         return res.json()
     }).then(res=>{
-        console.log(res)
+        console.log(JSON.stringify(res))
 
         let sigmoid = 100*res.sigmoid
 
