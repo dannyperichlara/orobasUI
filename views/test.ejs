@@ -25,8 +25,8 @@
       <label>Segundos</label> 
       <select name="seconds" id="seconds">
         <option value="0.2">0.2</option>
-        <option value="0.5">0.5</option>
-        <option value="1" selected>1</option>
+        <option value="0.5"selected>0.5</option>
+        <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="5">5</option>
@@ -42,6 +42,27 @@
 
     <script>
         "use strict"
+
+        if (!localStorage.orobas) {
+          localStorage.orobas = JSON.stringify({win:0, loss:0, draw:0})
+        }
+
+        // Win:  354
+        // Loss: 318
+        // Draw: 328
+
+        // Total: 1000 Win/Loss Ratio: 1.113
+        // ΔELO:  15
+
+        let results = JSON.parse(localStorage.orobas)
+        let totalgames = results.win+results.draw+results.loss
+        let eloBase = 0
+        let delta = 0
+        let winlossproportion = 1.113
+
+        console.log(`%c Win: ${results.win}\nLoss: ${results.loss*winlossproportion | 0}\n%cDraw: ${results.draw}`, "font-size: 24px", "font-size: 24px; color: #444")
+        console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${parseInt(1000*results.win/results.loss/winlossproportion)/1000}`, "font-size: 16px")
+        console.log(`%cΔELO: ${(eloBase + 400*(results.win - results.loss*winlossproportion))/totalgames - delta | 0}`, "font-size: 16px")
         
         var board = null
 var game = new Chess()
@@ -103,11 +124,44 @@ let computerMove = function () {
       promotion: 'q' // NOTE: always promote to a queen for example simplicity
     })
 
-    board.position(game.fen())
+    if (game.history().length % 20 === 1) {
+      board.position(game.fen())
+      updateStatus()
+    }
 
-    updateStatus()
 
-    if (!game.game_over()) computerMove()
+
+    if (!game.game_over()) {
+      if (game.history().length > 20) {
+        if (res.sigmoid>0.96) {
+          results.win++
+          localStorage.orobas = JSON.stringify(results)
+          location.reload()
+        }
+
+        if (res.sigmoid<0.04) {
+          results.loss++
+          localStorage.orobas = JSON.stringify(results)
+          location.reload()
+        }
+      }
+
+      computerMove()
+    } else {
+      if (game.in_draw()) results.draw++
+
+      if (game.in_checkmate()) {
+        if (game.turn() === 'b') {
+          results.win++
+        } else {
+          results.loss++
+        }
+      }
+
+      localStorage.orobas = JSON.stringify(results)
+
+      location.reload()
+    }
   })
 }
 
@@ -178,11 +232,11 @@ let analyze = function(callback) {
     }).then(res=>{
         return res.json()
     }).then(res=>{
-        console.log(JSON.stringify(res))
+        // console.log(JSON.stringify(res))
 
-        let sigmoid = 100*res.sigmoid
+        // let sigmoid = 100*res.sigmoid
 
-        document.getElementById('sigmoid').style.width = sigmoid + "%"
+        // document.getElementById('sigmoid').style.width = sigmoid + "%"
 
         if (callback) callback(res)
     })
@@ -191,11 +245,6 @@ let analyze = function(callback) {
 let undo = function () {
   game.undo(); board.position(game.fen()); updateStatus()
 }
-
-// if (new Date().getTime() % 2 === 1) {
-//   board.flip()
-//   computerMove()
-// }
 
 computerMove()
 
