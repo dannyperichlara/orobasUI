@@ -24,9 +24,9 @@
     <span>
       <label>Segundos</label> 
       <select name="seconds" id="seconds">
-        <option value="0.2">0.2</option>
-        <option value="0.5"selected>0.5</option>
-        <option value="1">1</option>
+        <!-- <option value="0.2" selected>0.2</option> -->
+        <option value="0.5" selected>0.5</option>
+        <!-- <option value="1" selected>1</option> -->
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="5">5</option>
@@ -58,7 +58,7 @@
         let totalgames = results.win+results.draw+results.loss
         let eloBase = 0
         let delta = 0
-        let winlossproportion = 1.113
+        let winlossproportion = 1//1.113
 
         console.log(`%c Win: ${results.win}\nLoss: ${results.loss*winlossproportion | 0}\n%cDraw: ${results.draw}`, "font-size: 24px", "font-size: 24px; color: #444")
         console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${parseInt(1000*results.win/results.loss/winlossproportion)/1000}`, "font-size: 16px")
@@ -124,27 +124,31 @@ let computerMove = function () {
       promotion: 'q' // NOTE: always promote to a queen for example simplicity
     })
 
-    if (game.history().length % 20 === 1) {
+    
+    
+    if (game.history().length % 10 === 1) {
+      let sigmoid = 100*res.sigmoid
+      document.getElementById('sigmoid').style.width = sigmoid + "%"
       board.position(game.fen())
       updateStatus()
     }
 
-
-
     if (!game.game_over()) {
-      if (game.history().length > 20) {
-        if (res.sigmoid>0.96) {
-          results.win++
-          localStorage.orobas = JSON.stringify(results)
-          location.reload()
-        }
+      // if (game.history().length > 20) {
+      //   if (res.sigmoid>=0.95) {
+      //     results.win++
+      //     localStorage.orobas = JSON.stringify(results)
+      //     location.reload()
+      //     return
+      //   }
 
-        if (res.sigmoid<0.04) {
-          results.loss++
-          localStorage.orobas = JSON.stringify(results)
-          location.reload()
-        }
-      }
+      //   if (res.sigmoid<=0.05) {
+      //     results.loss++
+      //     localStorage.orobas = JSON.stringify(results)
+      //     location.reload()
+      //     return
+      //   }
+      // }
 
       computerMove()
     } else {
@@ -234,9 +238,7 @@ let analyze = function(callback) {
     }).then(res=>{
         // console.log(JSON.stringify(res))
 
-        // let sigmoid = 100*res.sigmoid
-
-        // document.getElementById('sigmoid').style.width = sigmoid + "%"
+        
 
         if (callback) callback(res)
     })
