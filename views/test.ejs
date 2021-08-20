@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orobas Chess</title>
+    <title id="title">Orobas Chess</title>
     <link rel="stylesheet" href="/stylesheets/chessboard-1.0.0.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="/javascripts/chessboard-1.0.0.min.js"></script>
@@ -24,9 +24,11 @@
     <span>
       <label>Segundos</label> 
       <select name="seconds" id="seconds">
-        <!-- <option value="0.2" selected>0.2</option> -->
-        <option value="0.5" selected>0.5</option>
-        <!-- <option value="1" selected>1</option> -->
+        <option value="0.1">0.1</option>
+        <option value="0.2">0.2</option>
+        <option value="0.4" selected>0.4</option>
+        <option value="0.5">0.5</option>
+        <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="5">5</option>
@@ -47,28 +49,22 @@
           localStorage.orobas = JSON.stringify({win:0, loss:0, draw:0})
         }
 
-        // Win:  354
-        // Loss: 318
-        // Draw: 328
-
-        // Total: 1000 Win/Loss Ratio: 1.113
-        // ΔELO:  15
-
         let results = JSON.parse(localStorage.orobas)
         let totalgames = results.win+results.draw+results.loss
         let eloBase = 0
-        let delta = 0
-        let winlossproportion = 1//1.113
+        let winLossRatio = parseInt(1000*results.win/results.loss | 0)/1000
+        let eloDelta = ((eloBase + 400*(results.win - results.loss))/totalgames) | 0
 
-        console.log(`%c Win: ${results.win}\nLoss: ${results.loss*winlossproportion | 0}\n%cDraw: ${results.draw}`, "font-size: 24px", "font-size: 24px; color: #444")
-        console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${parseInt(1000*results.win/results.loss/winlossproportion)/1000}`, "font-size: 16px")
-        console.log(`%cΔELO: ${(eloBase + 400*(results.win - results.loss*winlossproportion))/totalgames - delta | 0}`, "font-size: 16px")
+        console.log(`%c Win: ${results.win}\nLoss: ${results.loss | 0}\n%cDraw: ${results.draw}`, "font-size: 24px", "font-size: 24px; color: #444")
+        console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${winLossRatio}`, "font-size: 16px")
+        console.log(`%cΔELO: ${eloDelta}`, "font-size: 16px")
         
         var board = null
 var game = new Chess()
 var $status = $('#status')
 var $fen = $('#fen')
 var $pgn = $('#pgn')
+var $title = $('#title')
 
 let loadfen = function(fen){
   game.load(fen)
@@ -125,9 +121,11 @@ let computerMove = function () {
     })
 
     
+    $title.html(`Orobas ${res.sigmoid} | ${results.win}-${results.loss} (${winLossRatio}:1)`)
     
     if (game.history().length % 10 === 1) {
       let sigmoid = 100*res.sigmoid
+      console.log(res)
       document.getElementById('sigmoid').style.width = sigmoid + "%"
       board.position(game.fen())
       updateStatus()
