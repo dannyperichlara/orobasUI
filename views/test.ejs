@@ -26,8 +26,8 @@
       <select name="seconds" id="seconds">
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
-        <option value="0.4" selected>0.4</option>
-        <option value="0.5">0.5</option>
+        <option value="0.4">0.4</option>
+        <option value="0.5" selected>0.5</option>
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
@@ -109,7 +109,6 @@ function onDrop (source, target) {
 
   computerMove()
 
-  
 }
 
 let computerMove = function () {
@@ -227,7 +226,6 @@ let analyze = function(callback) {
     let port = turn === 0? 3666 : 3667 
 
     fetch(`http://${location.hostname}:${port}?fen=` + fen
-                                          + '&turn=' + turn
                                           + '&seconds=' + seconds,
     {
         method: 'GET',
