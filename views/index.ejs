@@ -9,11 +9,16 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="/javascripts/chessboard-1.0.0.min.js"></script>
     <script src="/javascripts/chess.js"></script>
+    <script>
+      let worker = new Worker("/javascripts/worker.js")
 
+      
+      
+    </script>
 </head>
 <body style="overflow: hidden;">
-    <div id="board" style="max-width: 100%; width: 520px; margin-bottom: 10px;"></div>
-    <div style="background-color: #000; width: 514px; max-width: 100%; border: 1px solid #000; margin-bottom: 10px;">
+    <div id="board" style="max-width: 100%; width: 420px; margin-bottom: 10px;"></div>
+    <div style="background-color: #000; width: 414px; max-width: 100%; border: 1px solid #000; margin-bottom: 10px;">
       <div id="sigmoid" style="transition: width 0.4s; width: 50%; background-color: #FFF; height: 10px;"></div>
     </div>
     <button style="padding: 10px;" onclick="location.reload()">Nueva Partida</button>
@@ -26,8 +31,8 @@
       <select name="seconds" id="seconds">
         <option value="0.2">0.2</option>
         <option value="0.5">0.5</option>
-        <option value="1" selected>1</option>
-        <option value="2">2</option>
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
         <option value="3">3</option>
         <option value="5">5</option>
         <option value="10">10</option>
@@ -36,9 +41,9 @@
       </select>
     </span>
     <hr>
-    <!-- <textarea id="loadfen" style="width:100%" rows="5"></textarea>
+    <textarea id="loadfen" style="width:100%" rows="5"></textarea>
     <button onclick="loadfen($('#loadfen').val())">Cargar FEN</button>
-    <div id="pgn"></div> -->
+    <div id="pgn"></div>
 
     <script>
         "use strict"
@@ -163,25 +168,34 @@ let analyze = function(callback) {
     let turn = game.turn() === 'w'? 0 : 1
 
     let fen = game.fen()
-
     let seconds = $('#seconds').val()
 
-    fetch(`http://${location.hostname}:3666?fen=` + fen
-                                          + '&turn=' + turn
-                                          + '&seconds=' + seconds,
-    {
-        method: 'GET',
-    }).then(res=>{
-        return res.json()
-    }).then(res=>{
-        console.log(JSON.stringify(res))
-
-        let sigmoid = 100*res.sigmoid
+    worker.onmessage = function(event){
+        let sigmoid = 100*event.data.sigmoid
 
         document.getElementById('sigmoid').style.width = sigmoid + "%"
+        callback(event.data)
+      }
 
-        if (callback) callback(res)
-    })
+    worker.postMessage({fen, seconds})
+
+
+    // fetch(`http://${location.hostname}:3666?fen=` + fen
+    //                                       + '&turn=' + turn
+    //                                       + '&seconds=' + seconds,
+    // {
+    //     method: 'GET',
+    // }).then(res=>{
+    //     return res.json()
+    // }).then(res=>{
+    //     console.log(JSON.stringify(res))
+
+    //     let sigmoid = 100*res.sigmoid
+
+    //     document.getElementById('sigmoid').style.width = sigmoid + "%"
+
+    //     if (callback) callback(res)
+    // })
 }
 
 let undo = function () {

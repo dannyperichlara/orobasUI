@@ -26,9 +26,9 @@
       <select name="seconds" id="seconds">
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
-        <option value="0.4">0.4</option>
-        <option value="0.5">0.5</option>
-        <option value="1" selected>1</option>
+        <option value="0.3">0.3</option>
+        <option value="0.5" selected>0.5</option>
+        <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="5">5</option>
@@ -45,6 +45,8 @@
     <script>
         "use strict"
 
+        let n = 10
+
         if (!localStorage.orobas) {
           localStorage.orobas = JSON.stringify({win:0, loss:0, draw:0})
         }
@@ -58,6 +60,8 @@
         console.log(`%c Win: ${results.win}\nLoss: ${results.loss | 0}\n%cDraw: ${results.draw}`, "font-size: 24px", "font-size: 24px; color: #444")
         console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${winLossRatio}`, "font-size: 16px")
         console.log(`%cΔELO: ${eloDelta}`, "font-size: 16px")
+
+        if (totalgames >= 100) throw new Error(0);
         
         var board = null
 var game = new Chess()
@@ -120,11 +124,12 @@ let computerMove = function () {
     })
 
     
-    $title.html(`Orobas ${res.sigmoid} | ${results.win}-${results.loss} (${winLossRatio}:1)`)
+    $title.html(`Orobas ${game.turn()}|${res.depth}|${res.sigmoid} | ${results.win}-${results.loss}-${results.win+results.loss+results.draw} (${winLossRatio}:1)`)
     
-    if (game.history().length % 10 === 1) {
+    console.log(res)
+
+    if (game.history().length % n === 1) {
       let sigmoid = 100*res.sigmoid
-      console.log(res)
       document.getElementById('sigmoid').style.width = sigmoid + "%"
       board.position(game.fen())
       updateStatus()
@@ -212,9 +217,6 @@ var config = {
   onDrop: onDrop,
   onSnapEnd: onSnapEnd
 }
-board = Chessboard('board', config)
-
-updateStatus()
 
 let analyze = function(callback) {
     let turn = game.turn() === 'w'? 0 : 1
@@ -243,6 +245,12 @@ let analyze = function(callback) {
 let undo = function () {
   game.undo(); board.position(game.fen()); updateStatus()
 }
+
+
+board = Chessboard('board', config)
+// loadfen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1 1')
+
+updateStatus()
 
 computerMove()
 
