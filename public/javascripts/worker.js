@@ -3489,7 +3489,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(true, true, true)
         AI.f = AI.lastscore / AI.nullWindowFactor
     }
 
@@ -3601,12 +3601,14 @@ AI.search = function (board, options) {
 
                 // console.log(depth, `FHF: ${fhfperc}%`)
 
-                if (AI.PV && !AI.stop) console.log(depth, AI.PV.map(e => { return e? [e.from,e.to] : '-'}).join(' '), '| Fhf ' + fhfperc + '%',
-                        'Pawn hit ' + (AI.phnodes / AI.pnodes * 100 | 0), score | 0, AI.nodes.toString(),
-                        AI.qsnodes.toString(), AI.ttnodes.toString(),
-                        ((100*this.evalhashnodes/(this.evalnodes)) | 0),
-                        'PV Nodes: ' + (AI.pvnodes| 0)
-                )
+                if (AI.PV && !AI.stop) {
+                    console.log(`Depth: ${depth}`, `Score: ${score | 0}`, `PVS Nodes: ${AI.nodes.toString()}`,
+                        `QS Nodes: ${AI.qsnodes.toString()}`, `TT Nodes: ${AI.ttnodes.toString()}`)
+                    console.log(`Static Eval Hit Rate: ${((100*this.evalhashnodes/(this.evalnodes)) | 0)}`,
+                    'PV Nodes: ' + (AI.pvnodes| 0), 'FHF ' + fhfperc + '%',
+                    'Pawn Hit Rate: ' + (AI.phnodes / AI.pnodes * 100 | 0))
+                    console.log(' ')
+                }
             
                 depth++
             }
