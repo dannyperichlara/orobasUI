@@ -1,4 +1,4 @@
-// "use strict"
+"use strict"
 
 const P =   1
 const N =   2
@@ -467,6 +467,19 @@ let orobas = {
     isSquareAttacked(square, attackerSide, count, xrays) {
         if (square & 0x88) return count? 0 : false
 
+        let pFrom
+        let nFrom
+        let bFrom
+        let rFrom
+        let qFrom
+        let kFrom
+        let pTo  
+        let nTo  
+        let bTo  
+        let rTo  
+        let qTo  
+        let kTo  
+
         if (attackerSide === BLACK) {
             pFrom = P
             nFrom = N
@@ -672,7 +685,7 @@ let orobas = {
             //Peones
             if (!forMobility) {
                 if (piece === P || piece === p) {
-                    for (j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
+                    for (let j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
                         let to = from + this.pieces[piece].offsets[j]
     
                         if (to & 0x88) continue
@@ -688,6 +701,8 @@ let orobas = {
                                     continue
                                 } else {
                                     isCapture = true
+
+                                    let promotingPiece = null
     
                                     if (to>=0 && to <= 7) {
                                         promotingPiece = Q
@@ -697,7 +712,7 @@ let orobas = {
                                         promotingPiece = q
                                     }
     
-                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null, promotingPiece}))
                                 }
                             } else {
                                 let lastEP = this.enPassantSquares[this.enPassantSquares.length - 1]
@@ -755,7 +770,7 @@ let orobas = {
                 }
             }
             
-            for (j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
+            for (let j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
                 let to = i
                 
                 while (true) {
@@ -3489,7 +3504,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, true)
+        AI.createTables(true, true, false)
         AI.f = AI.lastscore / AI.nullWindowFactor
     }
 
