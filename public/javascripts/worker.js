@@ -161,19 +161,21 @@ let orobas = {
         let enpassantsquare = fen[3]
         let movenumber = fen[5]
 
-        this.movenumber = movenumber
-    
+        
         let castlingRights = 0
-
+        
         if (castling.indexOf('K') > -1) castlingRights ^= 8
         if (castling.indexOf('Q') > -1) castlingRights ^= 4
         if (castling.indexOf('k') > -1) castlingRights ^= 2
         if (castling.indexOf('q') > -1) castlingRights ^= 1
         
-        this.castlingRights = [castlingRights]
-
+        
         this.board = this.fen2board(board)
+        this.initZobrist()
 
+        this.movenumber = movenumber
+        this.castlingRights = [castlingRights]
+        
         this.whiteKingIndex = this.board.indexOf(K)
         this.blackKingIndex = this.board.indexOf(k)
 
@@ -183,6 +185,7 @@ let orobas = {
             this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
             console.log('En Passant Square', this.enPassantSquares)
         }
+
     },
 
     fen2board (fen) {
@@ -385,13 +388,13 @@ let orobas = {
             if (turn !== this.turn) {
                 this.turn = turn
 
-                this.updateHashkey(this.zobristKeys.turn[WHITE])
-                this.updateHashkey(this.zobristKeys.turn[BLACK])
+                // this.updateHashkey(this.zobristKeys.turn[WHITE])
+                // this.updateHashkey(this.zobristKeys.turn[BLACK])
             }
         } else {
             this.turn = this.turn === WHITE? BLACK : WHITE // Esto es 35% más rápido que ~turn o -turn o cualquier otra cosa
-            this.updateHashkey(this.zobristKeys.turn[WHITE])
-            this.updateHashkey(this.zobristKeys.turn[BLACK])
+            // this.updateHashkey(this.zobristKeys.turn[WHITE])
+            // this.updateHashkey(this.zobristKeys.turn[BLACK])
         }
     },
 
@@ -1195,7 +1198,7 @@ let AI = {
     fh: 0,
     random: 0,
     phase: 1,
-    htlength: (1 << 24) / 2 | 0,
+    htlength: 1 << 24,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
     mindepth: [3,3,3,3],
@@ -1572,7 +1575,11 @@ AI.createTables = function (tt, hh, pp) {
 
     if (tt) {
         delete AI.hashTable
-        AI.hashTable = [null, new Map(), new Map()]
+        AI.hashTable = [
+            null,
+            (new Array(this.htlength)).fill(null),
+            (new Array(this.htlength)).fill(null),
+        ]
 
         delete AI.evalTable
         AI.evalTable = [
@@ -2580,7 +2587,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         move.hvalue = 0
         move.killer1 = 0
         move.killer2 = 0
-        move.score = 0
+        move.score = Math.random() * 1000 | 0
 
 
         // CRITERIO 0: La jugada está en la Tabla de Trasposición
@@ -2618,13 +2625,6 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             continue
         }
 
-        // CRITERIO: La jugada es el segundo movimiento Killer
-        if (killer2 && killer2.key === move.key) {
-            move.killer2 = true
-            move.score += 5e6
-            continue
-        }
-        
         // CRITERIO: La jugada es una promoción
         if (move.promotingPiece) {
             move.score += 3e6
@@ -2636,7 +2636,13 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 2e6
             continue
         }
-        
+
+        // CRITERIO: La jugada es el segundo movimiento Killer
+        if (killer2 && killer2.key === move.key) {
+            move.killer2 = true
+            move.score += 5e6
+            continue
+        }     
 
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
@@ -2979,6 +2985,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
             if (R < 0) R = 0
         }
 
+        let reduced = false
+
         // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
             // AI.moveTime += (new Date()).getTime() - m0
@@ -2997,6 +3005,8 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
 
                 if (!AI.stop && score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1)
+                } else {
+                    reduced = true
                 }
             }
 
@@ -3016,7 +3026,7 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
                     AI.PV[ply] = move
     
                     //LOWERBOUND
-                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
+                    AI.ttSave(turn, hashkey, score, LOWERBOUND, reduced? depth - R : depth, move)
     
                     if (!move.isCapture) {
                         if (
@@ -3467,7 +3477,7 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
 }
 
 AI.search = function (board, options) {
-    console.log('Searching...')
+    console.log('Searching...', board.ply)
     AI.sortingTime = 0
     AI.searchTime0 = Date.now()
 
@@ -3504,7 +3514,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(true, true, false)
+        AI.createTables(false, true, false)
         AI.f = AI.lastscore / AI.nullWindowFactor
     }
 
