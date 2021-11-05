@@ -2720,7 +2720,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
 
         // Bad captures pruning
         if (AI.phase <= MIDGAME && move.mvvlva < 6000) {
-            if (board.isSquareAttacked(move.to, opponentTurn, false, false)) {
+            if (board.isSquareAttacked(move.to, opponentTurn, true, false) > 1) {
                 continue
             }
         }
