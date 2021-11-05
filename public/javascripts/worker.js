@@ -2932,8 +2932,9 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         if (!ttEntry) {
             let ttETC = AI.ttGet(turn, hashkey)
 
-            if (ttETC) {
+            if (ttETC && ttETC.hashkey === hashkey) {
                 if (ttETC.flag <= EXACT) {
+                    console.log('ETC')
                     return ttETC.score
                 }
             }
