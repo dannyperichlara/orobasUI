@@ -2928,6 +2928,17 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let move = moves[i]
         let piece = move.piece
 
+        // Enhanced Transposition Cutoff
+        if (!ttEntry) {
+            let ttETC = AI.ttGet(turn, hashkey)
+
+            if (ttETC) {
+                if (ttETC.flag <= EXACT) {
+                    return ttETC.score
+                }
+            }
+        }
+
         if (!incheck && legal >= 1) {
             // Futility Pruning
             if (depth <= 3) {
