@@ -2928,13 +2928,16 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         let move = moves[i]
         let piece = move.piece
 
-        // Enhanced Transposition Cutoff
+        // Enhanced Transposition Cutoff Part 1
         if (!ttEntry) {
             let ttETC = AI.ttGet(turn, hashkey)
 
-            if (ttETC && ttETC.hashkey === hashkey) {
-                if (ttETC.flag <= EXACT) {
-                    console.log('ETC')
+            if (ttETC && ttETC.depth >= depth && ttETC.hashkey === hashkey) {
+                if (ttETC.flag === LOWERBOUND) {
+                    if (ttETC.score > alpha) alpha = ttETC.score
+                } else if (ttETC.flag === UPPERBOUND) {
+                    if (ttETC.score < beta) beta = ttETC.score
+                } else {
                     return ttETC.score
                 }
             }
@@ -3014,6 +3017,27 @@ AI.PVS = function (board, alpha, beta, depth, ply) {
         // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
             // AI.moveTime += (new Date()).getTime() - m0
+
+            // Enhanced Transposition Cutoff Part 2 ???????????
+            // if (true || i <= 5 && depth > 2) {
+            //     let ttETC = AI.ttGet(board.turn, board.hashkey)
+
+            //     if (ttETC && ttETC.hashkey === board.hashkey && ttETC.depth >= depth) {
+            //         // console.log('ETC')
+            //         console.log(ttETC.score)
+            //         if (ttETC.flag === LOWERBOUND) {
+            //             if (ttETC.score > alpha) alpha = ttETC.score
+            //         } else if (ttETC.flag === UPPERBOUND) {
+            //             if (ttETC.score < beta) beta = ttETC.score
+            //         } else { // EXACT
+            //             board.unmakeMove(move)
+
+            //             return ttETC.score
+            //         }
+            //     }
+            // }
+
+
             legal++
 
             if (legal === 1) {
