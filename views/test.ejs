@@ -124,16 +124,20 @@ let computerMove = function () {
     })
 
     
-    $title.html(`Orobas ${game.turn()}|${res.depth}|${res.sigmoid} | ${results.win}-${results.loss}-${results.win+results.loss+results.draw} (${winLossRatio}:1)`)
     
     console.log(res)
-
+    
     if (game.history().length % n === 1) {
       let sigmoid = 100*res.sigmoid
       document.getElementById('sigmoid').style.width = sigmoid + "%"
       board.position(game.fen())
       updateStatus()
     }
+
+    let total = results.win + results.loss + results.draw
+    let eloDelta = ((eloBase + 400*(results.win - results.loss))/totalgames) | 0
+
+    $title.html(`${results.win}+${results.loss}+${results.draw}=${total} ΔELO: ${eloDelta} ${res.sigmoid}`)
 
     if (!game.game_over()) {
       // if (game.history().length > 20) {
