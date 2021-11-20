@@ -1203,7 +1203,7 @@ let AI = {
     htlength: 1 << 22,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
-    mindepth: [3,3,3,3],
+    mindepth: [18,18,18,18],
     // mindepth: [1,1,1,1],
     secondspermove: 3,
     lastmove: null,
@@ -3465,7 +3465,7 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     
     do {
         let beta = f + (f == bound[0])
-        f = AI.PVS(board, beta - 2, beta, d, 1)
+        f = AI.PVS(board, beta - (AI.iteration < 10? 2 : 1), beta, d, 1)
         bound[(f < beta) | 0] = f
     } while (bound[0] < bound[1] && !AI.stop)
     
