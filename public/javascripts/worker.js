@@ -1199,7 +1199,7 @@ let AI = {
     fhf: 0,
     fh: 0,
     random: 0,
-    phase: 1,
+    phase: 0,
     htlength: 1 << 22,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
@@ -1210,7 +1210,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 20 // +132 ELO
+    nullWindowFactor: 10 // +132 ELO
 }
 
 // ÍNDICES
@@ -2008,7 +2008,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     score += AI.getPawnShield(board, AI.phase)
 
     // Mobility
-    let mobility = AI.getMobility(board)
+    let mobility = AI.getMobility(board)// / 4 | 0
 
     score += mobility
 
@@ -2042,29 +2042,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     score += AI.BISHOP_PAIR[AI.phase]*(bishopsW - bishopsB)
 
     // Pawns on same squares of bishops //8 for MG, 15 for EG
-    let bpmalus = AI.phase <= MIDGAME? 8 : 15
-    let badpawns = (bpmalus*lightSquaresWhiteBishop*lightSquaresWhitePawns + bpmalus*darkSquaresWhiteBishop*darkSquaresWhitePawns)
-        badpawns+= (10*lightSquaresWhiteBishop*blockedLightSquaresWhitePawns + 10*darkSquaresWhiteBishop*blockedDarkSquaresWhitePawns)
-        badpawns-= (bpmalus*lightSquaresBlackBishop*lightSquaresBlackPawns + bpmalus*darkSquaresBlackBishop*darkSquaresBlackPawns)
-        badpawns-= (10*lightSquaresBlackBishop*blockedLightSquaresBlackPawns + 10*darkSquaresBlackBishop*blockedDarkSquaresBlackPawns)
+    let badPawnPenalty = AI.phase <= MIDGAME? 10 : 20
+    let badPawns = (badPawnPenalty*lightSquaresWhiteBishop*lightSquaresWhitePawns + badPawnPenalty*darkSquaresWhiteBishop*darkSquaresWhitePawns)
+        badPawns+= (10*lightSquaresWhiteBishop*blockedLightSquaresWhitePawns + 10*darkSquaresWhiteBishop*blockedDarkSquaresWhitePawns)
+        badPawns-= (badPawnPenalty*lightSquaresBlackBishop*lightSquaresBlackPawns + badPawnPenalty*darkSquaresBlackBishop*darkSquaresBlackPawns)
+        badPawns-= (10*lightSquaresBlackBishop*blockedLightSquaresBlackPawns + 10*darkSquaresBlackBishop*blockedDarkSquaresBlackPawns)
 
-    score -= badpawns
+    score -= badPawns
 
 
     if (AI.phase === OPENING || pvNode) {
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
-            
-            let nullWindowScore = score / AI.nullWindowFactor | 0
-            
-            AI.evalTable[board.hashkey % this.htlength] = {
-                hashkey: board.hashkey,
-                score: q
-            }
-            return sign*nullWindowScore
-        }
-
-        // // Mobility
-        // score += AI.getMobility(board)
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -3539,7 +3526,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(board, true, false, true, true)
+        AI.createTables(board, false, false, true, false)
         // if (changeofphase) {
         //     AI.createTables(board, true, true, true)
         // } else {
@@ -3659,7 +3646,7 @@ AI.search = function (board, options) {
                 // console.log(depth, `FHF: ${AI.fhfperc}%`)
 
                 if (AI.PV && !AI.stop) {
-                    console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes)
+                    console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0))
                     // console.log(`Static Eval Hit Rate: ${((100*this.evalhashnodes/(this.evalnodes)) | 0)}`,
                     // 'PV Nodes: ' + (AI.pvnodes| 0), 'FHF ' + AI.fhfperc + '%',
                     // 'Pawn Hit Rate: ' + (AI.phnodes / AI.pnodes * 100 | 0))
