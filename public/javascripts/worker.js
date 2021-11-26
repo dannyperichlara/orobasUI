@@ -1200,7 +1200,7 @@ let AI = {
     fh: 0,
     random: 0,
     phase: 1,
-    htlength: 1 << 24,
+    htlength: 1 << 22,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
     // mindepth: [14,18,20,22],
@@ -1210,7 +1210,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 0.5 // +132 ELO
+    nullWindowFactor: 20 // +132 ELO
 }
 
 // ÍNDICES
@@ -1621,7 +1621,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     
     if (evalEntry && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
-        return sign*evalEntry.score
+        if (Math.abs(evalEntry.score) < MARGIN3) return sign*evalEntry.score
     }
 
     alpha = alpha*this.nullWindowFactor
@@ -1631,11 +1631,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
-    let safety = 0
-    let mobility = 0
-    let doubled = 0
-    
-    let pawns = new Array(120)
     let pawnindexW = []
     let pawnindexB = []
 
@@ -1736,23 +1731,23 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
                     score += 40
                 }
 
-                if (AI.phase <= MIDGAME) {
-                    //Center control
-                    if (i === 68 && board.board[51] === 0) score+=10
-                    if (i === 67 && board.board[52] === 0) score+=10
+                // if (AI.phase <= MIDGAME) {
+                //     //Center control
+                //     if (i === 68 && board.board[51] === 0) score+=10
+                //     if (i === 67 && board.board[52] === 0) score+=10
 
-                    //Outer central lever
-                    if (i === 66 && (board.board[51] === p || board.board[51] === 0)) {
-                        score+=20
+                //     //Outer central lever
+                //     if (i === 66 && (board.board[51] === p || board.board[51] === 0)) {
+                //         score+=20
 
-                        if (board.board[81] === P || board.board[83] === P) score += 15
-                    } 
-                    if (i === 69 && (board.board[52] === p || board.board[52] === 0)) {
-                        score+=20 
+                //         if (board.board[81] === P || board.board[83] === P) score += 15
+                //     } 
+                //     if (i === 69 && (board.board[52] === p || board.board[52] === 0)) {
+                //         score+=20 
 
-                        if (board.board[84] === P || board.board[86] === P) score += 15
-                    }
-                }
+                //         if (board.board[84] === P || board.board[86] === P) score += 15
+                //     }
+                // }
 
                 if (board.colorOfSquare(i)) {
                     lightSquaresWhitePawns++
@@ -1800,21 +1795,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
                     score -= 40
                 }
 
-                if (AI.phase <= MIDGAME) {
-                    //Center control
-                    if (i === 51 && board.board[68] === 0) score-=10
-                    if (i === 52 && board.board[67] === 0) score-=10
+                // if (AI.phase <= MIDGAME) {
+                //     //Center control
+                //     if (i === 51 && board.board[68] === 0) score-=10
+                //     if (i === 52 && board.board[67] === 0) score-=10
 
-                    //Outer central lever
-                    if (i === 50 && (board.board[67] === P || board.board[67] === 0)) {
-                        score-=20
-                        if (board.board[33] === p || board.board[35] === p) score -= 15
-                    } 
-                    if (i === 53 && (board.board[68] === P || board.board[68] === 0)) {
-                        score-=20
-                        if (board.board[36] === p || board.board[38] === p) score -= 15
-                    } 
-                }
+                //     //Outer central lever
+                //     if (i === 50 && (board.board[67] === P || board.board[67] === 0)) {
+                //         score-=20
+                //         if (board.board[33] === p || board.board[35] === p) score -= 15
+                //     } 
+                //     if (i === 53 && (board.board[68] === P || board.board[68] === 0)) {
+                //         score-=20
+                //         if (board.board[36] === p || board.board[38] === p) score -= 15
+                //     } 
+                // }
 
                 if (board.colorOfSquare(i)) {
                     lightSquaresBlackPawns++
@@ -2012,6 +2007,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     // Pawn shield
     score += AI.getPawnShield(board, AI.phase)
 
+    // Mobility
+    let mobility = AI.getMobility(board)
+
+    score += mobility
+
     if (AI.phase === LATE_ENDGAME && alpha > MARGIN3) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
@@ -2063,8 +2063,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             return sign*nullWindowScore
         }
 
-        // Mobility
-        score += AI.getMobility(board)
+        // // Mobility
+        // score += AI.getMobility(board)
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2264,6 +2264,8 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
 
 AI.getMobility = (board)=>{
     let score = 0
+    let mobilityW = 0
+    let mobilityB = 0
     let whiteMoves = []
     let blackMoves = []
 
@@ -2286,19 +2288,19 @@ AI.getMobility = (board)=>{
         if (board.board[move.to - 17] === p || board.board[move.to - 15] === p) continue
 
         if (move.piece === N) {
-            score += AI.NMOBILITY[move.to]
+            mobilityW += AI.NMOBILITY[move.to]
         }
 
         if (move.piece === B) {
-            score += AI.BMOBILITY[move.to]
+            mobilityW += AI.BMOBILITY[move.to]
         }
 
         if (move.piece === R) {
-            score += AI.RMOBILITY[move.to]
+            mobilityW += AI.RMOBILITY[move.to]
         }
 
         if (move.piece === Q) {
-            score += AI.QMOBILITY[move.to]
+            mobilityW += AI.QMOBILITY[move.to]
         }
     }
 
@@ -2309,23 +2311,23 @@ AI.getMobility = (board)=>{
         if (board.board[move.to + 17] === P || board.board[move.to + 15] === P) continue
 
         if (move.piece === n) {
-            score -= AI.NMOBILITY[112^move.to]
+            mobilityB += AI.NMOBILITY[112^move.to]
         }
 
         if (move.piece === b) {
-            score -= AI.BMOBILITY[112^move.to]
+            mobilityB += AI.BMOBILITY[112^move.to]
         }
 
         if (move.piece === r) {
-            score -= AI.RMOBILITY[112^move.to]
+            mobilityB += AI.RMOBILITY[112^move.to]
         }
 
         if (move.piece === q) {
-            score -= AI.QMOBILITY[112^move.to]
+            mobilityB += AI.QMOBILITY[112^move.to]
         }
     }
 
-    // console.log(score)
+    score = mobilityW - mobilityB
 
     return score
 }
@@ -2909,7 +2911,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         let move = moves[i]
         let piece = move.piece
 
-        if (!move.killer1 && !incheck && legal >= 1) {
+        if (!move.killer1 && !incheck && legal >= 1 && AI.iteration > 1) {
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
@@ -2939,6 +2941,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             let ttETC = AI.ttGet(turn, hashkey)
             
             if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
+                AI.etcNodes++
                 // max++
                 if (ttETC.flag === LOWERBOUND) {
                     if (ttETC.score > alpha) alpha = ttETC.score
@@ -2958,7 +2961,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         //Reducciones
         let R = 0
 
-        if (depth >= 3 && legal >= 1 && !mateE) {
+        if (AI.iteration > 1 && depth >= 3 && legal >= 1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode && i < 6) {
@@ -3006,6 +3009,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             let ttETC = AI.ttGet(board.turn, board.hashkey)
 
             if (!ttEntry && ttETC && ttETC.hashkey === board.hashkey && ttETC.depth >= depth) {
+                AI.etcNodes++
+                
                 let scoreETC = -ttETC.score
                 
                 if (ttETC.flag === LOWERBOUND) {
@@ -3483,7 +3488,7 @@ AI.getPV = function (board, length) {
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // return AI.PVS(board, lowerBound, upperBound, d, 1, true)
+    // if (AI.fhfperc === 0 || AI.fhfperc === 100) return AI.PVS(board, lowerBound, upperBound, d, 1, true)
     
     let bound = [lowerBound, upperBound] // lower, upper
     
@@ -3534,7 +3539,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(board, false, false, true, false)
+        AI.createTables(board, true, false, true, true)
         // if (changeofphase) {
         //     AI.createTables(board, true, true, true)
         // } else {
@@ -3582,6 +3587,7 @@ AI.search = function (board, options) {
         AI.enodes = 0
         AI.pvnodes = 0
         AI.ttnodes = 0
+        AI.etcNodes = 0
         AI.evalhashnodes = 0
         AI.evalnodes = 0
         AI.rnodes = 0
@@ -3595,7 +3601,7 @@ AI.search = function (board, options) {
         AI.changeinPV = true
 
         let score = 0
-        let fhfperc = 0
+        AI.fhfperc = 0
 
         AI.killers = []
 
@@ -3646,17 +3652,16 @@ AI.search = function (board, options) {
                 //     AI.changeinPV = false
                 // }
 
-                fhfperc = Math.round(AI.fhf * 100 / AI.fh)
+                AI.fhfperc = Math.round(AI.fhf * 100 / AI.fh)
 
                 if (!AI.stop) AI.lastscore = score
 
-                // console.log(depth, `FHF: ${fhfperc}%`)
+                // console.log(depth, `FHF: ${AI.fhfperc}%`)
 
                 if (AI.PV && !AI.stop) {
-                    console.log(AI.phase, fhfperc, `Depth: ${depth}`, `Score: ${score | 0}`, `PVS Nodes: ${AI.nodes.toString()}`,
-                        `QS Nodes: ${AI.qsnodes.toString()}`, `TT Nodes: ${AI.ttnodes.toString()}`)
+                    console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes)
                     // console.log(`Static Eval Hit Rate: ${((100*this.evalhashnodes/(this.evalnodes)) | 0)}`,
-                    // 'PV Nodes: ' + (AI.pvnodes| 0), 'FHF ' + fhfperc + '%',
+                    // 'PV Nodes: ' + (AI.pvnodes| 0), 'FHF ' + AI.fhfperc + '%',
                     // 'Pawn Hit Rate: ' + (AI.phnodes / AI.pnodes * 100 | 0))
                     // console.log(' ')
                 }
@@ -3692,7 +3697,7 @@ AI.search = function (board, options) {
         console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0,
                     'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
-                    'ETC 1 (%): ', (max/total*1000 | 0) / 10,
+                    'ETC 1 (%): ', (AI.etcNodes/AI.nodes*1000 | 0) / 10,
         )
 
         // console.log(AI.bestmove, (AI.moveTime / AI.searchTime) * 100 | 0)
@@ -3701,7 +3706,7 @@ AI.search = function (board, options) {
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
             to: board.board64[AI.bestmove.to], fromto0x88: [AI.bestmove.from, AI.bestmove.to],
             score: AI.lastscore | 0, sigmoid: (sigmoid * 100 | 0) / 100, nodes: AI.nodes, qsnodes: AI.qsnodes,
-            FHF: fhfperc + '%', version: AI.version
+            FHF: AI.fhfperc + '%', version: AI.version
         })
     })
 }
