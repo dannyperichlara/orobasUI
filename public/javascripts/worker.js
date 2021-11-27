@@ -1198,10 +1198,10 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 40,
     phase: 0,
-    htlength: 1 << 22,
-    pawntlength: 5e5,
+    htlength: 4e6,
+    pawntlength: 1e6,
     // mindepth: [6,10,12,18],
     // mindepth: [14,18,20,22],
     mindepth: [1,1,1,1],
@@ -1210,7 +1210,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 10 // +132 ELO
+    nullWindowFactor: 20 // +132 ELO
 }
 
 // ÍNDICES
@@ -2008,7 +2008,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     score += AI.getPawnShield(board, AI.phase)
 
     // Mobility
-    let mobility = AI.getMobility(board)// / 4 | 0
+    let mobility = AI.getMobility(board) / 4 | 0
 
     score += mobility
 
@@ -2334,20 +2334,25 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 
     AI.pnodes++
 
-    if (hashentry !== null) {
-        AI.phnodes++
-        return hashentry
+    if (hashentry) {
+        if (hashentry.hashkey === hashkey) {
+            AI.phnodes++
+            return hashentry.score
+        } else {
+            // console.log('collision', total++)
+        }
     }
 
-    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB) // -32 ELO (why?)
+    let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
 
     let score = doubled + defended + passers + space
 
-    AI.pawnTable[hashkey % AI.pawntlength] = score
+    AI.pawnTable[hashkey % AI.pawntlength] = {hashkey, score}
     return score
+
 }
 
 AI.getSpace = (board, pawnindexW, pawnindexB)=>{
@@ -2637,7 +2642,7 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1000 + hvalue
             continue
         } else {
-            move.score += 0// Math.random()*1000 | 0
+            move.score += Math.random()*1000 | 0
 
             continue
         }
@@ -2734,7 +2739,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     }
 
     if (alpha > alphaOriginal) {
-        AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
+        // AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
         return alpha
     } else {
         return alphaOriginal
