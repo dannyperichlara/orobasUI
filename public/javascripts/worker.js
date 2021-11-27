@@ -3631,8 +3631,8 @@ AI.search = function (board, options) {
                     continue
                 }
 
-                alpha -= MARGIN1/2
-                beta += MARGIN1/2
+                alpha -= SMALLMARGIN
+                beta += SMALLMARGIN
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
