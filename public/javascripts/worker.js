@@ -2890,7 +2890,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     }
 
     // IID
-    if (!ttEntry && depth > 2) depth-=2
+    if (!ttEntry && depth > 4) depth-=2
 
     let moves = board.getMoves()
 
@@ -3489,7 +3489,7 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     do {
         let beta = f + (f === bound[0])
         // console.log(beta)
-        f = AI.PVS(board, beta - (AI.iteration < 10? 1 : 1), beta, d, 1, true)
+        f = AI.PVS(board, beta - (AI.iteration < 10? 2 : 1), beta, d, 1, true)
         bound[(f < beta) | 0] = f
         // console.log(bound)
     } while (bound[0] < bound[1] && !AI.stop)
@@ -3613,7 +3613,6 @@ AI.search = function (board, options) {
         let beta = INFINITY
 
         if (true) {
-
             //Iterative Deepening
             for (; depth <= AI.totaldepth; ) {
                 // console.log(board.hashkey)
@@ -3624,19 +3623,21 @@ AI.search = function (board, options) {
 
                 AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
 
-                //Aspiration window
-                if (AI.f < alpha) {
-                    alpha = -INFINITY
-                    continue
-                }
+                // //Aspiration window
+                // if (AI.f < alpha) {
+                //     console.log('alpha correction')
+                //     alpha -= SMALLMARGIN
+                //     continue
+                // }
 
-                if (AI.f > beta) {
-                    beta = INFINITY
-                    continue
-                }
+                // if (AI.f > beta) {
+                //     console.log('beta correction')
+                //     beta += SMALLMARGIN
+                //     continue
+                // }
 
-                alpha -= SMALLMARGIN
-                beta += SMALLMARGIN
+                // alpha = AI.f - SMALLMARGIN
+                // beta = AI.f + SMALLMARGIN
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
