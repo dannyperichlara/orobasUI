@@ -643,6 +643,22 @@ let orobas = {
 
     getMoves(forMobility, onlyCaptures) {
         forMobility = !!forMobility
+
+        let mobilityMoves = {
+            [P]: 0,
+            [N]: 0,
+            [B]: 0,
+            [R]: 0,
+            [Q]: 0,
+            [K]: 0,
+            [p]: 0,
+            [n]: 0,
+            [b]: 0,
+            [r]: 0,
+            [q]: 0,
+            [k]: 0,
+        }
+
         let moves = []
         let moveindex = 0
 
@@ -688,8 +704,8 @@ let orobas = {
             }
 
             //Peones
-            if (!forMobility) {
-                if (piece === P || piece === p) {
+            if (piece === P || piece === p) {
+                if (!forMobility) {
                     for (let j = 0, len=this.pieces[piece].offsets.length; j < len; j++) {
                         let to = from + this.pieces[piece].offsets[j]
     
@@ -773,40 +789,48 @@ let orobas = {
     
                     continue
                 }
-            }
-            
-            for (let j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
-                let to = i
-                
-                while (true) {
-                    to += this.pieces[piece].offsets[j]
+            } else {
+                for (let j=0, len = this.pieces[piece].offsets.length; j < len; j++) {
+                    let to = i
                     
-                    if (to & 0x88) break
-                    
-                    let isCapture = false
-
-                    let capturedPiece = this.board[to]
-
-                    if (capturedPiece) {
-                        if (this.color(capturedPiece) === this.turn) {
-                            break
+                    while (true) {
+                        to += this.pieces[piece].offsets[j]
+                        
+                        if (to & 0x88) break
+                        
+                        let isCapture = false
+    
+                        let capturedPiece = this.board[to]
+    
+                        if (capturedPiece) {
+                            if (this.color(capturedPiece) === this.turn) {
+                                break
+                            } else {
+                                isCapture = true
+                            }
                         } else {
-                            isCapture = true
+                            if (onlyCaptures) continue
                         }
-                    } else {
-                        if (onlyCaptures) continue
-                    }
-
-                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
-
-                    if (isCapture) break
-
-                    if (piece === N || piece === n || piece === K || piece === k) {
-                        break
+    
+                        if (forMobility) {
+                            mobilityMoves[piece]++
+                        } else {
+                            moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
+                        }
+    
+    
+                        if (isCapture) break
+    
+                        if (piece === N || piece === n || piece === K || piece === k) {
+                            break
+                        }
                     }
                 }
             }
+            
         }
+
+        if (forMobility) return mobilityMoves
 
         return moves
     },
@@ -1198,7 +1222,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 40,
+    random: 0,
     phase: 0,
     htlength: 4e6,
     pawntlength: 1e6,
@@ -1625,8 +1649,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     }
 
     alpha = alpha*this.nullWindowFactor | 0
-    beta = beta*this.nullWindowFactor | 0
-    // beta = alpha + VPAWN2
+    // beta = beta*this.nullWindowFactor | 0
+    beta = alpha + VPAWN2
     
     // let incheck = board.isKingInCheck()
     
@@ -1693,7 +1717,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             pawnindexB.push(i)
         }
         
-        if (AI.phase <= OPENING || pvNode){
+        if (false && AI.phase <= OPENING || pvNode){
             // if (board.color(piece) === WHITE) {
             //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
             // } else {
@@ -2008,11 +2032,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     // Pawn shield
     score += AI.getPawnShield(board, AI.phase)
 
-    // Mobility
-    let mobility = AI.getMobility(board) / 4 | 0
-
-    score += mobility
-
     if (AI.phase === LATE_ENDGAME && alpha > MARGIN3) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
@@ -2054,6 +2073,20 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
 
     if (AI.phase === OPENING || pvNode) {
     
+        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+            
+            let nullWindowScore = score / AI.nullWindowFactor | 0
+            
+            AI.evalTable[board.hashkey % this.htlength] = {
+                hashkey: board.hashkey,
+                score: nullWindowScore
+            }
+            return sign*nullWindowScore
+        }
+
+        // Mobility
+        score += AI.getMobility(board)
+
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
             let nullWindowScore = score / AI.nullWindowFactor | 0
@@ -2258,6 +2291,8 @@ AI.getMobility = (board)=>{
     let whiteMoves = []
     let blackMoves = []
 
+    let pieces = []
+
     if (board.turn === WHITE) {
         whiteMoves = board.getMoves(true,false)
         board.changeTurn()
@@ -2270,53 +2305,15 @@ AI.getMobility = (board)=>{
         board.changeTurn()
     }
 
-    for (let i = 0, len = whiteMoves.length; i < len; i++) {
-        let move = whiteMoves[i]
+    score += whiteMoves[N]? 23 * Math.log(whiteMoves[N]) - 35 | 0 : 0
+    score += whiteMoves[B]? 26 * Math.log(whiteMoves[B]) - 25 | 0 : 0
+    score += whiteMoves[R]? 21 * Math.log(whiteMoves[R]) - 28 | 0 : 0
+    score += whiteMoves[Q]? 24 * Math.log(whiteMoves[R]) - 29 | 0 : 0
 
-        // Safe Mobility +12 ELO
-        if (board.board[move.to - 17] === p || board.board[move.to - 15] === p) continue
-
-        if (move.piece === N) {
-            mobilityW += AI.NMOBILITY[move.to]
-        }
-
-        if (move.piece === B) {
-            mobilityW += AI.BMOBILITY[move.to]
-        }
-
-        if (move.piece === R) {
-            mobilityW += AI.RMOBILITY[move.to]
-        }
-
-        if (move.piece === Q) {
-            mobilityW += AI.QMOBILITY[move.to]
-        }
-    }
-
-    for (let i = 0, len = blackMoves.length; i < len; i++) {
-        let move = blackMoves[i]
-
-        // Safe Mobility +12 ELO
-        if (board.board[move.to + 17] === P || board.board[move.to + 15] === P) continue
-
-        if (move.piece === n) {
-            mobilityB += AI.NMOBILITY[112^move.to]
-        }
-
-        if (move.piece === b) {
-            mobilityB += AI.BMOBILITY[112^move.to]
-        }
-
-        if (move.piece === r) {
-            mobilityB += AI.RMOBILITY[112^move.to]
-        }
-
-        if (move.piece === q) {
-            mobilityB += AI.QMOBILITY[112^move.to]
-        }
-    }
-
-    score = mobilityW - mobilityB
+    score -= blackMoves[n]? 23 * Math.log(blackMoves[n]) - 35 | 0 : 0
+    score -= blackMoves[b]? 26 * Math.log(blackMoves[b]) - 25 | 0 : 0
+    score -= blackMoves[r]? 21 * Math.log(blackMoves[r]) - 28 | 0 : 0
+    score -= blackMoves[q]? 24 * Math.log(blackMoves[q]) - 29 | 0 : 0
 
     return score
 }
@@ -2729,7 +2726,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             board.unmakeMove(move)
 
             if (score >= beta) {
-                AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
+                // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
                 return score
             }
             
@@ -3535,12 +3532,12 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        AI.createTables(board, false, false, true, false)
-        // if (changeofphase) {
-        //     AI.createTables(board, true, true, true)
-        // } else {
-        //     AI.createTables(board, true, true, true)
-        // }
+        // AI.createTables(board, false, false, true, false)
+        if (changeofphase) {
+            AI.createTables(board, true, true, true, true)
+        } else {
+            AI.createTables(board, false, false, true, false)
+        }
         
         AI.f = AI.lastscore / AI.nullWindowFactor | 0
     }
