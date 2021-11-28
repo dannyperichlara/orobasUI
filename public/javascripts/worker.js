@@ -1624,8 +1624,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         if (Math.abs(evalEntry.score) < MARGIN3) return sign*evalEntry.score
     }
 
-    alpha = alpha*this.nullWindowFactor
-    beta = alpha + VPAWN2
+    alpha = alpha*this.nullWindowFactor | 0
+    beta = beta*this.nullWindowFactor | 0
+    // beta = alpha + VPAWN2
     
     // let incheck = board.isKingInCheck()
     
@@ -2244,7 +2245,8 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
         return true
     }
 
-    if (signedScore < alpha) {
+    if (signedScore < alpha - VPAWN) {
+        // console.log('alpha futile', ++max)
         return true
     }
 }
@@ -3480,14 +3482,16 @@ AI.getPV = function (board, length) {
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // if (AI.fhfperc === 0 || AI.fhfperc === 100) return AI.PVS(board, lowerBound, upperBound, d, 1, true)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1, true)
     
     let bound = [lowerBound, upperBound] // lower, upper
-    
+
     do {
-        let beta = f + (f == bound[0])
-        f = AI.PVS(board, beta - (AI.iteration < 10? 2 : 1), beta, d, 1, true)
+        let beta = f + (f === bound[0])
+        // console.log(beta)
+        f = AI.PVS(board, beta - (AI.iteration < 10? 1 : 1), beta, d, 1, true)
         bound[(f < beta) | 0] = f
+        // console.log(bound)
     } while (bound[0] < bound[1] && !AI.stop)
     
     return f
@@ -3538,7 +3542,7 @@ AI.search = function (board, options) {
         //     AI.createTables(board, true, true, true)
         // }
         
-        AI.f = AI.lastscore / AI.nullWindowFactor
+        AI.f = AI.lastscore / AI.nullWindowFactor | 0
     }
     
     if (!AI.f) AI.f = 0
