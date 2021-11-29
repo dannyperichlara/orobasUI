@@ -1717,7 +1717,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             pawnindexB.push(i)
         }
         
-        if (false && AI.phase <= OPENING || pvNode){
+        if (true || (AI.phase <= OPENING || pvNode)) {
             // if (board.color(piece) === WHITE) {
             //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
             // } else {
@@ -2071,7 +2071,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     score -= badPawns
 
 
-    if (AI.phase === OPENING || pvNode) {
+    if (true || AI.phase === OPENING || pvNode) {
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2641,7 +2641,12 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
             move.score += 1000 + hvalue
             continue
         } else {
-            move.score += Math.random()*1000 | 0
+            // move.score += Math.random()*1000 | 0
+            if (turn === WHITE) {
+                move.score += AI.PSQT[ABS[move.piece]][move.to] - AI.PSQT[ABS[move.piece]][move.from]
+            } else {
+                move.score += AI.PSQT[ABS[move.piece]][112^move.to] - AI.PSQT[ABS[move.piece]][112^move.from]
+            }
 
             continue
         }
@@ -2859,7 +2864,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck)
 
     //Futility
-    if (!pvNode && depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(staticeval) < MARGIN10) {
+    if (!pvNode && depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(alpha) < MARGIN10) {
         return staticeval
     }
 
@@ -2964,7 +2969,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (cutNode && !move.killer1) R+= 2
 
             // Reduce negative history
-            if (AI.history[piece][move.to] < 0) R++
+            if (AI.history[piece][move.to] < 0) R += 4
             
             if (!move.isCapture) {
                 // Move count reductions
@@ -3025,7 +3030,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                 score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, allowNullMove)
 
                 if (!AI.stop && score > alpha) {
-                    R = 0
+                    // R = 0
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove)
                 }
             }
@@ -3044,7 +3049,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                     AI.fh++
 
                     //LOWERBOUND
-                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth - R, move)
+                    // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth - R, move)
+                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
     
                     if (!move.isCapture) {
                         if (
@@ -3532,7 +3538,6 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        // AI.createTables(board, false, false, true, false)
         if (changeofphase) {
             AI.createTables(board, true, true, true, true)
         } else {
