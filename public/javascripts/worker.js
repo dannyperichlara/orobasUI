@@ -1650,7 +1650,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
 
     alpha = alpha*this.nullWindowFactor | 0
     // beta = beta*this.nullWindowFactor | 0
-    beta = alpha + VPAWN2
+    beta = alpha + VPAWN4
     
     // let incheck = board.isKingInCheck()
     
@@ -2278,7 +2278,7 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
         return true
     }
 
-    if (signedScore < alpha - VPAWN) {
+    if (signedScore < alpha - VPAWN2) {
         // console.log('alpha futile', ++max)
         return true
     }
@@ -2969,7 +2969,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (cutNode && !move.killer1) R+= 2
 
             // Reduce negative history
-            if (AI.history[piece][move.to] < 0) R += 4
+            if (AI.history[piece][move.to] < 0) R += 2
             
             if (!move.isCapture) {
                 // Move count reductions
@@ -3538,7 +3538,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        if (changeofphase) {
+        if (true || changeofphase) {
             AI.createTables(board, true, true, true, true)
         } else {
             AI.createTables(board, false, false, true, false)
