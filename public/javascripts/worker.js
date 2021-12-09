@@ -1645,7 +1645,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     
     if (evalEntry && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
-        if (Math.abs(evalEntry.score) < MARGIN3) return sign*evalEntry.score
+        return sign*evalEntry.score
     }
 
     alpha = alpha*this.nullWindowFactor | 0
@@ -1717,7 +1717,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             pawnindexB.push(i)
         }
         
-        if (true || (AI.phase <= OPENING || pvNode)) {
+        if (!incheck) {
             // if (board.color(piece) === WHITE) {
             //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
             // } else {
@@ -2046,7 +2046,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         }
     }
 
-    if (AI.isLazyFutile(sign, score, alpha, beta)) {
+    if (incheck || AI.isLazyFutile(sign, score, alpha, beta)) {
         
         let nullWindowScore = score / AI.nullWindowFactor | 0
         
@@ -2071,7 +2071,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     score -= badPawns
 
 
-    if (true || AI.phase === OPENING || pvNode) {
+    if (true) {
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2271,7 +2271,7 @@ AI.getPawnShield = (board, phase)=>{
 } 
 
 AI.isLazyFutile = (sign, score, alpha, beta)=> {
-    // return false
+    return false
     let signedScore = sign * score
 
     if (signedScore >= beta) {
@@ -2286,12 +2286,8 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
 
 AI.getMobility = (board)=>{
     let score = 0
-    let mobilityW = 0
-    let mobilityB = 0
-    let whiteMoves = []
-    let blackMoves = []
-
-    let pieces = []
+    let whiteMoves
+    let blackMoves
 
     if (board.turn === WHITE) {
         whiteMoves = board.getMoves(true,false)
@@ -2305,20 +2301,21 @@ AI.getMobility = (board)=>{
         board.changeTurn()
     }
 
-    score += whiteMoves[N]? 23 * Math.log(whiteMoves[N]) - 35 | 0 : 0
-    score += whiteMoves[B]? 26 * Math.log(whiteMoves[B]) - 25 | 0 : 0
-    score += whiteMoves[R]? 21 * Math.log(whiteMoves[R]) - 28 | 0 : 0
-    score += whiteMoves[Q]? 24 * Math.log(whiteMoves[R]) - 29 | 0 : 0
+    score += (whiteMoves[N]? 23 * Math.log10(whiteMoves[N]) - 35 | 0 : 0)
+    score += (whiteMoves[B]? 26 * Math.log10(whiteMoves[B]) - 25 | 0 : 0)
+    score += (whiteMoves[R]? 21 * Math.log10(whiteMoves[R]) - 28 | 0 : 0)
+    score += (whiteMoves[Q]? 24 * Math.log10(whiteMoves[Q]) - 29 | 0 : 0)
 
-    score -= blackMoves[n]? 23 * Math.log(blackMoves[n]) - 35 | 0 : 0
-    score -= blackMoves[b]? 26 * Math.log(blackMoves[b]) - 25 | 0 : 0
-    score -= blackMoves[r]? 21 * Math.log(blackMoves[r]) - 28 | 0 : 0
-    score -= blackMoves[q]? 24 * Math.log(blackMoves[q]) - 29 | 0 : 0
+    score -= (blackMoves[n]? 23 * Math.log10(blackMoves[n]) - 35 | 0 : 0)
+    score -= (blackMoves[b]? 26 * Math.log10(blackMoves[b]) - 25 | 0 : 0)
+    score -= (blackMoves[r]? 21 * Math.log10(blackMoves[r]) - 28 | 0 : 0)
+    score -= (blackMoves[q]? 24 * Math.log10(blackMoves[q]) - 29 | 0 : 0)
 
     return score
 }
 
 let max = 0
+let min = 0
 let total = 1
 
 // IMPORTANTE: Esta función devuelve el valor de la estructura de peones.
@@ -2789,8 +2786,6 @@ AI.ttGet = function (turn, hashkey) {
 
 }
 
-// let max = 0
-
 AI.saveHistory = function (turn, move, value) {
     // AI.history[move.piece][move.to] += value | 0
     AI.history[move.piece][move.to] += 32 * value - AI.history[move.piece][move.to]*Math.abs(value)/512 | 0
@@ -2911,7 +2906,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
-                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + SMALLMARGIN < alpha) {
+                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3 < alpha) {
+                        // console.log('fut C', max++)
                         continue
                     }
                 } else {
@@ -2960,7 +2956,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         if (AI.iteration > 1 && depth >= 3 && legal >= 1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
 
-            if (pvNode && i < 6) {
+            if (pvNode) {
                 R--
             }
 
@@ -2969,7 +2965,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (cutNode && !move.killer1) R+= 2
 
             // Reduce negative history
-            if (AI.history[piece][move.to] < 0) R += 2
+            if (AI.history[piece][move.to] < 0) R += 21
             
             if (!move.isCapture) {
                 // Move count reductions
@@ -2994,6 +2990,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             }
 
             if (R < 0) R = 0
+
+            let rLimit = legal > 4 && !move.isCapture? 2 : 4
+
+            if (depth > 6 && Math.abs(alpha - staticeval) > MARGIN3) {
+                // console.log('si po')
+                R = Math.max(R, depth - rLimit)
+            }
         }
 
         // let m0 = (new Date()).getTime()
@@ -3538,7 +3541,7 @@ AI.search = function (board, options) {
         AI.lastscore = 0
         AI.f = 0
     } else {
-        if (true || changeofphase) {
+        if (changeofphase) {
             AI.createTables(board, true, true, true, true)
         } else {
             AI.createTables(board, false, false, true, false)
