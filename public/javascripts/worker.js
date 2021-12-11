@@ -1714,7 +1714,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             pawnindexB.push(i)
         }
         
-        if (!incheck) {
+        if (!incheck && pvNode) {
             // if (board.color(piece) === WHITE) {
             //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
             // } else {
@@ -2070,7 +2070,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
 
     score -= badPawns
 
-    if (true) {
+    if (pvNode) {
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2953,7 +2953,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         //Reducciones
         let R = 0
 
-        if (AI.iteration > 1 && depth >= 1 && legal >= 1 && !mateE) {
+        if (AI.iteration > 1 && depth >= 3 && legal >= 1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) {
@@ -3033,7 +3033,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                 score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, allowNullMove)
 
                 if (!AI.stop && score > alpha) {
-                    // R = 0
+                    R = 0
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove)
                 }
             }
@@ -3052,8 +3052,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                     AI.fh++
 
                     //LOWERBOUND
-                    // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth - R, move)
-                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
+                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth - R, move)
+                    // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
     
                     if (!move.isCapture) {
                         if (
@@ -3627,22 +3627,6 @@ AI.search = function (board, options) {
                 AI.iteration++
 
                 AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
-
-                // //Aspiration window
-                // if (AI.f < alpha) {
-                //     console.log('alpha correction')
-                //     alpha = -INFINITY
-                //     continue
-                // }
-
-                // if (AI.f > beta) {
-                //     console.log('beta correction')
-                //     beta = INFINITY
-                //     continue
-                // }
-
-                // alpha = AI.f - MARGIN1/5
-                // beta = AI.f + MARGIN1/5
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
