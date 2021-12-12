@@ -1714,12 +1714,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             pawnindexB.push(i)
         }
         
-        if (!incheck && pvNode) {
-            // if (board.color(piece) === WHITE) {
-            //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, false)*10
-            // } else {
-            //     if (piece !== p) score += board.isSquareAttacked(i, WHITE, false)*10
-            // }
+        if (!incheck) {
+            if (board.color(piece) === WHITE) {
+                if (piece !== P) score -= board.isSquareAttacked(i, BLACK, true)*10
+            } else {
+                if (piece !== p) score += board.isSquareAttacked(i, WHITE, true)*10
+            }
 
             if (piece === P) {
                 //Attacking pieces
@@ -2070,7 +2070,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
 
     score -= badPawns
 
-    if (pvNode) {
+    if (true) {
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2136,7 +2136,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
                 if (occupiedBy === WHITE) {
                     score += i < 64? 20 : 10
                 } else {
-                    score -= i > 64? -20 : -10
+                    score -= i > 64? 20 : 10
                 }
             }
         }
@@ -2270,17 +2270,17 @@ AI.getPawnShield = (board, phase)=>{
 } 
 
 AI.isLazyFutile = (sign, score, alpha, beta)=> {
-    return false
+    // return false
     let signedScore = sign * score
 
     if (signedScore >= beta) {
         return true
     }
 
-    if (signedScore < alpha - VPAWN2) {
-        // console.log('alpha futile', ++max)
-        return true
-    }
+    // if (signedScore < alpha - VPAWN2) {
+    //     // console.log('alpha futile', ++max)
+    //     return true
+    // }
 }
 
 AI.getMobility = (board)=>{
@@ -2622,10 +2622,10 @@ AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
         }
 
         // CRITERIO: Enroque
-        if (AI.phase <= MIDGAME && move.castleSide) {
-            move.score += 2e6
-            continue
-        }
+        // if (AI.phase <= MIDGAME && move.castleSide) {
+        //     move.score += 2e6
+        //     continue
+        // }
         
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
@@ -2789,6 +2789,8 @@ AI.saveHistory = function (turn, move, value) {
     // AI.history[move.piece][move.to] += value | 0
     AI.history[move.piece][move.to] += 32 * value - AI.history[move.piece][move.to]*Math.abs(value)/512 | 0
 
+    if (AI.history[move.piece][move.to] < min) min = AI.history[move.piece][move.to]
+
     //HistoryTableEntry += 32 * bonus - HistoryTableEntry * abs(bonus) / 512;
 }
 
@@ -2843,7 +2845,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         }
 
         if (alpha >= beta) {
-            return ttEntry.score
+            if (depth > 0) {
+                return ttEntry.score
+            }
         }
     }
 
@@ -2940,7 +2944,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                 } else if (ttETC.flag === UPPERBOUND) {
                     if (ttETC.score < beta) beta = ttETC.score
                 } else { // EXACT
-                    if (ttETC.score > alpha) return ttETC.score
+                    if (ttETC.score > alpha) {
+                        console.log(depth)
+                        return ttETC.score
+                    }
                 }
             }
         }
@@ -2965,7 +2972,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (cutNode && !move.killer1) R+= 2
 
             // Reduce negative history
-            if (AI.history[piece][move.to] < 0) R += 21
+            if (AI.history[piece][move.to] < 0) R += 2
+            if (AI.history[piece][move.to] < -2000) R += 20
             
             if (!move.isCapture) {
                 // Move count reductions
