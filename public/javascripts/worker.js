@@ -1209,6 +1209,7 @@ let AI = {
     version: "2.1.5",
     totaldepth: 48,
     ttNodes: 0,
+    collisions: 0,
     iteration: 0,
     qsnodes: 0,
     nodes: 0,
@@ -1226,7 +1227,7 @@ let AI = {
     fh: 0,
     random: 0,
     phase: 0,
-    htlength: 4e6,
+    htlength: 8e6,
     pawntlength: 5e5,
     // mindepth: [6,10,12,18],
     // mindepth: [18,20,22,24],
@@ -1236,7 +1237,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 12 // +132 ELO
+    nullWindowFactor: 5 // +132 ELO
 }
 
 // ÍNDICES
@@ -1308,6 +1309,7 @@ const MARGIN2 = VPAWN*2/AI.nullWindowFactor | 0
 const MARGIN3 = VPAWN*3/AI.nullWindowFactor | 0
 const MARGIN10 = VPAWN*10/AI.nullWindowFactor | 0
 const SMALLMARGIN = (VPAWN/2)/AI.nullWindowFactor | 0
+const VERYSMALLMARGIN = (VPAWN/4)/AI.nullWindowFactor | 0
 
 AI.PIECE_VALUES = [
     new Map(),
@@ -1617,6 +1619,8 @@ AI.createTables = function (board, tt, ev, hh, pp) {
     if (tt) {
         delete AI.hashTable
         AI.hashTable = [null, new Array(this.htlength).fill(null), new Array(this.htlength).fill(null)]
+
+        AI.collisions = 0
     }
 
     if (ev) {
@@ -2050,8 +2054,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     // Material + PSQT
     score += material + psqt
 
-    // Pawn imbalance
-    score += 40*(pawnindexW.length - pawnindexB.length)
+    if (incheck) {
+            
+        let nullWindowScore = (score / AI.nullWindowFactor | 0)
+        
+        AI.evalTable[board.hashkey % this.htlength] = {
+            hashkey: board.hashkey,
+            score: nullWindowScore
+        }
+        return sign*nullWindowScore
+    }
 
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)
@@ -2083,23 +2095,23 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         }
         return sign*nullWindowScore
     }
-
-    // Mobility
-    score += AI.getMobility(board)
-
-    if (incheck || AI.isLazyFutile(sign, score, alpha, beta)) {
-        
-        let nullWindowScore = (score / AI.nullWindowFactor | 0)
-        
-        AI.evalTable[board.hashkey % this.htlength] = {
-            hashkey: board.hashkey,
-            score: nullWindowScore
+    
+    if (pvNode) {
+        // Mobility
+        score += AI.getMobility(board)
+    
+        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+            
+            let nullWindowScore = (score / AI.nullWindowFactor | 0)
+            
+            AI.evalTable[board.hashkey % this.htlength] = {
+                hashkey: board.hashkey,
+                score: nullWindowScore
+            }
+    
+            return sign*nullWindowScore
         }
 
-        return sign*nullWindowScore
-    }
-
-    if (pvNode) {
         // Bishop pair
         score += bishopsW === 2? AI.BISHOP_PAIR[AI.phase] : 0
         score -= bishopsB === 2? AI.BISHOP_PAIR[AI.phase] : 0
@@ -2359,46 +2371,57 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
         }
     }
 
+    let pawnImbalance = 40*(pawnindexW.length - pawnindexB.length)
     let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
     let defended = AI.getDefended(board, pawnindexW, pawnindexB)
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
+    let backward = AI.getBackwardPawns(board, pawnindexW, pawnindexB)
 
-    let score = doubled + defended + passers + space
+    let score = pawnImbalance + doubled + defended + passers + space + backward
 
     AI.pawnTable[hashkey % AI.pawntlength] = {hashkey, score}
     return score
 
 }
 
+AI.getBackwardPawns = (board, pawnindexW, pawnindexB)=>{
+    let whiteBackwardPawns = 0
+    let blackBackwardPawns = 0
+
+    for (let i = 0; i < pawnindexW.length; i++) {
+        let square = pawnindexW[i]
+
+        if (square >= 64 && square <= 87) {
+            if (board.board[square + 15] !== P && board.board[square + 17] !== P && board.board[square + 33] !== P && board.board[square + 31] !== P) {
+                whiteBackwardPawns++
+            }
+        }
+    }
+
+    for (let i = 0; i < pawnindexB.length; i++) {
+        let square = pawnindexB[i]
+        if (square >= 32 && square <= 55) {
+            if (board.board[square - 15] !== p && board.board[square - 17] !== p && board.board[square - 33] !== p && board.board[square - 31] !== p) {
+                blackBackwardPawns++
+            }
+        }
+    }
+
+    return -40 * (whiteBackwardPawns - blackBackwardPawns)
+}
+
 AI.getSpace = (board, pawnindexW, pawnindexB)=>{
     let spaceW = 0
     let spaceB = 0
 
-    for (let i = 0; i < 120; i++) {
-        if (i & 0x88) {
-            i+=7
-            continue
-        }
-
-        let piece = board.board[i]
-
-        if (!piece) continue
-
-        if (board.color(piece) === WHITE) {
-            spaceW += board.ranksW[i]
-        } else {
-            spaceB += board.ranksB[i]
-        }
+    for (let i = 0, len=pawnindexW.length; i < len; i++) {
+        spaceW += board.ranksW[pawnindexW[i]] - 1
     }
 
-    // for (let i = 0, len=pawnindexW.length; i < len; i++) {
-    //     spaceW += board.ranksW[pawnindexW[i]] - 1
-    // }
-
-    // for (let i = 0, len=pawnindexB.length; i < len; i++) {
-    //     spaceB += board.ranksB[pawnindexB[i]] - 1
-    // }
+    for (let i = 0, len=pawnindexB.length; i < len; i++) {
+        spaceB += board.ranksB[pawnindexB[i]] - 1
+    }
 
     let space = 2*(spaceW - spaceB)
 
@@ -2598,7 +2621,7 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
 // Esta función es fundamental para que la poda Alfa-Beta funcione de manera óptima
 // El orden establecido permite que la primera jugada
 // sea FAIL-HIGH en más de un 90% de los casos.
-AI.sortMoves = function (moves, turn, ply, board, ttEntry) {
+AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
 
     // let t0 = (new Date).getTime()
     let killer1, killer2
@@ -2730,25 +2753,19 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let ttEntry = AI.ttGet(turn, hashkey)
     let score = -INFINITY
     
-    moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
+    moves = AI.sortMoves(moves, turn, ply, depth, ttEntry)
 
     let bestmove = moves[0]
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
 
+        let attackers = board.isSquareAttacked(move.to, opponentTurn, false, false)
+
         // Bad captures pruning (+34 ELO)
         if (move.mvvlva < 6000) {
-            if (board.isSquareAttacked(move.to, opponentTurn, false, false)) {
+            if (attackers) {
                 continue
-             }
-        } else if (move.mvvlva < 20000) {
-            if (board.isSquareAttacked(move.to, opponentTurn, true, false) > 1) {
-                continue
-            } else {
-                if (board.isSquareAttacked(move.to, opponentTurn, true, true) > 2) {
-                    continue
-                }
             }
         }
         
@@ -2779,7 +2796,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     }
 
     if (alpha > alphaOriginal) {
-        // AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
+        AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
         return alpha
     } else {
         return alphaOriginal
@@ -2805,6 +2822,8 @@ AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
         depth,
         move
     }
+
+    AI.totalTTnodes++
 }
 
 AI.ttGet = function (turn, hashkey) {
@@ -2815,7 +2834,8 @@ AI.ttGet = function (turn, hashkey) {
             AI.ttnodes++
             return ttEntry
         } else {
-            // console.log('Collision')
+            AI.collisions++
+            // console.log('Collision', AI.collisions)
             AI.hashTable[turn][hashkey % AI.htlength] = null
             return null
         }
@@ -2871,7 +2891,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let sign = turn === WHITE? 1 : -1
     let hashkey = board.hashkey
 
+    
     let incheck = board.isKingInCheck()
+    let prune = !incheck && cutNode
 
     let ttEntry = AI.ttGet(turn, hashkey)
 
@@ -2887,7 +2909,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         if (alpha >= beta) {
             if (depth > 0) {
                 return ttEntry.score
-            }
+            } 
         }
     }
 
@@ -2925,12 +2947,12 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
 
     //Futility
-    if (!pvNode && depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(alpha) < MARGIN10) {
+    if (prune && !pvNode && depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(alpha) < MARGIN10) {
         return staticeval
     }
 
     // Null move pruning
-    if (allowNullMove && !incheck && depth > 2 && AI.phase < LATE_ENDGAME) {
+    if (prune && allowNullMove && AI.phase < LATE_ENDGAME) {
         board.changeTurn()
         let nullR = depth > 6? 4 : 3
         let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply, false)
@@ -2945,8 +2967,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     }
 
     // Razoring
-    if (cutNode && depth <= 3) {
-        if (staticeval + MARGIN3 < beta) { // likely a fail-low node ?
+    if (prune && cutNode && depth <= 3) {
+        if (staticeval + MARGIN1 < beta) { // likely a fail-low node ?
             let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode)
             if (score < beta) return score
         }
@@ -2957,7 +2979,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
 
     let moves = board.getMoves()
 
-    moves = AI.sortMoves(moves, turn, ply, board, ttEntry)
+    moves = AI.sortMoves(moves, turn, ply, depth, ttEntry)
 
     let bestmove = moves[0]
     let legal = 0
@@ -2968,23 +2990,29 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         let move = moves[i]
         let piece = move.piece
 
-        if (!move.killer1 && !incheck && legal >= 1 && AI.iteration > 1) {
+        // Extensiones
+        let E = mateE && depth <= 2? 1 : 0
+
+        if (pvNode && AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+
+        //Reducciones
+        let R = 0
+
+        if (prune && !move.killer1 && legal >= 1) {
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
                     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + SMALLMARGIN < alpha) {
-                        // console.log('fut C', max++)
                         continue
                     }
                 } else {
                     if (staticeval + SMALLMARGIN < alpha) {
-                        // console.log('fut', max++)
                         continue
                     }
                 }
             }
 
-            if (ply > 1 && i > 12 && !move.isCapture) {
+            if (ply > 1 && i > 12 && !move.isCapture && staticeval > alpha - VERYSMALLMARGIN) {
                 let limit = i > 20? 0.95 : 0.9
                 if (Math.random() < limit) {
                     AI.rnodes++
@@ -3007,22 +3035,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                 } else if (ttETC.flag === UPPERBOUND) {
                     if (ttETC.score < beta) beta = ttETC.score
                 }/* else { // EXACT
-                    if (ttETC.score > alpha) {
+                    if (ttETC.score > alpha) { // > beta?
                         return ttETC.score
                     }
                 }*/
             }
         }
 
-        // Extensiones
-        let E = mateE && depth <= 2? 1 : 0
-
-        // if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
-
-        //Reducciones
-        let R = 0
-
-        if (AI.iteration > 1 && depth >= 3 && legal >= 1 && !mateE) {
+        if (prune && depth >= 3 && legal >= 1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
 
             if (pvNode) {
@@ -3086,7 +3106,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                 } else if (ttETC.flag === UPPERBOUND) {
                     if (scoreETC > alpha) alpha = ttETC.score
                     // console.log('alpha')
-                }
+                }/* else if (ttETC.flag === EXACT) {
+                    bestmove = ttETC.move
+                    beta = ttETC.score
+                }*/
             }
 
             if (legal === 1) {
@@ -3111,17 +3134,17 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (AI.stop) return alphaOriginal //tested ok
             
             if (score > alpha) {
+                AI.ttSave(turn, hashkey, score, LOWERBOUND, depth - R, move)
+                
                 // Fail-high
                 if (AI.iteration > 2 && score >= beta) {
                     if (legal === 1) {
                         AI.fhf++
                     }
-    
+                    
                     AI.fh++
-
+                    
                     //LOWERBOUND
-                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth - R, move)
-                    // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
     
                     if (!move.isCapture) {
                         if (
@@ -3562,10 +3585,8 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
 
     do {
         let beta = f + (f === bound[0])
-        // console.log(beta)
         f = AI.PVS(board, beta - (AI.iteration < 10? 2 : 1), beta, d, 1, true)
         bound[(f < beta) | 0] = f
-        // console.log(bound)
     } while (bound[0] < bound[1] && !AI.stop)
     
     return f
@@ -3573,8 +3594,6 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
 
 
 AI.search = function (board, options) {
-    AI.stop = true
-
     AI.sortingTime = 0
     AI.searchTime0 = Date.now()
 
@@ -3584,8 +3603,6 @@ AI.search = function (board, options) {
         AI.bestscore = 0
         AI.f = 0
     }
-
-    AI.totalmaterial = 7960
 
     if (options && options.seconds) AI.secondspermove = options.seconds
 
@@ -3605,7 +3622,7 @@ AI.search = function (board, options) {
     if (AI.lastphase !== AI.phase) changeofphase = true
     
     AI.lastphase = AI.phase
-    
+
     if (board.movenumber && board.movenumber <= 1) {
         AI.createTables(board, true, true, true, true)
         AI.lastscore = 0
@@ -3614,8 +3631,7 @@ AI.search = function (board, options) {
         if (changeofphase) {
             AI.createTables(board, true, true, true, true)
         } else {
-            // AI.createTables(board, false, false, true, false)
-            AI.createTables(board, false, false, false, false)
+            AI.createTables(board, false, false, true, false)
         }
         
         AI.f = AI.lastscore / AI.nullWindowFactor | 0
@@ -3684,7 +3700,7 @@ AI.search = function (board, options) {
         
         AI.previousls = AI.lastscore
 
-        let depth = 1
+        let depth = 0
         let alpha = -INFINITY
         let beta = INFINITY
 
@@ -3695,6 +3711,7 @@ AI.search = function (board, options) {
                 if (AI.stop) break
 
                 AI.bestmove = [...AI.PV][1]
+
                 AI.iteration++
 
                 AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
@@ -3703,15 +3720,15 @@ AI.search = function (board, options) {
 
                 AI.PV = AI.getPV(board, AI.totaldepth)
 
-                // if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
-                //     AI.changeinPV = true
-                // } else {
-                //     AI.changeinPV = false
-                // }
+                if (!AI.stop) AI.lastscore = score
+
+                if ([...AI.PV][1] && AI.bestmove && [...AI.PV][1].value !== AI.bestmove.value) {
+                    AI.changeinPV = true
+                } else {
+                    AI.changeinPV = false
+                }
 
                 AI.fhfperc = Math.round(AI.fhf * 100 / AI.fh)
-
-                if (!AI.stop) AI.lastscore = score
 
                 // console.log(depth, `FHF: ${AI.fhfperc}%`)
 
@@ -3754,7 +3771,8 @@ AI.search = function (board, options) {
         console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0,
                     'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
-                    'ETC 1 (%): ', (AI.etcNodes/AI.nodes*1000 | 0) / 10,
+                    'ETC (%): ', (AI.etcNodes/AI.nodes*1000 | 0) / 10,
+                    'Collisions (%): ', (AI.collisions/AI.nodes*1000 | 0) / 10,
         )
 
         // console.log(AI.bestmove, (AI.moveTime / AI.searchTime) * 100 | 0)
