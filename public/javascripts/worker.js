@@ -1228,7 +1228,7 @@ let AI = {
     random: 0,
     phase: 0,
     htlength: 8e6,
-    pawntlength: 5e5,
+    pawntlength: 1e6,
     // mindepth: [6,10,12,18],
     // mindepth: [18,20,22,24],
     mindepth: [1,1,1,1],
@@ -1658,13 +1658,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
     
-    if (evalEntry && evalEntry.hashkey === board.hashkey) {
+    if (evalEntry && !pvNode && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
         return sign*evalEntry.score
     }
 
     alpha = alpha*this.nullWindowFactor | 0
-    beta = alpha + VPAWN2
+    beta = alpha + VPAWN
         
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
@@ -1749,18 +1749,18 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         }
         
         if (!incheck && pvNode) {
-            // if (board.color(piece) === WHITE) {
-            //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/2
-            // } else {
-            //     if (piece !== p) score += board.isSquareAttacked(i, WHITE, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/2
-            // }
+            if (board.color(piece) === WHITE) {
+                if (piece !== P) score -= board.isSquareAttacked(i, BLACK, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/4
+            } else {
+                if (piece !== p) score += board.isSquareAttacked(i, WHITE, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/4
+            }
 
             if (piece === P) {
-                // //Attacking pieces
-                // if (board.board[i-15] === q || board.board[i-17] === q) score += 100
-                // if (board.board[i-15] === r || board.board[i-17] === r) score += 65
-                // if (board.board[i-15] === b || board.board[i-17] === b) score += 45
-                // if (board.board[i-15] === n || board.board[i-17] === n) score += 45
+                //Attacking pieces
+                if (board.board[i-15] === q || board.board[i-17] === q) score += 100
+                if (board.board[i-15] === r || board.board[i-17] === r) score += 65
+                if (board.board[i-15] === b || board.board[i-17] === b) score += 45
+                if (board.board[i-15] === n || board.board[i-17] === n) score += 45
 
                 //Defended
                 if (board.board[i+15] === P || board.board[i+17] === P) {
@@ -1820,11 +1820,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
                     }
                 }
             } else if (piece === p) {
-                // //Attacking pieces
-                // if (board.board[i+15] === Q || board.board[i+17] === Q) score -= 100
-                // if (board.board[i+15] === R || board.board[i+17] === R) score -= 65
-                // if (board.board[i+15] === B || board.board[i+17] === B) score -= 45
-                // if (board.board[i+15] === N || board.board[i+17] === N) score -= 45
+                //Attacking pieces
+                if (board.board[i+15] === Q || board.board[i+17] === Q) score -= 100
+                if (board.board[i+15] === R || board.board[i+17] === R) score -= 65
+                if (board.board[i+15] === B || board.board[i+17] === B) score -= 45
+                if (board.board[i+15] === N || board.board[i+17] === N) score -= 45
 
                 //Defended
                 if (board.board[i-15] === p || board.board[i-17] === p) {
