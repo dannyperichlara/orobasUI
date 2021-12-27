@@ -1358,9 +1358,9 @@ console.log('Max material value', AI.maxMaterialValue)
 AI.BISHOP_PAIR = [50, 50, 80, 80]
 
 // CONSTANTES
-const MATE = 10000 / AI.nullWindowFactor | 0
+const MATE = AI.maxMaterialValue / AI.nullWindowFactor | 0
 const DRAW = 0 //-2*VPAWN
-const INFINITY = 11000 / AI.nullWindowFactor | 0
+const INFINITY = MATE + 1 | 0
 
 AI.ZEROINDEX = new Map()
 
@@ -2054,6 +2054,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     // Material + PSQT
     score += material + psqt
 
+    // Pawn structure
+    score += AI.getStructure(board, pawnindexW, pawnindexB)
+
+    // Pawn shield
+    score += AI.getPawnShield(board, AI.phase)
+
     if (incheck) {
             
         let nullWindowScore = (score / AI.nullWindowFactor | 0)
@@ -2064,12 +2070,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         }
         return sign*nullWindowScore
     }
-
-    // Pawn structure
-    score += AI.getStructure(board, pawnindexW, pawnindexB)
-
-    // Pawn shield
-    score += AI.getPawnShield(board, AI.phase)
 
     if (AI.phase === LATE_ENDGAME && alpha > VPAWNx2) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
@@ -2085,6 +2085,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         }
     }
 
+    // Mobility
+    score += AI.getMobility(board)
+
     if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
         let nullWindowScore = (score / AI.nullWindowFactor | 0)
@@ -2096,9 +2099,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         return sign*nullWindowScore
     }
     
+    
     if (pvNode) {
-        // Mobility
-        score += AI.getMobility(board)
     
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2333,15 +2335,25 @@ AI.getMobility = (board)=>{
         board.changeTurn()
     }
 
-    score += (whiteMoves[N]? 23 * Math.log10(whiteMoves[N]) - 35 | 0 : 0)
-    score += (whiteMoves[B]? 26 * Math.log10(whiteMoves[B]) - 25 | 0 : 0)
-    score += (whiteMoves[R]? 21 * Math.log10(whiteMoves[R]) - 28 | 0 : 0)
-    score += (whiteMoves[Q]? 24 * Math.log10(whiteMoves[Q]) - 29 | 0 : 0)
+    // score += (whiteMoves[N]? 23 * Math.log10(whiteMoves[N]) - 35 | 0 : 0)
+    // score += (whiteMoves[B]? 26 * Math.log10(whiteMoves[B]) - 25 | 0 : 0)
+    // score += (whiteMoves[R]? 21 * Math.log10(whiteMoves[R]) - 28 | 0 : 0)
+    // score += (whiteMoves[Q]? 24 * Math.log10(whiteMoves[Q]) - 29 | 0 : 0)
     
-    score -= (blackMoves[n]? 23 * Math.log10(blackMoves[n]) - 35 | 0 : 0)
-    score -= (blackMoves[b]? 26 * Math.log10(blackMoves[b]) - 25 | 0 : 0)
-    score -= (blackMoves[r]? 21 * Math.log10(blackMoves[r]) - 28 | 0 : 0)
-    score -= (blackMoves[q]? 24 * Math.log10(blackMoves[q]) - 29 | 0 : 0)
+    // score -= (blackMoves[n]? 23 * Math.log10(blackMoves[n]) - 35 | 0 : 0)
+    // score -= (blackMoves[b]? 26 * Math.log10(blackMoves[b]) - 25 | 0 : 0)
+    // score -= (blackMoves[r]? 21 * Math.log10(blackMoves[r]) - 28 | 0 : 0)
+    // score -= (blackMoves[q]? 24 * Math.log10(blackMoves[q]) - 29 | 0 : 0)
+
+    score += (whiteMoves[N]? 23 * Math.log(whiteMoves[N]) - 35 | 0 : 0)
+    score += (whiteMoves[B]? 26 * Math.log(whiteMoves[B]) - 25 | 0 : 0)
+    score += (whiteMoves[R]? 21 * Math.log(whiteMoves[R]) - 28 | 0 : 0)
+    score += (whiteMoves[Q]? 24 * Math.log(whiteMoves[Q]) - 29 | 0 : 0)
+    
+    score -= (blackMoves[n]? 23 * Math.log(blackMoves[n]) - 35 | 0 : 0)
+    score -= (blackMoves[b]? 26 * Math.log(blackMoves[b]) - 25 | 0 : 0)
+    score -= (blackMoves[r]? 21 * Math.log(blackMoves[r]) - 28 | 0 : 0)
+    score -= (blackMoves[q]? 24 * Math.log(blackMoves[q]) - 29 | 0 : 0)
 
     return score
 }
@@ -2684,10 +2696,10 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         }
 
         // CRITERIO: Enroque
-        if (AI.phase <= MIDGAME && move.castleSide) {
-            move.score += 2e6
-            continue
-        }
+        // if (AI.phase <= MIDGAME && move.castleSide) {
+        //     move.score += 2e6
+        //     continue
+        // }
         
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
@@ -2977,7 +2989,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     }
 
     // IID
-    if (!ttEntry && depth > 2) depth-=2
+    if (!ttEntry && depth >= 6) depth-=2
 
     let moves = board.getMoves()
 
@@ -3579,7 +3591,6 @@ AI.getPV = function (board, length) {
 
 // https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
-    
     //Esta línea permite que el algoritmo funcione como PVS normal
     // return AI.PVS(board, lowerBound, upperBound, d, 1, true)
     
@@ -3588,7 +3599,7 @@ AI.MTDF = function (board, f, d, lowerBound, upperBound) {
 
     do {
         let beta = f + (f === bound[0])
-        f = AI.PVS(board, beta - (AI.iteration < 10? 2 : 1), beta, d, 1, true)
+        f = AI.PVS(board, beta - 2, beta, d, 1, true)
         bound[(f < beta) | 0] = f
     } while (bound[0] < bound[1] && !AI.stop)
 
