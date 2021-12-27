@@ -1237,7 +1237,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 5 // +132 ELO
+    nullWindowFactor: 20 // +132 ELO
 }
 
 // ÍNDICES
@@ -1319,31 +1319,31 @@ AI.PIECE_VALUES = [
 ]
 
 AI.PIECE_VALUES[OPENING][p] = -VPAWN | 0
-AI.PIECE_VALUES[OPENING][n] = -VPAWN*3.05 | 0
-AI.PIECE_VALUES[OPENING][b] = -VPAWN*3.33 | 0
-AI.PIECE_VALUES[OPENING][r] = -VPAWN*5.63 | 0
-AI.PIECE_VALUES[OPENING][q] = -VPAWN*9.50 | 0
+AI.PIECE_VALUES[OPENING][n] = -VPAWN*4.10 | 0
+AI.PIECE_VALUES[OPENING][b] = -VPAWN*4.45 | 0
+AI.PIECE_VALUES[OPENING][r] = -VPAWN*5.80 | 0
+AI.PIECE_VALUES[OPENING][q] = -VPAWN*12.50 | 0
 AI.PIECE_VALUES[OPENING][k] = 0
 
 AI.PIECE_VALUES[OPENING][P] = VPAWN | 0
-AI.PIECE_VALUES[OPENING][N] = VPAWN*3.05 | 0
-AI.PIECE_VALUES[OPENING][B] = VPAWN*3.33 | 0
-AI.PIECE_VALUES[OPENING][R] = VPAWN*5.63 | 0
-AI.PIECE_VALUES[OPENING][Q] = VPAWN*9.50 | 0
+AI.PIECE_VALUES[OPENING][N] = VPAWN*4.10 | 0
+AI.PIECE_VALUES[OPENING][B] = VPAWN*4.45 | 0
+AI.PIECE_VALUES[OPENING][R] = VPAWN*5.80 | 0
+AI.PIECE_VALUES[OPENING][Q] = VPAWN*12.50 | 0
 AI.PIECE_VALUES[OPENING][K] = 0
 
-AI.PIECE_VALUES[LATE_ENDGAME][p] = -VPAWN | 0
-AI.PIECE_VALUES[LATE_ENDGAME][n] = -VPAWN*3.05 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][b] = -VPAWN*3.33 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][r] = -VPAWN*5.63 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][q] = -VPAWN*9.50 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][p] = -VPAWN*1.14 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][n] = -VPAWN*3.42 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][b] = -VPAWN*3.62 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][r] = -VPAWN*6.24 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][q] = -VPAWN*11.40 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][k] = 0
 
-AI.PIECE_VALUES[LATE_ENDGAME][P] = VPAWN | 0
-AI.PIECE_VALUES[LATE_ENDGAME][N] = VPAWN*3.05 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][B] = VPAWN*3.33 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*5.63 | 0
-AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*9.50 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][P] = VPAWN*1.14 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][N] = VPAWN*3.42 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][B] = VPAWN*3.62 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*6.24 | 0
+AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*11.40 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
 AI.maxMaterialValue = 16 * AI.PIECE_VALUES[OPENING][P] +
@@ -2335,16 +2335,6 @@ AI.getMobility = (board)=>{
         board.changeTurn()
     }
 
-    // score += (whiteMoves[N]? 23 * Math.log10(whiteMoves[N]) - 35 | 0 : 0)
-    // score += (whiteMoves[B]? 26 * Math.log10(whiteMoves[B]) - 25 | 0 : 0)
-    // score += (whiteMoves[R]? 21 * Math.log10(whiteMoves[R]) - 28 | 0 : 0)
-    // score += (whiteMoves[Q]? 24 * Math.log10(whiteMoves[Q]) - 29 | 0 : 0)
-    
-    // score -= (blackMoves[n]? 23 * Math.log10(blackMoves[n]) - 35 | 0 : 0)
-    // score -= (blackMoves[b]? 26 * Math.log10(blackMoves[b]) - 25 | 0 : 0)
-    // score -= (blackMoves[r]? 21 * Math.log10(blackMoves[r]) - 28 | 0 : 0)
-    // score -= (blackMoves[q]? 24 * Math.log10(blackMoves[q]) - 29 | 0 : 0)
-
     score += (whiteMoves[N]? 23 * Math.log(whiteMoves[N]) - 35 | 0 : 0)
     score += (whiteMoves[B]? 26 * Math.log(whiteMoves[B]) - 25 | 0 : 0)
     score += (whiteMoves[R]? 21 * Math.log(whiteMoves[R]) - 28 | 0 : 0)
@@ -2798,7 +2788,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             board.unmakeMove(move)
 
             if (score >= beta) {
-                AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
+                // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
                 return score
             }
             
@@ -2810,7 +2800,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     }
 
     if (alpha > alphaOriginal) {
-        AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
+        // AI.ttSave(turn, hashkey, alpha, LOWERBOUND, depth, bestmove)
         return alpha
     } else {
         return alphaOriginal
