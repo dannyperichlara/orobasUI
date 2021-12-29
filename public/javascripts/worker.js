@@ -1331,8 +1331,8 @@ AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*6.24 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*11.40 | 0
 AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
-AI.maxMaterialValue = 16 * AI.PIECE_VALUES[OPENING][P] +
-                      4 * AI.PIECE_VALUES[OPENING][N] +
+// Total material value doesnt count pawns
+AI.maxMaterialValue = 4 * AI.PIECE_VALUES[OPENING][N] +
                       4 * AI.PIECE_VALUES[OPENING][B] +
                       4 * AI.PIECE_VALUES[OPENING][R] +
                       2 * AI.PIECE_VALUES[OPENING][Q] +
@@ -1343,8 +1343,8 @@ console.log('Max material value', AI.maxMaterialValue)
 AI.BISHOP_PAIR = [50, 50, 80, 80]
 
 // CONSTANTES
-const MATE = AI.maxMaterialValue / AI.nullWindowFactor | 0
-const DRAW = 0 //-2*VPAWN
+const MATE = (AI.maxMaterialValue + 16*VPAWN) / AI.nullWindowFactor | 0
+const DRAW = 0
 const INFINITY = MATE + 1 | 0
 
 AI.ZEROINDEX = new Map()
@@ -1653,14 +1653,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
         
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
-    if (incheck) {
-        if (turn === WHITE) {
-            score -= 300
-        } else {
-            score += 300
-        }
-    }
-
     let pawnindexW = []
     let pawnindexB = []
 
@@ -1716,10 +1708,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             continue
         }
 
+        let sumMaterial = true // Sum material only if piece is not a pawn
+
         if (piece === P) {
             pawnindexW.push(i)
+            sumMaterial = false
         } else if (piece === p) {
             pawnindexB.push(i)
+            sumMaterial = false
         }
 
         if (AI.phase === OPENING) {
@@ -2029,7 +2025,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
 
         material += (mgMaterial + egMaterial) //Material
 
-        tempTotalMaterial += AI.PIECE_VALUES[OPENING][ABS[piece]] //Material
+        tempTotalMaterial += sumMaterial? AI.PIECE_VALUES[OPENING][ABS[piece]] : 0 //Not-pawn material
 
         let index = turn === WHITE? i : (112^i)
         let piecetype = ABS[piece]
@@ -2449,11 +2445,19 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         }
 
         if (!encounters) {
-            score += AI.PASSERSBONUS[pawnindexW[i]]
+            let bonus = AI.PASSERSBONUS[pawnindexW[i]]
+
+            score += bonus
 
             //blocked passer
             let blockerindex = pawnindexW[i] - 16
             if (board.board[blockerindex] === n || board.board[blockerindex] === b) score-=20
+
+            // Defended passer
+            score += pawnindexB[i] + 15 === P? bonus/4 | 0 : 0
+            score += pawnindexB[i] + 17 === P? bonus/4 | 0 : 0
+            score += pawnindexB[i] -  1 === P? bonus/5 | 0 : 0
+            score += pawnindexB[i] +  1 === P? bonus/5 | 0 : 0
 
             //TODO: passer protected by king
         }
@@ -2492,11 +2496,19 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
         }
         
         if (!encounters) {
-            score -= AI.PASSERSBONUS[112^pawnindexB[i]]
+            let bonus = AI.PASSERSBONUS[112^pawnindexB[i]]
+
+            score -= bonus
             
             //blocked passer
-            let blockerindex = pawnindexW[i] + 16
+            let blockerindex = pawnindexB[i] + 16
             if (board.board[blockerindex] === N || board.board[blockerindex] === B) score+=20
+
+            // Defended passer
+            score -= pawnindexB[i] - 15 === p? bonus/4 | 0 : 0
+            score -= pawnindexB[i] - 17 === p? bonus/4 | 0 : 0
+            score -= pawnindexB[i] -  1 === p? bonus/5 | 0 : 0
+            score -= pawnindexB[i] +  1 === p? bonus/5 | 0 : 0
             
             //TODO: passer protected by king
         }
@@ -2709,20 +2721,20 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
 // donde la última jugada haya sido una captura). Cuando se logra esta posición
 // "en calma", se evalúa la posición.
 AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
-    let alphaOriginal = alpha
 
     AI.qsnodes++
 
     let turn = board.turn
     let opponentTurn = turn === WHITE? BLACK : WHITE
     let legal = 0
-    let incheck = depth > - 2? board.isKingInCheck() : false
-    let standpat = 0 // AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
+    let incheck = board.isKingInCheck()
+    let standpat = alpha // Only to prevent undefined values for standpat
     
     let hashkey = board.hashkey
 
     if (!incheck) {
         standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
+        
         if (standpat >= beta) {
             return standpat
         }
@@ -2741,24 +2753,19 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     
     moves = AI.sortMoves(moves, turn, ply, depth, ttEntry)
 
-    let bestmove = moves[0]
-
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
 
-        
-        // Bad captures pruning (+34 ELO)
-        if (move.mvvlva < 6000) {
-            let attackers = board.isSquareAttacked(move.to, opponentTurn, false, false)
-
-            if (attackers) {
+        if (!incheck) {
+            // Bad captures pruning (+34 ELO)
+            if (move.mvvlva < 6000) {
+                if (board.isSquareAttacked(move.to, opponentTurn, false, false)) continue
+            }
+            
+            // delta pruning para cada movimiento
+            if (standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor < alpha) {
                 continue
             }
-        }
-        
-        // delta pruning para cada movimiento
-        if (!incheck && standpat + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor < alpha) {
-            continue
         }
 
         // let m0 = (new Date()).getTime()
@@ -2777,14 +2784,12 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
             
             if (score > alpha) {
                 alpha = score
-                bestmove = move
             }
         }
     }
 
     if (incheck && legal === 0) {
-        // console.log('mate', total++)
-        return -MATE + ply;
+        return -MATE + ply
     }
 
     return alpha
@@ -2875,6 +2880,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     }
 
     let turn = board.turn
+    let opponentTurn = turn === WHITE? BLACK : WHITE
     let sign = turn === WHITE? 1 : -1
     let hashkey = board.hashkey
 
@@ -2984,6 +2990,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         let R = 0
 
         if (prune && !move.killer1 && legal >= 1) {
+
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
@@ -3165,7 +3172,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     if (legal === 0) {
         // Ahogado
         if (incheck) {
-            console.log('mate')
             // Mate
             // AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
             // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
