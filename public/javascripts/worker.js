@@ -2937,36 +2937,40 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
     let prune = !incheck/* && cutNode*/ && alpha < MATE - AI.totaldepth
 
-    //Futility
-    if (prune && depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(alpha) < MARGIN10) {
-        return staticeval
-    }
-
-    // Null move pruning
-    if (prune && allowNullMove && staticeval >= beta && AI.phase < LATE_ENDGAME) {
-        board.changeTurn()
-        let nullR = depth > 6? 3 : 2
-        let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply, false)
-        board.changeTurn()
-        if (nullScore >= beta) {
-            return nullScore
-        } else {
-            if (nullScore < -MATE + AI.totaldepth) {
-                mateE = 1
+    if (prune) {
+        //Futility
+        if (depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(alpha) < MARGIN10) {
+            return staticeval
+        }
+    
+        // Null move pruning
+        if (allowNullMove && staticeval >= beta && AI.phase < LATE_ENDGAME) {
+            board.changeTurn()
+            let nullR = depth > 6? 3 : 2
+            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply, false)
+            board.changeTurn()
+            if (nullScore >= beta) {
+                return nullScore
+            } else {
+                if (nullScore < -MATE + AI.totaldepth) {
+                    mateE = 1
+                }
             }
         }
-    }
-
-    // Razoring
-    if (prune && depth <= 3) {
-        if (staticeval + MARGIN1 < beta) { // likely a fail-low node ?
-            let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode)
-            if (score < beta) return score
+    
+        // Razoring
+        if (depth <= 3) {
+            if (staticeval + MARGIN1 < beta) { // likely a fail-low node ?
+                let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode)
+                if (score < beta) return score
+            }
         }
+    
+        // IID
+        // if (!ttEntry && depth >= 4) depth-=2
+        if (!ttEntry && depth > 6) depth -= 2
     }
 
-    // IID
-    if (!ttEntry && depth >= 6) depth-=2
 
     let moves = board.getMoves()
 
@@ -2984,7 +2988,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         // Extensiones
         let E = mateE && depth <= 2? 1 : 0
 
-        if (pvNode && AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+        if (pvNode) {
+            if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+    
+            if (depth <= 2 && staticeval > beta + MARGIN3) {
+                // console.log('extend')
+                E++
+            }
+        }
+
 
         //Reducciones
         let R = 0
@@ -3151,7 +3163,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                             AI.saveHistory(turn, move, depth*depth)
                         }
                         
-                        AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R + Math.round(Math.random()), move)
+                        AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
                         
                         return score
                     }
@@ -3736,10 +3748,6 @@ AI.search = function (board, options) {
 
                 if (AI.PV && !AI.stop) {
                     console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0))
-                    // console.log(`Static Eval Hit Rate: ${((100*this.evalhashnodes/(this.evalnodes)) | 0)}`,
-                    // 'PV Nodes: ' + (AI.pvnodes| 0), 'FHF ' + AI.fhfperc + '%',
-                    // 'Pawn Hit Rate: ' + (AI.phnodes / AI.pnodes * 100 | 0))
-                    // console.log(' ')
                 }
             
                 depth++
