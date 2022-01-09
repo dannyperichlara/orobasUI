@@ -673,21 +673,51 @@ let orobas = {
                 
                 if (piece === K && i === 116) {
                     if (castlingRights & 8) {
-                        moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                        if (
+                            !this.board[117] &&
+                            !this.board[118] &&
+                            !this.isSquareAttacked(117, BLACK) &&
+                            !this.isSquareAttacked(118, BLACK)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: K, from:116, to:118, isCapture:false, capturedPiece:0, castleSide:8, enPassantSquares:null}))
+                        }
                     }
                     
                     if (castlingRights & 4) {
-                        moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                        if (
+                            !this.board[115] &&
+                            !this.board[114] &&
+                            !this.board[113] &&
+                            !this.isSquareAttacked(115, BLACK) &&
+                            !this.isSquareAttacked(114, BLACK)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: K, from:116, to:114, isCapture:false, capturedPiece:0, castleSide:4, enPassantSquares:null}))
+                        }
                     } 
                 }
     
                 if (piece === k && i === 4) {
                     if (castlingRights & 2) {
-                        moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                        if (
+                            !this.board[5] &&
+                            !this.board[6] &&
+                            !this.isSquareAttacked(5, WHITE) &&
+                            !this.isSquareAttacked(6, WHITE)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: k, from:4, to:6, isCapture:false, capturedPiece:0, castleSide:2, enPassantSquares:null}))
+                        }
                     }
                     
                     if (castlingRights & 1) {
-                        moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                        if (
+                            !this.board[3] &&
+                            !this.board[2] &&
+                            !this.board[1] &&
+                            !this.isSquareAttacked(3, WHITE) &&
+                            !this.isSquareAttacked(2, WHITE)
+                            ) {
+                            moves[moveindex++]=(this.createMove({piece: k, from:4, to:2, isCapture:false, capturedPiece:0, castleSide:1, enPassantSquares:null}))
+                        }
                     }
                 }
             }
@@ -1340,7 +1370,7 @@ AI.maxMaterialValue = 4 * AI.PIECE_VALUES[OPENING][N] +
 
 console.log('Max material value', AI.maxMaterialValue)
 
-AI.BISHOP_PAIR = [50, 50, 80, 80]
+AI.BISHOP_PAIR = [20, 30, 40, 50]
 
 // CONSTANTES
 const MATE = (AI.maxMaterialValue + 16*VPAWN) / AI.nullWindowFactor | 0
@@ -2082,11 +2112,18 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     }
     
     if (pvNode) {
-        // Mobility
-        score += AI.getMobility(board)
-    
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+        // Is king under attack
+        if (AI.phase >= MIDGAME) {
+            score -= 20*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, false)
+            score -= 20*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, false)
+            score -= 20*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, false)       
             
+            score += 20*board.isSquareAttacked(board.blackKingIndex+15, WHITE, false)
+            score += 20*board.isSquareAttacked(board.blackKingIndex+16, WHITE, false)
+            score += 20*board.isSquareAttacked(board.blackKingIndex+17, WHITE, false)
+        }
+
+        if (AI.isLazyFutile(sign, score, alpha, beta)) {
             let nullWindowScore = (score / AI.nullWindowFactor | 0)
             
             AI.evalTable[board.hashkey % this.htlength] = {
@@ -2096,6 +2133,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     
             return sign*nullWindowScore
         }
+
+        // Mobility
+        score += AI.getMobility(board)
 
         // Bishop pair
         score += bishopsW === 2? AI.BISHOP_PAIR[AI.phase] : 0
@@ -2110,30 +2150,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             badPawns-= (8*lightSquaresBlackBishop*blockedLightSquaresBlackPawns + 8*darkSquaresBlackBishop*blockedDarkSquaresBlackPawns)
     
         score -= badPawns
-
-        // if (AI.isLazyFutile(sign, score, alpha, beta)) {
-            
-        //     let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
-            
-        //     AI.evalTable[board.hashkey % this.htlength] = {
-        //         hashkey: board.hashkey,
-        //         score: nullWindowScore
-        //     }
-        //     return sign*nullWindowScore
-        // }
-    
-        // Is king under attack
-    
-        if (AI.phase >= MIDGAME) {
-            score -= 30*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, false)
-            score -= 30*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, false)
-            score -= 30*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, false)       
-            
-            score += 30*board.isSquareAttacked(board.blackKingIndex+15, WHITE, false)
-            score += 30*board.isSquareAttacked(board.blackKingIndex+16, WHITE, false)
-            score += 30*board.isSquareAttacked(board.blackKingIndex+17, WHITE, false)
-        
-        }
 
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
@@ -2290,7 +2306,9 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
         return true
     }
 
-
+    if (signedScore < alpha) {
+        return true
+    }
 }
 
 AI.getMobility = (board)=>{
@@ -2678,8 +2696,8 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         }
 
         // CRITERIO: Enroque
-        if (AI.phase <= MIDGAME && move.castleSide) {
-            move.score += 2e6
+        if (move.castleSide && AI.phase <= MIDGAME) {
+            move.score += 20000 // Enough to be over the history moves
             continue
         }
         
@@ -2838,12 +2856,7 @@ AI.ttGet = function (turn, hashkey) {
 }
 
 AI.saveHistory = function (turn, move, value) {
-    // AI.history[move.piece][move.to] += value | 0
     AI.history[move.piece][move.to] += 32 * value - AI.history[move.piece][move.to]*Math.abs(value)/512 | 0
-
-    if (AI.history[move.piece][move.to] < min) min = AI.history[move.piece][move.to]
-
-    //HistoryTableEntry += 32 * bonus - HistoryTableEntry * abs(bonus) / 512;
 }
 
 // PRINCIPAL VARIATION SEARCH
@@ -2902,31 +2915,31 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         }
     }
 
-    // if (!ttEntry) {
-    //     let ttOppositeEntry = AI.ttGet(turn === WHITE? BLACK : WHITE, hashkey)
+    if (!ttEntry) {
+        let ttOppositeEntry = AI.ttGet(turn === WHITE? BLACK : WHITE, hashkey)
     
-    //     if (ttOppositeEntry && ttOppositeEntry.depth >= depth) {
-    //         AI.etcNodes++
+        if (ttOppositeEntry && ttOppositeEntry.depth >= depth) {
+            AI.etcNodes++
 
-    //         let ttScore = -ttOppositeEntry.score
+            let ttScore = -ttOppositeEntry.score
 
-    //         if (ttOppositeEntry.flag === LOWERBOUND) {
-    //             if (ttScore < beta) {
-    //                 beta = ttScore
-    //             }
-    //         } else if (ttOppositeEntry.flag === UPPERBOUND) {
+            if (ttOppositeEntry.flag === LOWERBOUND) {
+                if (ttScore < beta) {
+                    beta = ttScore
+                }
+            } else if (ttOppositeEntry.flag === UPPERBOUND) {
                 
-    //             if (ttScore > alpha) {
-    //                 alpha = ttScore
-    //             }
-    //         }
-    //     }
-    // }
+                if (ttScore > alpha) {
+                    alpha = ttScore
+                }
+            }
+        }
+    }
 
     let incheck = board.isKingInCheck()
     
     //Búsqueda QS
-    if (/*!incheck && */depth <= 0) {
+    if (!incheck && depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
     
@@ -2935,11 +2948,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let mateE = 0 // Mate threat extension
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
-    let prune = !incheck/* && cutNode*/ && alpha < MATE - AI.totaldepth
+    let prune = !incheck/* && cutNode*/ && alpha < MATE - AI.totaldepth && AI.iteration > 4
 
     if (prune) {
         //Futility
-        if (depth < 9 && staticeval - MARGIN1*depth >= beta && Math.abs(alpha) < MARGIN10) {
+        if (cutNode && depth < 9 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
             return staticeval
         }
     
@@ -2967,7 +2980,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         }
     
         // IID
-        // if (!ttEntry && depth >= 4) depth-=2
         if (!ttEntry && depth > 6) depth -= 2
     }
 
@@ -3026,25 +3038,25 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         }
 
         // // Enhanced Transposition Cut-Off actual position +12 ELO
-        // if (!ttEntry) {
-        //     // total++
+        if (!ttEntry) {
+            // total++
             
-        //     let ttETC = AI.ttGet(turn, hashkey)
+            let ttETC = AI.ttGet(turn, hashkey)
             
-        //     if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
-        //         AI.etcNodes++
-        //         // max++
-        //         if (ttETC.flag === LOWERBOUND) {
-        //             if (ttETC.score > alpha) alpha = ttETC.score
-        //         } else if (ttETC.flag === UPPERBOUND) {
-        //             if (ttETC.score < beta) beta = ttETC.score
-        //         } else { // EXACT
-        //             if (ttETC.score >= beta) { // > beta?
-        //                 return ttETC.score
-        //             }
-        //         }
-        //     }
-        // }
+            if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
+                AI.etcNodes++
+                // max++
+                if (ttETC.flag === LOWERBOUND) {
+                    if (ttETC.score > alpha) alpha = ttETC.score
+                } else if (ttETC.flag === UPPERBOUND) {
+                    if (ttETC.score < beta) beta = ttETC.score
+                } else { // EXACT
+                    if (ttETC.score >= beta) { // > beta?
+                        return ttETC.score
+                    }
+                }
+            }
+        }
 
         if (prune && depth >= 3 && legal >= 1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
@@ -3096,26 +3108,22 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             // AI.moveTime += (new Date()).getTime() - m0
             legal++
 
-            // // Enhanced Transposition Cut-Off +16 ELO
-            // let ttETC = AI.ttGet(board.turn, board.hashkey)
+            // Enhanced Transposition Cut-Off +16 ELO
+            let ttETC = AI.ttGet(board.turn, board.hashkey)
 
-            // if (!ttEntry && ttETC && ttETC.hashkey === board.hashkey && ttETC.depth >= depth) {
-            //     AI.etcNodes++
+            if (!ttEntry && ttETC && ttETC.hashkey === board.hashkey && ttETC.depth >= depth) {
+                AI.etcNodes++
                 
-            //     let scoreETC = -ttETC.score
+                let scoreETC = -ttETC.score
                 
-            //     if (ttETC.flag === LOWERBOUND) {
-            //         if (scoreETC < beta) beta = ttETC.score
-            //         // console.log('beta')
-            //     } else if (ttETC.flag === UPPERBOUND) {
-            //         if (scoreETC > alpha) alpha = ttETC.score
-            //         // console.log('alpha')
-            //     }/* else if (ttETC.flag === EXACT) {
-            //         console.log('ETC exact')
-            //         bestmove = ttETC.move
-            //         beta = ttETC.score
-            //     }*/
-            // }
+                if (ttETC.flag === LOWERBOUND) {
+                    if (scoreETC < beta) beta = ttETC.score
+                    // console.log('beta')
+                } else if (ttETC.flag === UPPERBOUND) {
+                    if (scoreETC > alpha) alpha = ttETC.score
+                    // console.log('alpha')
+                }
+            }
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
@@ -3182,14 +3190,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     }
 
     if (legal === 0) {
-        // Ahogado
         if (incheck) {
             // Mate
             // AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
             // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
-    
+            
             return -MATE + ply
         } else {
+            // Ahogado
             // AI.ttSave(turn, hashkey, DRAW, EXACT, depth, bestmove)
             // AI.ttSave(turn, hashkey, DRAW, LOWERBOUND, depth, bestmove)
             
