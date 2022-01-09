@@ -2983,7 +2983,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         if (!ttEntry && depth > 6) depth -= 2
     }
 
-
     let moves = board.getMoves()
 
     moves = AI.sortMoves(moves, turn, ply, depth, ttEntry)
@@ -3004,7 +3003,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
     
             if (depth <= 2 && staticeval > beta + MARGIN3) {
-                // console.log('extend')
                 E++
             }
         }
@@ -3014,7 +3012,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         let R = 0
 
         if (prune && !move.killer1 && legal >= 1) {
-
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
@@ -3037,7 +3034,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             }
         }
 
-        // // Enhanced Transposition Cut-Off actual position +12 ELO
+        // Enhanced Transposition Cut-Off actual position +12 ELO
         if (!ttEntry) {
             // total++
             
