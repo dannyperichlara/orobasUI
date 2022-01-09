@@ -2915,26 +2915,26 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         }
     }
 
-    if (!ttEntry) {
-        let ttOppositeEntry = AI.ttGet(turn === WHITE? BLACK : WHITE, hashkey)
+    // if (!ttEntry) {
+    //     let ttOppositeEntry = AI.ttGet(turn === WHITE? BLACK : WHITE, hashkey)
     
-        if (ttOppositeEntry && ttOppositeEntry.depth >= depth) {
-            AI.etcNodes++
+    //     if (ttOppositeEntry && ttOppositeEntry.depth >= depth) {
+    //         AI.etcNodes++
 
-            let ttScore = -ttOppositeEntry.score
+    //         let ttScore = -ttOppositeEntry.score
 
-            if (ttOppositeEntry.flag === LOWERBOUND) {
-                if (ttScore < beta) {
-                    beta = ttScore
-                }
-            } else if (ttOppositeEntry.flag === UPPERBOUND) {
+    //         if (ttOppositeEntry.flag === LOWERBOUND) {
+    //             if (ttScore < beta) {
+    //                 beta = ttScore
+    //             }
+    //         } else if (ttOppositeEntry.flag === UPPERBOUND) {
                 
-                if (ttScore > alpha) {
-                    alpha = ttScore
-                }
-            }
-        }
-    }
+    //             if (ttScore > alpha) {
+    //                 alpha = ttScore
+    //             }
+    //         }
+    //     }
+    // }
 
     let incheck = board.isKingInCheck()
     
