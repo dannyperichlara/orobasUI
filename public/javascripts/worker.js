@@ -1668,8 +1668,9 @@ AI.randomizePSQT = function () {
 }
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
-AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
+AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) {
     // let t0 = Date.now()
+    illegalMovesSoFar = illegalMovesSoFar | 0
 
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     this.evalnodes++
@@ -1685,6 +1686,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
     beta = alpha + VPAWN
         
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
+
+    score -= turn * illegalMovesSoFar
+    if (score < min) {
+        min = score
+    }
 
     let pawnindexW = []
     let pawnindexB = []
@@ -2741,7 +2747,7 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
 // que se encuentra una posición "en calma" (donde ningún rey está en jaque ni
 // donde la última jugada haya sido una captura). Cuando se logra esta posición
 // "en calma", se evalúa la posición.
-AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
+AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar) {
 
     AI.qsnodes++
 
@@ -2754,7 +2760,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode) {
     let hashkey = board.hashkey
 
     if (!incheck) {
-        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
+        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
         
         if (standpat >= beta) {
             return standpat
@@ -2864,7 +2870,7 @@ AI.saveHistory = function (turn, move, value) {
 
 // PRINCIPAL VARIATION SEARCH
 // El método PVS es Negamax + Ventana-Nula
-AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
+AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSoFar) {
 
     let mating_value = MATE - ply;
 
@@ -2943,7 +2949,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     
     //Búsqueda QS
     if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar)
     }
     
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
@@ -2977,7 +2983,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         // Razoring
         if (depth <= 3) {
             if (staticeval + MARGIN1 < beta) { // likely a fail-low node ?
-                let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode)
+                let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar)
                 if (score < beta) return score
             }
         }
@@ -2993,7 +2999,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
 
     let bestmove = moves[0]
     let legal = 0
-    let illegal = 0
+    let illegalMoves = 0
     let bestscore = -INFINITY
     let score
 
@@ -3129,17 +3135,17 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
                 // if (AI.stop) return alphaOriginal
-                score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove)
+                score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove, illegalMoves)
             } else {
                 if (AI.stop) {
                     board.unmakeMove(move)
                     return alphaOriginal
                 }
-                score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, allowNullMove)
+                score = -AI.PVS(board, -alpha-1, -alpha, depth + E - R - 1, ply + 1, allowNullMove, illegalMoves)
 
                 if (!AI.stop && score > alpha) {
                     R = 0
-                    score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove)
+                    score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove, illegalMoves)
                 }
             }
 
@@ -3188,7 +3194,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
                 if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
         } else {
-            illegal++
+            illegalMoves++
         }
     }
 
