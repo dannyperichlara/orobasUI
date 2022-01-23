@@ -759,7 +759,7 @@ let orobas = {
                                 if (to === lastEP) {
                                     isCapture = false
                                     //En passant move
-                                    // moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
+                                    moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece:0, castleSide:0, enPassantSquares:null, enPassant: true}))
                                     epnodes++
                                 }
                             }
@@ -1222,7 +1222,7 @@ orobas.init()
 
 let AI = {
     version: "2.1.5",
-    totaldepth: 48,
+    totaldepth: 18,
     ttNodes: 0,
     collisions: 0,
     iteration: 0,
@@ -1246,13 +1246,13 @@ let AI = {
     pawntlength: 1e6,
     // mindepth: [6,10,12,18],
     // mindepth: [18,20,22,24],
-    mindepth: [1,1,1,1],
+    mindepth: [12,12,12,12],
     secondspermove: 1,
     lastmove: null,
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 20 // +132 ELO
+    nullWindowFactor: 5 // +132 ELO
 }
 
 // ÍNDICES
@@ -1289,6 +1289,7 @@ const ALLINDEX = [1,2,3,4,5,6,7,8,9,10,11,12]
 
 const ABS = new Map()
 
+ABS[0] = 0
 ABS[k] = K
 ABS[q] = Q
 ABS[r] = R
@@ -1332,6 +1333,8 @@ AI.PIECE_VALUES = [
     new Map(),
     new Map(),
 ]
+
+AI.PIECE_VALUES[OPENING][0] = 0
 
 AI.PIECE_VALUES[OPENING][p] = -VPAWN | 0
 AI.PIECE_VALUES[OPENING][n] = -VPAWN*4.10 | 0
@@ -1732,7 +1735,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
             continue
         }
 
+        
         let piece = board.board[i]
+ 
+        // // NOT FULLY TESTED
+        // if (board.color(piece) === WHITE) {
+        //     score -= board.isSquareAttacked(i, BLACK, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/10 + 2 | 0
+        // } else {
+        //     score += board.isSquareAttacked(i, WHITE, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/10 + 2 | 0
+        // }
+
+        // console.log(score)
         
         if (!piece) {
             continue
@@ -1764,14 +1777,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck) {
                 if (board.board[i+17] === p) score += 40
             }
         }
-        
-        if (!incheck && pvNode) {
-            // if (board.color(piece) === WHITE) {
-            //     if (piece !== P) score -= board.isSquareAttacked(i, BLACK, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/4
-            // } else {
-            //     if (piece !== p) score += board.isSquareAttacked(i, WHITE, true)*AI.PIECE_VALUES[OPENING][ABS[piece]]/4
-            // }
 
+        if (!incheck && pvNode) {
             if (piece === P) {
                 // //Attacking pieces
                 // if (board.board[i-15] === q || board.board[i-17] === q) score += 100
@@ -2303,10 +2310,6 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
     let signedScore = sign * score
 
     if (signedScore >= beta) {
-        return true
-    }
-
-    if (signedScore < alpha) {
         return true
     }
 }
@@ -2939,7 +2942,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let incheck = board.isKingInCheck()
     
     //Búsqueda QS
-    if (!incheck && depth <= 0) {
+    if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode)
     }
     
@@ -2948,7 +2951,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
     let mateE = 0 // Mate threat extension
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
-    let prune = !incheck/* && cutNode*/ && alpha < MATE - AI.totaldepth && AI.iteration > 4
+    let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth// && AI.iteration > 4
 
     if (prune) {
         //Futility
@@ -2980,7 +2983,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         }
     
         // IID
-        if (!ttEntry && depth > 6) depth -= 2
+        // if (!ttEntry && depth > 6) depth -= 2
+        if (!ttEntry) depth--
     }
 
     let moves = board.getMoves()
@@ -2989,6 +2993,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
 
     let bestmove = moves[0]
     let legal = 0
+    let illegal = 0
     let bestscore = -INFINITY
     let score
 
@@ -2999,14 +3004,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
         // Extensiones
         let E = mateE && depth <= 2? 1 : 0
 
-        if (pvNode) {
-            if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E++
+        // if (pvNode) {
+        //     if (AI.phase === LATE_ENDGAME && (piece === P || piece === p)) E = 1
     
-            if (depth <= 2 && staticeval > beta + MARGIN3) {
-                E++
-            }
-        }
-
+        //     if (depth <= 2 && staticeval > beta + MARGIN3) {
+        //         E = 1
+        //     }
+        // }
 
         //Reducciones
         let R = 0
@@ -3183,6 +3187,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove) {
             } else {
                 if (!move.isCapture) { AI.saveHistory(turn, move, -depth) }
             }
+        } else {
+            illegal++
         }
     }
 
