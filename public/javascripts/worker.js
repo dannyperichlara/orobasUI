@@ -183,6 +183,8 @@ let orobas = {
         if (enpassantsquare !== '-') {
             this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
             console.log('En Passant Square', this.enPassantSquares)
+        } else {
+            this.enPassantSquares = [null]
         }
         
         this.initHashkey()
@@ -1687,7 +1689,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
-    score -= turn * illegalMovesSoFar
+    score -= 5 * turn * illegalMovesSoFar
+
     if (score < min) {
         min = score
     }
@@ -2713,15 +2716,21 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         // CRITERIO 6: Movimientos históricos
         // Se da preferencia a movimientos posicionales que han tenido 
         // éxito en otras posiciones.
-        let hvalue = AI.history[move.piece][move.to]
-        move.score += hvalue
 
-        // y PSQT
-        if (turn === WHITE) {
-            move.score += AI.PSQT[ABS[move.piece]][move.to] - AI.PSQT[ABS[move.piece]][move.from]
+        let hvalue = AI.history[move.piece][move.to]
+
+        if (hvalue) {
+            move.score += 200 + hvalue
+            continue
         } else {
-            move.score += AI.PSQT[ABS[move.piece]][112^move.to] - AI.PSQT[ABS[move.piece]][112^move.from]
+            // y PSQT
+            if (turn === WHITE) {
+                move.score += AI.PSQT[ABS[move.piece]][move.to] - AI.PSQT[ABS[move.piece]][move.from]
+            } else {
+                move.score += AI.PSQT[ABS[move.piece]][112^move.to] - AI.PSQT[ABS[move.piece]][112^move.from]
+            }
         }
+
     }
 
     // ORDENA LOS MOVIMIENTOS
@@ -2957,7 +2966,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let mateE = 0 // Mate threat extension
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
-    let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth// && AI.iteration > 4
+    let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
 
     if (prune) {
         //Futility
@@ -2967,17 +2976,21 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
         // Null move pruning
         if (allowNullMove && staticeval >= beta && AI.phase < LATE_ENDGAME) {
-            board.changeTurn()
-            let nullR = depth > 6? 3 : 2
-            let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply, false)
-            board.changeTurn()
-            if (nullScore >= beta) {
-                return nullScore
-            } else {
-                if (nullScore < -MATE + AI.totaldepth) {
-                    mateE = 1
+
+            if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
+                board.changeTurn()
+                let nullR = depth > 6? 4 : 3
+                let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply, false)
+                board.changeTurn()
+                if (nullScore >= beta) {
+                    return nullScore
+                } else {
+                    if (nullScore < -MATE + AI.totaldepth) {
+                        mateE = 1
+                    }
                 }
             }
+
         }
     
         // Razoring
@@ -3035,13 +3048,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
             }
 
-            if (cutNode && ply > 1 && i > 12 && !move.isCapture && staticeval > alpha - VERYSMALLMARGIN) {
-                let limit = i > 20? 0.85 : 0.8
-                if (Math.random() < limit) {
-                    AI.rnodes++
-                    continue
-                }
-            }
+            // if (cutNode && ply > 1 && i > 12 && !move.isCapture && staticeval > alpha - VERYSMALLMARGIN) {
+            //     let limit = i > 20? 0.85 : 0.8
+            //     if (Math.random() < limit) {
+            //         AI.rnodes++
+            //         continue
+            //     }
+            // }
         }
 
         // Enhanced Transposition Cut-Off actual position +12 ELO
@@ -3634,6 +3647,10 @@ AI.search = function (board, options) {
         AI.bestscore = 0
         AI.f = 0
     }
+
+    let isEnPassant = board.enPassantSquares
+
+    console.log(isEnPassant)
 
     if (options && options.seconds) AI.secondspermove = options.seconds
 
