@@ -1224,7 +1224,7 @@ orobas.init()
 
 let AI = {
     version: "2.1.5",
-    totaldepth: 18,
+    totaldepth: 22,
     ttNodes: 0,
     collisions: 0,
     iteration: 0,
@@ -1242,7 +1242,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 20,
     phase: 0,
     htlength: 8e6,
     pawntlength: 1e6,
@@ -2966,11 +2966,12 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let mateE = 0 // Mate threat extension
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
-    let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
+    // let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
+    let prune = !incheck && alpha < MATE - AI.totaldepth
 
     if (prune) {
         //Futility
-        if (cutNode && depth < 9 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
+        if (cutNode && depth < 8 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
             return staticeval
         }
     
@@ -3167,6 +3168,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (AI.stop) return alphaOriginal //tested ok
             
             if (score > alpha) {
+                // score > alpha continuation
+                bestscore = score
+                bestmove = move
+                alpha = score
                 
                 // Fail-high
                 if (score >= beta) {
@@ -3179,27 +3184,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     //LOWERBOUND
                     
                     if (!move.isCapture) {
-                        if (
-                            AI.killers[turn | 0][ply][0] &&
-                            AI.killers[turn | 0][ply][0].key != move.key
-                            ) {
+                        if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].key != move.key) {
                                 AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
-                            }
-                            
-                            AI.killers[turn | 0][ply][0] = move
-                            
-                            AI.saveHistory(turn, move, depth*depth)
                         }
                         
-                        AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
+                        AI.killers[turn | 0][ply][0] = move
                         
-                        return score
+                        AI.saveHistory(turn, move, depth*depth)
                     }
                     
-                // score > alpha continuation
-                bestscore = score
-                bestmove = move
-                alpha = score
+                    AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
+                    
+                    return score
+                }
 
                 if (!move.isCapture) { AI.saveHistory(turn, move, depth) }
 
