@@ -1224,7 +1224,7 @@ orobas.init()
 
 let AI = {
     version: "2.1.5",
-    totaldepth: 22,
+    totaldepth: 128,
     ttNodes: 0,
     collisions: 0,
     iteration: 0,
@@ -1254,7 +1254,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 5 // +132 ELO
+    nullWindowFactor: 20 // +132 ELO
 }
 
 // ÍNDICES
