@@ -3757,7 +3757,13 @@ AI.search = function (board, options) {
 
                 AI.iteration++
 
-                AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
+                let ttEntry = AI.ttGet(board.turn, board.hashkey)
+
+                if (ttEntry && ttEntry.depth >= depth) {
+                    AI.f = ttEntry.score
+                } else {
+                    AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
+                }
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
