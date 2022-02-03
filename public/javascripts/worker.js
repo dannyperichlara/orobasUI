@@ -1375,7 +1375,7 @@ AI.maxMaterialValue = 4 * AI.PIECE_VALUES[OPENING][N] +
 
 console.log('Max material value', AI.maxMaterialValue)
 
-AI.BISHOP_PAIR = [20, 30, 40, 50]
+AI.BISHOP_PAIR = [50, 60, 70, 80]
 
 // CONSTANTES
 const MATE = (AI.maxMaterialValue + 16*VPAWN) / AI.nullWindowFactor | 0
@@ -1769,18 +1769,26 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             pawnindexB.push(i)
             sumMaterial = false
         }
+        if (piece === B) {
+            bishopsW++
 
-        if (AI.phase === OPENING) {
-            if (piece === B) {
+            bishopsindexW.push(i)
+
+            if (AI.phase === OPENING) {
                 if ((i === 83 || i === 84) && board.board[i+16] === P) score -= 100
-
+    
                 // Bishop blocked by own pawns
                 if (board.board[i-15] === P) score -= 40
                 if (board.board[i-17] === P) score -= 40
+            }
+        } else if (piece === b) {
+            bishopsB++
 
-            } else if (piece === b) {
+            bishopsindexB.push(i)
+
+            if (AI.phase === OPENING) {
                 if ((i === 35 || i === 36) && board.board[i-16] === p) score += 100
-
+    
                 // Bishop blocked by own pawns
                 if (board.board[i+15] === p) score += 40
                 if (board.board[i+17] === p) score += 40
@@ -1914,10 +1922,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                     }
                 }
             } else if (piece === B) {
-                bishopsW++
-
-                bishopsindexW.push(i)
-
                 // Blocks knight mobility
                 if (board.board[i-48] === n) score += 20
 
@@ -1945,10 +1949,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                     darkSquaresWhiteBishop++
                 }
             } else if (piece === b) {
-                bishopsB++
-
-                bishopsindexB.push(i)
-
                 // Blocks knight mobility
                 if (board.board[i+48] === N) score -= 20
 
@@ -2087,6 +2087,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Material + PSQT
     score += material + psqt
 
+    // Bishop pair
+    score += bishopsW >= 2? AI.BISHOP_PAIR[AI.phase] : 0
+    score -= bishopsB >= 2? AI.BISHOP_PAIR[AI.phase] : 0
+
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)
 
@@ -2152,10 +2156,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         // Mobility
         score += AI.getMobility(board)
-
-        // Bishop pair
-        score += bishopsW === 2? AI.BISHOP_PAIR[AI.phase] : 0
-        score -= bishopsB === 2? AI.BISHOP_PAIR[AI.phase] : 0
     
         // Pawns on same squares of bishops //8 for MG, 15 for EG
         let badPawns = 0
@@ -2967,11 +2967,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
     // let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
-    let prune = !incheck && alpha < MATE - AI.totaldepth
+    let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
 
     if (prune) {
         //Futility
-        if (cutNode && depth < 8 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
+        if (cutNode && depth < 9 && staticeval - MARGIN2*depth >= beta) {
             return staticeval
         }
     
@@ -3002,10 +3002,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             }
         }
     
-        // IID
-        // if (!ttEntry && depth > 6) depth -= 2
-        if (!ttEntry) depth--
     }
+    
+    // IID
+    if (!ttEntry) depth--
 
     let moves = board.getMoves()
 
