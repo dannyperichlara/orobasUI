@@ -1242,9 +1242,9 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 20,
+    random: 0,
     phase: 0,
-    htlength: 8e6,
+    htlength: 16e6,
     pawntlength: 1e6,
     // mindepth: [6,10,12,18],
     // mindepth: [18,20,22,24],
@@ -1689,11 +1689,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
 
-    score -= 5 * turn * illegalMovesSoFar
+    score -= 2 * sign * illegalMovesSoFar
 
-    if (score < min) {
-        min = score
-    }
+    // if (score < min) {
+    //     min = score
+    //     console.log(min)
+    // }
 
     let pawnindexW = []
     let pawnindexB = []
@@ -2656,6 +2657,9 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         killer2 = AI.killers[turn][ply][1]
     }
 
+    let sortedMoves = []
+    let unsortedMoves = []
+
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
 
@@ -2669,6 +2673,7 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 2e9
+            sortedMoves.push(move)
             continue
         }
 
@@ -2683,6 +2688,8 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
                 move.score += 4e6 + move.mvvlva
             }
 
+            sortedMoves.push(move)
+
             continue
         }
 
@@ -2691,6 +2698,9 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         if (killer1 && killer1.key === move.key) {
             move.killer1 = true
             move.score += 6e6
+
+            sortedMoves.push(move)
+
             continue
         }
 
@@ -2698,18 +2708,27 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         if (killer2 && killer2.key === move.key) {
             move.killer2 = true
             move.score += 5e6
+
+            sortedMoves.push(move)
+
             continue
         }
         
         // CRITERIO: La jugada es una promoción
         if (move.promotingPiece) {
             move.score += 3e6
+
+            sortedMoves.push(move)
+
             continue
         }
 
         // CRITERIO: Enroque
         if (move.castleSide && AI.phase <= MIDGAME) {
             move.score += 20000 // Enough to be over the history moves
+
+            sortedMoves.push(move)
+
             continue
         }
         
@@ -2720,15 +2739,19 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         let hvalue = AI.history[move.piece][move.to]
 
         if (hvalue) {
-            move.score += 200 + hvalue
+            move.score += hvalue
+
+            sortedMoves.push(move)
+
             continue
         } else {
-            // y PSQT
-            if (turn === WHITE) {
-                move.score += AI.PSQT[ABS[move.piece]][move.to] - AI.PSQT[ABS[move.piece]][move.from]
-            } else {
-                move.score += AI.PSQT[ABS[move.piece]][112^move.to] - AI.PSQT[ABS[move.piece]][112^move.from]
-            }
+            unsortedMoves.push(move)
+            // // y PSQT
+            // if (turn === WHITE) {
+            //     move.score += AI.PSQT[ABS[move.piece]][move.to] - AI.PSQT[ABS[move.piece]][move.from]
+            // } else {
+            //     move.score += AI.PSQT[ABS[move.piece]][112^move.to] - AI.PSQT[ABS[move.piece]][112^move.from]
+            // }
         }
 
     }
@@ -2736,9 +2759,11 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
     // ORDENA LOS MOVIMIENTOS
     // El tiempo de esta función toma hasta un 10% del total de cada búsqueda.
     // Sería conveniente utilizar un mejor método de ordenamiento.
-    moves.sort((a, b) => {
+    sortedMoves.sort((a, b) => {
         return b.score - a.score
     })
+
+    moves = sortedMoves.concat(unsortedMoves)
 
     // moves = sort(moves).by([
     //     { desc: u => u.score }
@@ -2967,7 +2992,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck) | 0
     // let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
-    let prune = !incheck && cutNode && alpha < MATE - AI.totaldepth
+    let prune = !incheck && alpha < MATE - AI.totaldepth
 
     if (prune) {
         //Futility
@@ -3117,11 +3142,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
             if (R < 0) R = 0
 
-            let rLimit = legal > 4 && !move.isCapture? 2 : 4
+            // let rLimit = legal > 4 && !move.isCapture? 2 : 4
 
-            if (depth > 6 && Math.abs(alpha - staticeval) > MARGIN3) {
-                R = Math.max(R, depth - rLimit)
-            }
+            // if (depth > 6 && Math.abs(alpha - staticeval) > MARGIN3) {
+            //     R = Math.max(R, depth - rLimit)
+            // }
         }
 
         // let m0 = (new Date()).getTime()
