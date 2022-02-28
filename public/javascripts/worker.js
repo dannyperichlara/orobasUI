@@ -834,7 +834,17 @@ let orobas = {
                         }
     
                         if (forMobility) {
-                            mobilityMoves[piece]++
+                            let safe = true
+                            
+                            if (this.turn === WHITE) {
+                                if (this.board[to - 15] === p || this.board[to - 17] === p) safe = false
+                            } else {
+                                if (this.board[to + 15] === P || this.board[to + 17] === P) safe = false
+                            }
+                            
+                            if (safe) {
+                                mobilityMoves[piece]++
+                            }
                         } else {
                             moves[moveindex++]=(this.createMove({piece, from, to, isCapture, capturedPiece, castleSide:0, enPassantSquares:null}))
                         }
@@ -2446,7 +2456,8 @@ AI.getSpace = (board, pawnindexW, pawnindexB)=>{
         spaceB += board.ranksB[pawnindexB[i]] - 1
     }
 
-    let space = 2*(spaceW - spaceB)
+    let space = 5*(spaceW - spaceB)
+    // if (space > max) console.log(max = space)
 
     return space
 }
@@ -3078,7 +3089,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         //Reducciones
         let R = 0
 
-        if (prune && !move.killer1 && legal >= 1) {
+        if (prune && !E && !move.killer1 && legal >= 1) {
             // Futility Pruning
             if (depth <= 3) {
                 if (move.isCapture) {
