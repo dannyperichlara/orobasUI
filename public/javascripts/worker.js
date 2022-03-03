@@ -182,7 +182,7 @@ let orobas = {
         
         if (enpassantsquare !== '-') {
             this.enPassantSquares = [this.coords.indexOf(enpassantsquare)]
-            console.log('En Passant Square', this.enPassantSquares)
+            // console.log('En Passant Square', this.enPassantSquares)
         } else {
             this.enPassantSquares = [null]
         }
@@ -2457,7 +2457,6 @@ AI.getSpace = (board, pawnindexW, pawnindexB)=>{
     }
 
     let space = 5*(spaceW - spaceB)
-    // if (space > max) console.log(max = space)
 
     return space
 }
@@ -2790,10 +2789,6 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
     }
 
     moves = sortedMoves.concat(unsortedMoves)
-
-    // moves = sort(moves).by([
-    //     { desc: u => u.score }
-    //   ]);
 
     // let t1 = (new Date()).getTime()
 
@@ -3220,7 +3215,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (AI.stop) return alphaOriginal //tested ok
             
             if (score > alpha) {
-                // score > alpha continuation
                 bestscore = score
                 bestmove = move
                 alpha = score
@@ -3616,9 +3610,10 @@ AI.setPhase = function (board) {
         AI.phase = 3
     }
 
-    AI.createPSQT()
     // AI.randomizePSQT()
 }
+
+AI.createPSQT()
 
 AI.getPV = function (board, length) {
     let PV = [null]
