@@ -2094,7 +2094,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     score += AI.getStructure(board, pawnindexW, pawnindexB)
 
     if (incheck) {
-            
         let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
         AI.evalTable[board.hashkey % this.htlength] = {
@@ -2119,7 +2118,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     
-    if (AI.isLazyFutile(sign, score, alpha, beta)) {
+    if (AI.isLazyFutile(sign, score, alpha - MARGIN3, beta)) {
         
         let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
@@ -2145,7 +2144,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             score += AI.PAR[17]*board.isSquareAttacked(board.blackKingIndex+17, WHITE, false)
         }
 
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+        if (AI.isLazyFutile(sign, score, alpha - MARGIN3, beta)) {
             let nullWindowScore = (score / AI.nullWindowFactor | 0)
             
             AI.evalTable[board.hashkey % this.htlength] = {
@@ -2169,7 +2168,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
         score -= badPawns
 
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+        if (AI.isLazyFutile(sign, score, alpha - MARGIN3, beta)) {
             
             let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
             
@@ -2202,7 +2201,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             }
         }
     
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+        if (AI.isLazyFutile(sign, score, alpha - MARGIN3, beta)) {
             
             let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
             
@@ -2323,7 +2322,7 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
     // return false
     let signedScore = sign * score
 
-    if (signedScore >= beta) {
+    if (signedScore >= max) {
         return true
     }
 }
@@ -2775,6 +2774,12 @@ AI.sortMoves = function (moves, turn, ply, depth, ttEntry) {
         })
     }
 
+    // if (sortedMoves.length > 1) {
+    //     sort(sortedMoves).by([
+    //         { desc: u => u.score }
+    //     ]);
+    // }
+
     moves = sortedMoves.concat(unsortedMoves)
 
     // let t1 = (new Date()).getTime()
@@ -3014,6 +3019,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
         // Null move pruning
         if (allowNullMove && staticeval >= beta && AI.phase < LATE_ENDGAME) {
+
             if (!board.enPassantSquares[board.enPassantSquares.length - 1]) {
                 board.changeTurn()
                 let nullR = depth > 6? 4 : 3
@@ -3149,7 +3155,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 if (ttEntry && ttEntry.move.key === move.key) R++
             }
 
-            // if (R < 0) R = 0
+            if (R < 0) R = 0
 
             // let rLimit = legal > 4 && !move.isCapture? 2 : 4
 
