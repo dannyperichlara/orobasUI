@@ -1348,39 +1348,193 @@ AI.PIECE_VALUES = [
 
 AI.PSQT_OPENING =  [null]
 AI.PSQT_LATE_ENDGAME =  [null]
+AI.MOB = new Array(6).fill(null)
+AI.DEFENDED_VALUES = [0,0]
+
+AI.POV = [null,100,261,264,452,967]
+AI.PEV = [null,100,282,287,461,970]
+
+AI.BISHOP_PAIR = [44]
+
+AI.MOB[N] = [34,67]
+AI.MOB[B] = [26,32]
+AI.MOB[R] = [39,1]
+AI.MOB[Q] = [34,8]
+
+AI.PSQT_OPENING = new Array(7).fill(new Array(128).fill(0))
+AI.PSQT_LATE_ENDGAME = new Array(7).fill(new Array(128).fill(0))
+
+AI.PSQT_OPENING[P] = [8,-1,0,-2,2,-3,5,3,null,null,null,null,null,null,null,null,89,141,52,101,71,132,32,-13,null,null,null,null,null,null,null,null,0,6,12,29,76,65,31,-14,null,null,null,null,null,null,null,null,-25,29,1,21,18,6,13,-27,null,null,null,null,null,null,null,null,-17,-9,-18,-9,12,4,16,-21,null,null,null,null,null,null,null,null,-12,13,-12,-12,1,2,22,-8,null,null,null,null,null,null,null,null,-37,-6,-18,-29,8,25,29,-32,null,null,null,null,null,null,null,null,3,-11,2,2,-14,0,-7,-8,null,null,null,null,null,null,null,null]
+AI.PSQT_OPENING[N] = [-46,-56,-29,-44,56,-70,-22,-94,null,null,null,null,null,null,null,null,-50,-42,73,36,26,64,7,-10,null,null,null,null,null,null,null,null,-48,56,42,67,77,132,83,39,null,null,null,null,null,null,null,null,-8,14,11,47,45,73,18,23,null,null,null,null,null,null,null,null,-18,-2,18,10,30,20,21,-15,null,null,null,null,null,null,null,null,-26,-10,22,5,19,24,22,-20,null,null,null,null,null,null,null,null,-34,-44,-18,3,-7,19,-16,-18,null,null,null,null,null,null,null,null,-50,-25,-48,-36,-15,-26,-17,-29,null,null,null,null,null,null,null,null]
+AI.PSQT_OPENING[B] = [-16,4,-44,-43,-23,-39,3,-7,null,null,null,null,null,null,null,null,-38,8,-15,-16,26,49,18,-43,null,null,null,null,null,null,null,null,-22,33,53,40,14,49,30,-8,null,null,null,null,null,null,null,null,-9,0,12,53,30,32,9,-4,null,null,null,null,null,null,null,null,-15,20,22,44,36,8,11,10,null,null,null,null,null,null,null,null,1,18,7,15,15,26,26,8,null,null,null,null,null,null,null,null,0,27,13,1,12,14,31,6,null,null,null,null,null,null,null,null,-28,7,-4,-13,-14,-7,-26,-10,null,null,null,null,null,null,null,null]
+AI.PSQT_OPENING[R] = [32,38,22,45,64,19,34,38,null,null,null,null,null,null,null,null,26,31,55,62,67,74,29,34,null,null,null,null,null,null,null,null,0,33,18,34,1,47,74,17,null,null,null,null,null,null,null,null,-27,-11,4,17,16,37,-7,-34,null,null,null,null,null,null,null,null,-41,-11,-9,-19,17,-3,15,-18,null,null,null,null,null,null,null,null,-35,-14,-2,-12,-10,-9,-8,-29,null,null,null,null,null,null,null,null,-36,-13,-15,1,-15,4,3,-44,null,null,null,null,null,null,null,null,-33,-15,3,17,16,14,-37,-38,null,null,null,null,null,null,null,null]
+AI.PSQT_OPENING[Q] = [-43,6,44,16,50,34,57,58,null,null,null,null,null,null,null,null,-22,-41,-10,-3,-20,58,30,39,null,null,null,null,null,null,null,null,-19,-8,19,3,16,66,60,44,null,null,null,null,null,null,null,null,-19,-21,-23,-5,-5,5,-4,-6,null,null,null,null,null,null,null,null,-14,-24,5,-17,-5,-11,-14,-6,null,null,null,null,null,null,null,null,-5,3,-2,-2,-7,-15,16,0,null,null,null,null,null,null,null,null,-43,-1,2,0,13,23,9,0,null,null,null,null,null,null,null,null,-2,-15,-7,31,-21,-18,-18,-42,null,null,null,null,null,null,null,null]
+AI.PSQT_OPENING[K] = [-41,23,26,-13,-47,-32,3,9,null,null,null,null,null,null,null,null,18,4,-24,7,-12,-15,-32,-29,null,null,null,null,null,null,null,null,-9,21,-5,-18,-15,13,25,-17,null,null,null,null,null,null,null,null,-25,-30,-14,-25,-33,-28,-12,-33,null,null,null,null,null,null,null,null,-47,-2,-25,-38,-44,-46,-41,-50,null,null,null,null,null,null,null,null,-23,-10,-32,-50,-49,-25,-8,-32,null,null,null,null,null,null,null,null,2,-2,-11,-45,-50,-20,0,-2,null,null,null,null,null,null,null,null,-15,43,13,-43,18,-20,24,5,null,null,null,null,null,null,null,null]
+
+AI.PSQT_LATE_ENDGAME[P] = [-7,2,0,-1,-10,0,-2,6,null,null,null,null,null,null,null,null,179,166,157,131,142,131,165,191,null,null,null,null,null,null,null,null,103,95,76,68,55,54,83,79,null,null,null,null,null,null,null,null,26,17,11,8,-5,-1,5,16,null,null,null,null,null,null,null,null,7,10,-8,-6,-5,-9,0,-5,null,null,null,null,null,null,null,null,3,2,0,1,0,-2,3,-10,null,null,null,null,null,null,null,null,14,2,6,10,15,-5,2,-6,null,null,null,null,null,null,null,null,1,1,8,-5,1,-8,4,-3,null,null,null,null,null,null,null,null]
+AI.PSQT_LATE_ENDGAME[N] = [-39,-38,-9,-39,-36,-19,-46,-50,null,null,null,null,null,null,null,null,-17,-8,-21,0,-18,-25,-20,-49,null,null,null,null,null,null,null,null,-28,-29,-4,4,-9,-15,-29,-45,null,null,null,null,null,null,null,null,-27,0,18,31,33,8,5,-19,null,null,null,null,null,null,null,null,-34,-15,24,28,12,12,-6,-26,null,null,null,null,null,null,null,null,-22,-4,9,22,6,1,-18,-13,null,null,null,null,null,null,null,null,-41,-26,-9,-4,-6,-22,-33,-48,null,null,null,null,null,null,null,null,-31,-50,-22,-10,-6,-10,-45,-48,null,null,null,null,null,null,null,null]
+AI.PSQT_LATE_ENDGAME[B] = [-10,-25,-12,-8,-5,-10,-15,-15,null,null,null,null,null,null,null,null,2,-17,1,-21,-6,-18,5,-12,null,null,null,null,null,null,null,null,1,-19,8,11,-4,2,-6,6,null,null,null,null,null,null,null,null,0,6,14,18,17,10,2,-6,null,null,null,null,null,null,null,null,-7,4,13,4,15,22,-7,-16,null,null,null,null,null,null,null,null,-15,0,2,2,14,15,-14,-9,null,null,null,null,null,null,null,null,-15,-21,-1,-7,9,-18,-14,-26,null,null,null,null,null,null,null,null,-24,-13,-22,0,-11,-9,-20,-25,null,null,null,null,null,null,null,null]
+AI.PSQT_LATE_ENDGAME[R] = [7,13,9,10,17,5,15,3,null,null,null,null,null,null,null,null,4,0,22,-6,2,0,18,-2,null,null,null,null,null,null,null,null,9,11,3,-17,2,-1,-8,-11,null,null,null,null,null,null,null,null,1,4,15,-8,0,-10,-5,3,null,null,null,null,null,null,null,null,-1,16,8,1,-10,0,-7,-2,null,null,null,null,null,null,null,null,3,2,-3,5,-15,-13,-3,0,null,null,null,null,null,null,null,null,4,-3,1,-3,-7,-5,6,-2,null,null,null,null,null,null,null,null,-10,1,8,3,-8,-2,-4,-14,null,null,null,null,null,null,null,null]
+AI.PSQT_LATE_ENDGAME[Q] = [-7,13,39,32,51,31,18,34,null,null,null,null,null,null,null,null,-18,17,31,47,40,26,27,3,null,null,null,null,null,null,null,null,-15,10,17,49,49,42,13,12,null,null,null,null,null,null,null,null,12,9,36,43,50,42,71,35,null,null,null,null,null,null,null,null,-13,25,30,38,31,26,35,8,null,null,null,null,null,null,null,null,-22,-27,8,0,5,14,6,5,null,null,null,null,null,null,null,null,-23,-2,-29,-2,-9,-32,-25,-19,null,null,null,null,null,null,null,null,-33,-22,-25,-44,-7,-32,-28,-49,null,null,null,null,null,null,null,null]
+AI.PSQT_LATE_ENDGAME[K] = [-74,-17,-16,-16,-13,7,3,-30,null,null,null,null,null,null,null,null,-10,14,13,17,14,34,25,20,null,null,null,null,null,null,null,null,10,25,18,17,23,44,40,7,null,null,null,null,null,null,null,null,-10,21,18,20,30,28,22,0,null,null,null,null,null,null,null,null,-13,3,18,24,24,20,2,-3,null,null,null,null,null,null,null,null,-21,-8,6,27,18,19,8,-18,null,null,null,null,null,null,null,null,-24,-10,6,17,15,-5,7,-12,null,null,null,null,null,null,null,null,-44,-36,-21,-4,-26,-17,-13,-33,null,null,null,null,null,null,null,null]
+
 AI.POV = [null,100,410,445,580,1250]
 AI.PEV = [null,114,342,362,624,1140]
-AI.PSQT_OPENING[P] = [1,10,6,-2,14,1,4,1,null,null,null,null,null,null,null,null,77,143,47,101,82,126,34,-9,null,null,null,null,null,null,null,null,2,-3,14,31,78,67,35,-14,null,null,null,null,null,null,null,null,-29,26,1,34,20,5,13,-23,null,null,null,null,null,null,null,null,-19,2,-4,-3,11,4,26,-16,null,null,null,null,null,null,null,null,-14,8,-15,-15,-3,-2,19,-5,null,null,null,null,null,null,null,null,-22,-6,-28,-12,6,10,20,-29,null,null,null,null,null,null,null,null,3,-5,5,0,0,2,-13,-2,null,null,null,null,null,null,null,null]
-AI.PSQT_OPENING[N] = [-42,-42,-40,-40,59,-44,-24,-47,null,null,null,null,null,null,null,null,-38,-32,69,30,14,65,11,0,null,null,null,null,null,null,null,null,-37,45,38,60,82,129,90,42,null,null,null,null,null,null,null,null,-14,19,14,43,39,74,19,26,null,null,null,null,null,null,null,null,-6,6,16,14,25,18,27,-10,null,null,null,null,null,null,null,null,-31,-32,7,1,20,22,3,-14,null,null,null,null,null,null,null,null,-32,-37,-21,13,-12,20,-11,-14,null,null,null,null,null,null,null,null,-46,-15,-39,-26,-17,-21,-20,-25,null,null,null,null,null,null,null,null]
-AI.PSQT_OPENING[B] = [-22,5,-43,-32,-23,-37,6,-6,null,null,null,null,null,null,null,null,-31,11,-23,-10,23,52,14,-39,null,null,null,null,null,null,null,null,-22,33,45,42,16,44,29,-6,null,null,null,null,null,null,null,null,-10,2,18,57,31,29,2,2,null,null,null,null,null,null,null,null,-2,29,6,51,29,6,16,7,null,null,null,null,null,null,null,null,-3,28,-1,1,5,35,17,14,null,null,null,null,null,null,null,null,-5,17,9,-6,10,17,27,4,null,null,null,null,null,null,null,null,-29,3,12,-9,-13,0,-12,-2,null,null,null,null,null,null,null,null]
-AI.PSQT_OPENING[R] = [26,40,29,44,61,16,46,25,null,null,null,null,null,null,null,null,32,26,48,70,56,78,30,44,null,null,null,null,null,null,null,null,2,29,9,44,2,43,70,8,null,null,null,null,null,null,null,null,-28,-3,-3,27,10,30,-4,-29,null,null,null,null,null,null,null,null,-21,-5,-12,-15,13,-3,15,-13,null,null,null,null,null,null,null,null,-27,-5,-6,-14,-8,2,-16,-26,null,null,null,null,null,null,null,null,-34,-20,-19,-6,-29,-4,3,-45,null,null,null,null,null,null,null,null,-35,-13,1,11,29,12,-38,-39,null,null,null,null,null,null,null,null]
-AI.PSQT_OPENING[Q] = [-40,4,40,29,55,37,64,45,null,null,null,null,null,null,null,null,-23,-33,-6,-6,-27,40,24,46,null,null,null,null,null,null,null,null,-8,-11,17,-3,27,52,58,39,null,null,null,null,null,null,null,null,-15,-15,-14,-8,-11,9,-7,-17,null,null,null,null,null,null,null,null,-10,-14,1,-17,3,-9,-12,-1,null,null,null,null,null,null,null,null,-10,1,-5,9,-10,-13,10,5,null,null,null,null,null,null,null,null,-46,0,13,5,4,26,5,-6,null,null,null,null,null,null,null,null,-8,-8,-15,46,-17,-10,-21,-35,null,null,null,null,null,null,null,null]
-AI.PSQT_OPENING[K] = [-38,22,16,-13,-48,-30,6,12,null,null,null,null,null,null,null,null,9,5,-23,7,-13,-15,-31,-29,null,null,null,null,null,null,null,null,-7,16,-3,-5,-15,9,13,-12,null,null,null,null,null,null,null,null,-12,-26,-8,-20,-20,-23,-17,-26,null,null,null,null,null,null,null,null,-44,-9,-23,-43,-38,-48,-28,-43,null,null,null,null,null,null,null,null,-15,-12,-34,-44,-34,-24,-13,-42,null,null,null,null,null,null,null,null,3,-1,-9,-36,-40,-19,4,5,null,null,null,null,null,null,null,null,-13,41,10,-33,19,-19,6,-6,null,null,null,null,null,null,null,null]
-AI.PSQT_LATE_ENDGAME[P] = [1,7,-5,-1,-5,4,-5,7,null,null,null,null,null,null,null,null,186,165,154,135,145,135,157,193,null,null,null,null,null,null,null,null,95,83,68,74,51,52,83,73,null,null,null,null,null,null,null,null,26,27,13,8,-1,-1,6,10,null,null,null,null,null,null,null,null,3,11,1,-1,-7,-8,-13,0,null,null,null,null,null,null,null,null,-1,-1,2,6,2,1,4,-13,null,null,null,null,null,null,null,null,15,4,-8,-2,2,-1,-6,10,null,null,null,null,null,null,null,null,10,-4,19,-19,5,-2,-1,-3,null,null,null,null,null,null,null,null]
-AI.PSQT_LATE_ENDGAME[N] = [-31,-37,-5,-44,-38,-3,-43,-44,null,null,null,null,null,null,null,null,-12,-10,-21,-14,-30,-17,-7,-39,null,null,null,null,null,null,null,null,-35,-38,1,-4,-13,-19,-24,-44,null,null,null,null,null,null,null,null,-17,-4,18,26,30,15,7,-12,null,null,null,null,null,null,null,null,-21,-2,23,20,17,6,-10,-35,null,null,null,null,null,null,null,null,-14,-3,-6,3,-4,-4,-15,-13,null,null,null,null,null,null,null,null,-40,-31,-3,-5,-2,-18,-36,-48,null,null,null,null,null,null,null,null,-28,-36,-25,-14,-1,-11,-49,-42,null,null,null,null,null,null,null,null]
-AI.PSQT_LATE_ENDGAME[B] = [-11,-19,-14,-9,8,-11,-19,-12,null,null,null,null,null,null,null,null,4,-5,-6,-22,1,-21,4,5,null,null,null,null,null,null,null,null,-5,-22,4,15,-4,8,-7,3,null,null,null,null,null,null,null,null,-8,2,12,20,14,11,-3,-6,null,null,null,null,null,null,null,null,-1,-11,-2,6,0,12,-5,-15,null,null,null,null,null,null,null,null,-25,-2,6,-7,-3,28,-17,-4,null,null,null,null,null,null,null,null,1,-26,15,-10,1,-9,-9,-22,null,null,null,null,null,null,null,null,-21,-25,-2,-1,-16,-26,-22,-29,null,null,null,null,null,null,null,null]
-AI.PSQT_LATE_ENDGAME[R] = [11,14,12,4,9,-1,12,12,null,null,null,null,null,null,null,null,4,-2,19,-6,3,-1,12,4,null,null,null,null,null,null,null,null,2,2,10,-20,7,-2,-9,-7,null,null,null,null,null,null,null,null,-2,4,9,-4,-9,-13,9,-3,null,null,null,null,null,null,null,null,0,22,12,9,5,-1,-6,2,null,null,null,null,null,null,null,null,-9,13,1,-3,-16,-20,-3,4,null,null,null,null,null,null,null,null,1,-5,-2,-1,-20,-2,-5,3,null,null,null,null,null,null,null,null,-1,0,10,-9,3,0,-8,-26,null,null,null,null,null,null,null,null]
-AI.PSQT_LATE_ENDGAME[Q] = [-5,-1,35,29,61,25,16,46,null,null,null,null,null,null,null,null,-16,20,29,44,49,28,30,-7,null,null,null,null,null,null,null,null,-15,6,16,34,43,57,14,4,null,null,null,null,null,null,null,null,5,7,44,35,52,52,85,34,null,null,null,null,null,null,null,null,-19,23,29,42,31,37,22,8,null,null,null,null,null,null,null,null,-27,-22,19,-1,4,3,-1,9,null,null,null,null,null,null,null,null,-29,-6,-12,-9,-10,-44,-14,-17,null,null,null,null,null,null,null,null,-37,-21,-29,-29,-2,-19,-24,-40,null,null,null,null,null,null,null,null]
-AI.PSQT_LATE_ENDGAME[K] = [-43,-11,-12,-19,-14,2,-12,-24,null,null,null,null,null,null,null,null,-9,14,3,4,13,37,23,24,null,null,null,null,null,null,null,null,7,20,19,18,20,41,26,10,null,null,null,null,null,null,null,null,-18,20,27,18,39,30,14,-2,null,null,null,null,null,null,null,null,-19,8,25,14,15,11,0,-6,null,null,null,null,null,null,null,null,-29,-16,-2,27,22,10,15,-11,null,null,null,null,null,null,null,null,-20,-7,7,11,12,2,2,-8,null,null,null,null,null,null,null,null,-30,-30,-22,-4,-28,-8,-23,-26,null,null,null,null,null,null,null,null]
-AI.BISHOP_PAIR = [67,56,68,83]
-AI.DEFENDED_VALUES = [3,10,9]
-AI.BLOCKEDPAWNBONUS = [0,1,12,2,3,5,6,5,null,null,null,null,null,null,null,null,6,4,1,1,1,12,2,5,null,null,null,null,null,null,null,null,24,18,23,28,31,19,28,13,null,null,null,null,null,null,null,null,15,10,14,25,10,10,6,2,null,null,null,null,null,null,null,null,4,1,6,1,2,6,6,4,null,null,null,null,null,null,null,null,0,1,1,1,3,8,8,0,null,null,null,null,null,null,null,null,8,9,3,6,1,10,1,3,null,null,null,null,null,null,null,null,1,7,9,4,6,6,6,7,null,null,null,null,null,null,null,null]
-AI.DEFENDEDPAWNBONUS = [7,3,3,11,3,11,0,3,null,null,null,null,null,null,null,null,31,33,43,49,37,37,28,30,null,null,null,null,null,null,null,null,14,26,17,29,16,17,28,12,null,null,null,null,null,null,null,null,18,11,24,19,17,8,20,16,null,null,null,null,null,null,null,null,8,1,22,12,0,17,18,7,null,null,null,null,null,null,null,null,2,7,9,14,7,2,5,2,null,null,null,null,null,null,null,null,2,2,2,11,0,2,3,5,null,null,null,null,null,null,null,null,5,3,2,2,5,1,1,0,null,null,null,null,null,null,null,null]
-AI.ALIGNEDPAWNBONUS = [9,4,6,1,5,1,0,0,null,null,null,null,null,null,null,null,36,38,44,44,53,53,50,41,null,null,null,null,null,null,null,null,29,34,30,41,33,46,36,37,null,null,null,null,null,null,null,null,17,22,26,30,30,19,19,17,null,null,null,null,null,null,null,null,6,6,17,11,20,10,16,13,null,null,null,null,null,null,null,null,6,11,11,1,11,1,5,17,null,null,null,null,null,null,null,null,2,8,4,7,10,2,0,0,null,null,null,null,null,null,null,null,4,2,1,10,3,0,4,3,null,null,null,null,null,null,null,null]
-AI.NEIGHBOURPAWNBONUS = [4,5,0,7,2,4,5,2,null,null,null,null,null,null,null,null,8,23,23,16,24,20,13,2,null,null,null,null,null,null,null,null,11,12,17,15,25,12,8,5,null,null,null,null,null,null,null,null,3,6,0,9,2,8,0,6,null,null,null,null,null,null,null,null,4,0,5,9,5,2,14,2,null,null,null,null,null,null,null,null,1,1,2,5,5,2,15,0,null,null,null,null,null,null,null,null,4,7,1,10,1,5,2,0,null,null,null,null,null,null,null,null,6,0,3,3,5,6,5,2,null,null,null,null,null,null,null,null]
-AI.LEVERPAWNBONUS = [0,0,6,1,0,6,2,6,null,null,null,null,null,null,null,null,5,8,4,4,5,6,3,0,null,null,null,null,null,null,null,null,18,9,25,26,23,24,22,17,null,null,null,null,null,null,null,null,23,6,1,8,16,5,0,3,null,null,null,null,null,null,null,null,6,2,1,6,11,0,2,0,null,null,null,null,null,null,null,null,7,4,4,5,4,5,7,6,null,null,null,null,null,null,null,null,3,2,4,7,5,3,6,1,null,null,null,null,null,null,null,null,1,6,6,3,2,11,3,5,null,null,null,null,null,null,null,null]
-AI.PASSERSBONUS = [1,6,2,1,0,7,1,6,null,null,null,null,null,null,null,null,70,85,95,108,104,95,78,66,null,null,null,null,null,null,null,null,49,70,65,77,72,65,69,52,null,null,null,null,null,null,null,null,18,48,59,47,44,35,47,17,null,null,null,null,null,null,null,null,18,15,45,48,56,34,18,26,null,null,null,null,null,null,null,null,18,28,29,35,22,18,27,8,null,null,null,null,null,null,null,null,8,7,15,19,4,7,14,15,null,null,null,null,null,null,null,null,3,1,3,6,8,8,4,0,null,null,null,null,null,null,null,null]
-AI.DOUBLEDPENALTY = [7,6,8,2,4,0,0,8,null,null,null,null,null,null,null,null,43,16,29,38,39,20,21,26,null,null,null,null,null,null,null,null,29,21,13,21,19,17,31,33,null,null,null,null,null,null,null,null,42,12,23,13,17,14,17,30,null,null,null,null,null,null,null,null,33,6,18,32,8,20,12,34,null,null,null,null,null,null,null,null,24,0,25,25,30,5,10,32,null,null,null,null,null,null,null,null,3,7,7,4,7,2,8,3,null,null,null,null,null,null,null,null,8,5,6,7,0,0,0,10,null,null,null,null,null,null,null,null]
-AI.OUTPOSTBONUSKNIGHT = [6,3,7,4,5,8,3,6,null,null,null,null,null,null,null,null,3,6,4,4,9,5,5,4,null,null,null,null,null,null,null,null,29,43,53,61,72,62,51,28,null,null,null,null,null,null,null,null,5,29,40,47,55,34,30,15,null,null,null,null,null,null,null,null,11,14,10,24,35,24,10,3,null,null,null,null,null,null,null,null,9,1,0,6,11,2,9,1,null,null,null,null,null,null,null,null,12,3,2,0,5,1,9,2,null,null,null,null,null,null,null,null,4,5,2,13,1,2,3,5,null,null,null,null,null,null,null,null]
-AI.OUTPOSTBONUSBISHOP = [3,0,6,0,9,6,3,8,null,null,null,null,null,null,null,null,4,0,3,6,10,10,1,12,null,null,null,null,null,null,null,null,22,39,63,67,61,54,50,28,null,null,null,null,null,null,null,null,23,25,29,47,51,29,28,13,null,null,null,null,null,null,null,null,0,3,12,32,19,15,9,6,null,null,null,null,null,null,null,null,0,11,11,0,2,19,16,3,null,null,null,null,null,null,null,null,5,2,0,5,9,10,2,7,null,null,null,null,null,null,null,null,1,2,6,0,0,0,4,1,null,null,null,null,null,null,null,null]
-AI.ATTACKING_PIECES =  [null,null,11,12,4,8]
-AI.PAWNSHIELD = [28,8,2,2]
-AI.MOB = new Array(6).fill(null)//  [null,null,[1,43],[9,14],[19,28],[39,19]]
-AI.MOB[N] = [70,48]
-AI.MOB[B] = [60,27]
-AI.MOB[R] = [65,10]
-AI.MOB[Q] = [32,8]
-AI.PAR = [35,21,22,45,34,7,9,4,2,2,19,16,19,2,29,20,21,25,12,2,11,5,0,13,0,0,7,20,4,1,9,19,5,99,32]
+
+AI.BISHOP_PAIR = [78,59,78,83]
+
+AI.DEFENDED_VALUES = [0, 5, 0]
+
+AI.BLOCKEDPAWNBONUS = [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   15, 18, 22, 30, 30, 22, 18, 15,  null,  null,  null,  null,  null,  null,  null,  null, 
+    7,  9, 11, 13, 13, 11,  9,  7,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
+AI.DEFENDEDPAWNBONUS = [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   35, 36, 37, 38, 38, 37, 36, 35,  null,  null,  null,  null,  null,  null,  null,  null, 
+   20, 21, 23, 25, 25, 23, 21, 20,  null,  null,  null,  null,  null,  null,  null,  null, 
+   11, 13, 15, 17, 17, 15, 13, 11,  null,  null,  null,  null,  null,  null,  null,  null, 
+    5,  6,  8,  9,  9,  8,  6,  5,  null,  null,  null,  null,  null,  null,  null,  null, 
+    2,  3,  4,  5,  5,  4,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null,
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.ALIGNEDPAWNBONUS = [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   44, 45, 47, 49, 49, 47, 45, 44,  null,  null,  null,  null,  null,  null,  null,  null, 
+   35, 36, 37, 38, 38, 37, 36, 35,  null,  null,  null,  null,  null,  null,  null,  null, 
+   20, 21, 23, 25, 25, 23, 21, 20,  null,  null,  null,  null,  null,  null,  null,  null, 
+   11, 13, 15, 17, 17, 15, 13, 11,  null,  null,  null,  null,  null,  null,  null,  null, 
+    5,  6,  8,  9,  9,  8,  6,  5,  null,  null,  null,  null,  null,  null,  null,  null, 
+    2,  3,  4,  5,  5,  4,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.NEIGHBOURPAWNBONUS = [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   10, 15, 20, 25, 25, 20, 15, 10,  null,  null,  null,  null,  null,  null,  null,  null, 
+    6,  8, 12, 16, 16, 12,  8,  6,  null,  null,  null,  null,  null,  null,  null,  null, 
+    4,  6,  8, 11, 11,  8,  6,  4,  null,  null,  null,  null,  null,  null,  null,  null, 
+    2,  3,  4,  5,  5,  4,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null, 
+    2,  2,  3,  4,  4,  3,  2,  2,  null,  null,  null,  null,  null,  null,  null,  null, 
+    1,  2,  3,  4,  4,  3,  2,  1,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.LEVERPAWNBONUS = [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   16, 18, 22, 24, 24, 22, 18, 16,  null,  null,  null,  null,  null,  null,  null,  null, 
+    8,  9, 11, 13, 13, 11,  9,  8,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
+AI.PASSERSBONUS = [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   70, 85, 95,110,110, 95, 85, 70,  null,  null,  null,  null,  null,  null,  null,  null, 
+   50, 60, 68, 76, 76, 68, 60, 50,  null,  null,  null,  null,  null,  null,  null,  null, 
+   30, 40, 48, 56, 56, 48, 40, 30,  null,  null,  null,  null,  null,  null,  null,  null, 
+   20, 30, 38, 46, 46, 38, 30, 20,  null,  null,  null,  null,  null,  null,  null,  null, 
+   13, 18, 24, 32, 32, 24, 18, 13,  null,  null,  null,  null,  null,  null,  null,  null, 
+    6,  8, 12, 14, 14, 13,  8,  6,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
+AI.DOUBLEDPENALTY = [
+     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    38, 18, 23, 28, 28, 23, 18, 38,  null,  null,  null,  null,  null,  null,  null,  null, 
+    36, 16, 21, 26, 26, 21, 16, 36,  null,  null,  null,  null,  null,  null,  null,  null, 
+    34, 14, 19, 24, 24, 19, 14, 34,  null,  null,  null,  null,  null,  null,  null,  null, 
+    32, 12, 17, 22, 22, 17, 12, 32,  null,  null,  null,  null,  null,  null,  null,  null, 
+    30, 10, 15, 20, 20, 15, 10, 30,  null,  null,  null,  null,  null,  null,  null,  null, 
+     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+     0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
+AI.NMOBILITY = [
+    10, 11, 12, 13, 13, 12, 11, 10,  null,  null,  null,  null,  null,  null,  null,  null,
+    12, 13, 14, 15, 15, 14, 13, 12,  null,  null,  null,  null,  null,  null,  null,  null,
+    12, 17, 22, 24, 24, 22, 17, 12,  null,  null,  null,  null,  null,  null,  null,  null,
+    16, 24, 28, 30, 30, 28, 24, 16,  null,  null,  null,  null,  null,  null,  null,  null,
+    16, 24, 28, 30, 30, 28, 24, 16,  null,  null,  null,  null,  null,  null,  null,  null,
+    12, 17, 22, 24, 24, 22, 17, 12,  null,  null,  null,  null,  null,  null,  null,  null,
+    12, 13, 14, 15, 15, 14, 13, 12,  null,  null,  null,  null,  null,  null,  null,  null,
+    10, 11, 12, 13, 13, 12, 11, 10,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.BMOBILITY = [
+     8,  9, 10, 11, 11, 10,  9,  8,  null,  null,  null,  null,  null,  null,  null,  null,
+    10, 11, 12, 13, 13, 12, 11, 10,  null,  null,  null,  null,  null,  null,  null,  null,
+    12, 17, 18, 21, 21, 18, 17, 12,  null,  null,  null,  null,  null,  null,  null,  null,
+    15, 22, 25, 26, 26, 25, 22, 15,  null,  null,  null,  null,  null,  null,  null,  null,
+    15, 22, 25, 26, 26, 25, 22, 15,  null,  null,  null,  null,  null,  null,  null,  null,
+    12, 17, 18, 21, 21, 18, 17, 12,  null,  null,  null,  null,  null,  null,  null,  null,
+    10, 11, 12, 13, 13, 12, 11, 10,  null,  null,  null,  null,  null,  null,  null,  null,
+     8,  9, 10, 11, 11, 10,  9,  8,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.RMOBILITY = [
+     6,  7,  8,  9,  9,  8,  7,  6,  null,  null,  null,  null,  null,  null,  null,  null,
+    10, 11, 12, 13, 13, 12, 11, 10,  null,  null,  null,  null,  null,  null,  null,  null,
+     9, 10, 11, 12, 12, 11, 10,  9,  null,  null,  null,  null,  null,  null,  null,  null,
+    11, 12, 13, 14, 13, 13, 12, 11,  null,  null,  null,  null,  null,  null,  null,  null,
+     9, 10, 11, 12, 12, 11, 10,  9,  null,  null,  null,  null,  null,  null,  null,  null,
+     7,  8,  9, 10, 10,  9,  8,  7,  null,  null,  null,  null,  null,  null,  null,  null,
+     5,  6,  7,  8,  8,  7,  6,  5,  null,  null,  null,  null,  null,  null,  null,  null,
+     4,  5,  6,  7,  7,  6,  5,  4,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.QMOBILITY = [
+     2,  3,  3,  4,  4,  3,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null,
+     3,  3,  3,  4,  4,  3,  3,  3,  null,  null,  null,  null,  null,  null,  null,  null,
+     6,  6,  6,  7,  7,  6,  6,  6,  null,  null,  null,  null,  null,  null,  null,  null,
+     5,  6,  6,  7,  7,  6,  6,  5,  null,  null,  null,  null,  null,  null,  null,  null,
+     4,  5,  5,  6,  6,  5,  5,  4,  null,  null,  null,  null,  null,  null,  null,  null,
+     3,  4,  5,  5,  5,  5,  4,  3,  null,  null,  null,  null,  null,  null,  null,  null,
+     2,  3,  3,  4,  4,  3,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null,
+     2,  3,  3,  4,  4,  3,  3,  2,  null,  null,  null,  null,  null,  null,  null,  null,
+]
+
+AI.OUTPOSTBONUSKNIGHT= [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   28, 45, 60, 70, 70, 60, 45, 28,  null,  null,  null,  null,  null,  null,  null,  null,
+   15, 28, 35, 55, 55, 35, 28, 15,  null,  null,  null,  null,  null,  null,  null,  null,
+    9, 14, 18, 25, 25, 18, 14,  9,  null,  null,  null,  null,  null,  null,  null,  null,
+    5,  7,  9, 12, 12,  9,  7,  5,  null,  null,  null,  null,  null,  null,  null,  null,
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+
+]
+
+AI.OUTPOSTBONUSBISHOP= [
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+   28, 45, 60, 70, 70, 60, 45, 28,  null,  null,  null,  null,  null,  null,  null,  null,
+   15, 28, 35, 55, 55, 35, 28, 15,  null,  null,  null,  null,  null,  null,  null,  null,
+    8, 14, 18, 25, 25, 18, 14,  8,  null,  null,  null,  null,  null,  null,  null,  null,
+    5,  7,  9, 12, 12,  9,  7,  5,  null,  null,  null,  null,  null,  null,  null,  null,
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+    0,  0,  0,  0,  0,  0,  0,  0,  null,  null,  null,  null,  null,  null,  null,  null, 
+]
+
+AI.ATTACKING_PIECES =  [null,null,0,0,0,0]
+
+AI.PAWNSHIELD = [41,17,0,3]
+AI.MOB =  [null,null,[1,43],[9,14],[19,28],[39,19]]
+// AI.PAR = new Array(35).fill(0)
+AI.PAR = [31,17,17,37,32,15,15,7,4,2,12,16,29,3,30,19,16,22,12,6,0,0,10,13,0,0,12,18,4,9,8,31,2,102,27]
 
 // AI.PAR = [
 //     40, //0 center control
@@ -1426,45 +1580,6 @@ AI.PAR = [35,21,22,45,34,7,9,4,2,2,19,16,19,2,29,20,21,25,12,2,11,5,0,13,0,0,7,2
 //      40, //34 blocked by own pawn
 // ]
 
-// AI.PAR = [
-//     40, //0 center control
-//     20, //1 outer center lever
-//     15, //2 outer center lever 2
-//     40, //3 knight mobility blocker
-//     20, //4 Blocks knight mobility
-//     12, //5 Semi outpost
-//     20, //6 bishop x-rays
-//     10, //7 pawn in front of outpost bishop
-//     20, //8 outpost bishop in rank 6
-//     15, //9 knight semi outpost
-//     10, //10 enemy pawn in front of outpost knight
-//     20, //11 outpost knight in rank 6
-//     20, //12 Rook x-rays
-//     10, //13 defended rook in rank 5
-//     20, //14 queen x-rays
-//     20, //15 is king under attack1
-//     20, //16 is king under attack2
-//     20, //17 is king under attack3,
-//     10, //18 pawns at same squares as bishops
-//     10, //19 Expensive center control
-//     10, //20 Occupied by 1
-//     5,  //21 Occupied by 2
-//     10, //22 incentive for keeping queens and rooks in advantage
-//     10, //23 blocked pawns with knights
-//     5,  //24 pawn span midgame
-//     10, //25 pawn span endgame
-//     10, //26 raking bishops
-//     10, //27 Rook battery
-
-//     //Shield
-//     10, //28 King in center
-//     15, //29 bishop in front of king
-
-//     //Structure
-//     20, //30 pawn imbalance
-//     40, //31 backward pawns
-//     10, //32 space
-// ]
 
 AI.PIECE_VALUES[OPENING][0] = 0
 
@@ -1662,6 +1777,9 @@ AI.randomizePSQT = function () {
 
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) {
+
+    AI.phase = Math.round(3 - 3 * (AI.totalmaterial / AI.maxMaterialValue))
+    
     // let t0 = Date.now()
     illegalMovesSoFar = illegalMovesSoFar | 0
 
@@ -1679,8 +1797,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     beta = alpha + VPAWN
         
     let score = AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0
-
-    // score -= 2 * sign * illegalMovesSoFar
 
     // if (score < min) {
     //     min = score
@@ -1783,10 +1899,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         if (!incheck && pvNode) {
             if (piece === P) {
                 // //Attacking pieces
-                if (board.board[i-15] === q || board.board[i-17] === q) positionalScore += AI.ATTACKING_PIECES[Q]
-                if (board.board[i-15] === r || board.board[i-17] === r) positionalScore += AI.ATTACKING_PIECES[R]
-                if (board.board[i-15] === b || board.board[i-17] === b) positionalScore += AI.ATTACKING_PIECES[B]
+                if (board.board[i-15] === p || board.board[i-17] === p) positionalScore += AI.ATTACKING_PIECES[P]
                 if (board.board[i-15] === n || board.board[i-17] === n) positionalScore += AI.ATTACKING_PIECES[N]
+                if (board.board[i-15] === b || board.board[i-17] === b) positionalScore += AI.ATTACKING_PIECES[B]
+                if (board.board[i-15] === r || board.board[i-17] === r) positionalScore += AI.ATTACKING_PIECES[R]
+                if (board.board[i-15] === q || board.board[i-17] === q) positionalScore += AI.ATTACKING_PIECES[Q]
 
                 //Defended
                 if (board.board[i+15] === P || board.board[i+17] === P) {
@@ -1847,10 +1964,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                 }
             } else if (piece === p) {
                 // //Attacking pieces
-                if (board.board[i+15] === Q || board.board[i+17] === Q) positionalScore -= AI.ATTACKING_PIECES[Q]
-                if (board.board[i+15] === R || board.board[i+17] === R) positionalScore -= AI.ATTACKING_PIECES[R]
-                if (board.board[i+15] === B || board.board[i+17] === B) positionalScore -= AI.ATTACKING_PIECES[B]
+                if (board.board[i+15] === P || board.board[i+17] === P) positionalScore -= AI.ATTACKING_PIECES[P]
                 if (board.board[i+15] === N || board.board[i+17] === N) positionalScore -= AI.ATTACKING_PIECES[N]
+                if (board.board[i+15] === B || board.board[i+17] === B) positionalScore -= AI.ATTACKING_PIECES[B]
+                if (board.board[i+15] === R || board.board[i+17] === R) positionalScore -= AI.ATTACKING_PIECES[R]
+                if (board.board[i+15] === Q || board.board[i+17] === Q) positionalScore -= AI.ATTACKING_PIECES[Q]
 
                 //Defended
                 if (board.board[i-15] === p || board.board[i-17] === p) {
@@ -2087,8 +2205,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
     
     // Bishop pair
-    score += bishopsW >= 2? AI.BISHOP_PAIR[AI.phase] : 0
-    score -= bishopsB >= 2? AI.BISHOP_PAIR[AI.phase] : 0
+    score += bishopsW >= 2? AI.BISHOP_PAIR[0] : 0
+    score -= bishopsB >= 2? AI.BISHOP_PAIR[0] : 0
     
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)
@@ -2281,34 +2399,34 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     return sign*nullWindowScore
 }
 
-AI.getPawnShield = (board, phase)=>{
+AI.getPawnShield = (board)=>{
     let score = 0
     let bonus = AI.PAWNSHIELD[AI.phase]
 
-    if (phase <= MIDGAME && board.columns[board.whiteKingIndex] === 3 || board.columns[board.whiteKingIndex] === 4) score -= AI.PAR[28]
+    if (AI.phase <= MIDGAME && board.columns[board.whiteKingIndex] === 3 || board.columns[board.whiteKingIndex] === 4) score -= AI.PAR[28]
     
     if (board.whiteKingIndex !== 116) {
         score += board.board[board.whiteKingIndex-15] === P? bonus : 0
         score += board.board[board.whiteKingIndex-16] === P? bonus : 0
-        score += board.board[board.whiteKingIndex-16] === B && phase <= MIDGAME? AI.PAR[29] : 0
+        score += board.board[board.whiteKingIndex-16] === B && AI.phase <= MIDGAME? AI.PAR[29] : 0
         score += board.board[board.whiteKingIndex-17] === P? bonus : 0
 
-        if (phase <= MIDGAME && board.board[board.whiteKingIndex-16] === 0) {
+        if (AI.phase <= MIDGAME && board.board[board.whiteKingIndex-16] === 0) {
             score -= VPAWN
         }
         
         //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
     
-    if (phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += AI.PAR[28]
+    if (AI.phase <= MIDGAME && board.columns[board.blackKingIndex] === 3 || board.columns[board.blackKingIndex] === 4) score += AI.PAR[28]
     
     if (board.blackKingIndex !== 4) {
         score += board.board[board.blackKingIndex+15] === p? -bonus : 0
         score += board.board[board.blackKingIndex+16] === p? -bonus : 0
-        score += board.board[board.blackKingIndex+16] === b && phase <= MIDGAME? -AI.PAR[29] : 0
+        score += board.board[board.blackKingIndex+16] === b && AI.phase <= MIDGAME? -AI.PAR[29] : 0
         score += board.board[board.blackKingIndex+17] === p? -bonus : 0
 
-        if (phase <= MIDGAME && board.board[board.blackKingIndex+16] === 0) {
+        if (AI.phase <= MIDGAME && board.board[board.blackKingIndex+16] === 0) {
             score += VPAWN
         }
 
@@ -2322,7 +2440,7 @@ AI.isLazyFutile = (sign, score, alpha, beta)=> {
     // return false
     let signedScore = sign * score
 
-    if (signedScore >= max) {
+    if (signedScore >= beta) {
         return true
     }
 }
@@ -2392,7 +2510,7 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     let passers = AI.getPassers(board, pawnindexW, pawnindexB)
     let space = AI.getSpace(board, pawnindexW, pawnindexB)
     let backward = AI.getBackwardPawns(board, pawnindexW, pawnindexB)
-    let pawnShield = AI.getPawnShield(board, AI.phase)
+    let pawnShield = AI.getPawnShield(board)
 
     let score = pawnImbalance + doubled + defended + passers + space + backward + pawnShield
 
@@ -2646,8 +2764,8 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
         }
     }
 
-    let defendedWhitePawns = -AI.DEFENDED_VALUES[0]*defendedW**2 + AI.DEFENDED_VALUES[1]*defendedW - AI.DEFENDED_VALUES[2]
-    let defendedBlackPawns = -AI.DEFENDED_VALUES[0]*defendedB**2 + AI.DEFENDED_VALUES[1]*defendedB - AI.DEFENDED_VALUES[2]
+    let defendedWhitePawns = AI.DEFENDED_VALUES[0]*defendedW - AI.DEFENDED_VALUES[1]
+    let defendedBlackPawns = AI.DEFENDED_VALUES[0]*defendedB - AI.DEFENDED_VALUES[1]
 
     return defendedWhitePawns - defendedBlackPawns | 0
 }
@@ -3355,7 +3473,7 @@ AI.getPV = function (board, length) {
 // https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d, lowerBound, upperBound) {
     //Esta línea permite que el algoritmo funcione como PVS normal
-    return AI.PVS(board, lowerBound, upperBound, d, 1, true)
+    // return AI.PVS(board, lowerBound, upperBound, d, 1, true)
     
     let bound = [lowerBound, upperBound] // lower, upper
     let lastIterationF = f
