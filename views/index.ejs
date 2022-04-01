@@ -21,17 +21,17 @@
     <div style="background-color: #000; width: 414px; max-width: 100%; border: 1px solid #000; margin-bottom: 10px;">
       <div id="sigmoid" style="transition: width 0.4s; width: 50%; background-color: #FFF; height: 10px;"></div>
     </div>
-    <button style="padding: 10px;" onclick="location.reload()">New Game</button>
-    <button style="padding: 10px;" onclick="analyze()">Evaluate (console)</button>
-    <button style="padding: 10px;" onclick="computerMove()">Move (AI)</button>
+    <button style="padding: 10px;" onclick="location.reload()">New</button>
+    <button style="padding: 10px;" onclick="analyze()">Eval (console)</button>
+    <button style="padding: 10px;" onclick="computerMove()">Move</button>
     <button style="padding: 10px;" onclick="undo()">Undo</button>
     <button style="padding: 10px;" onclick="board.flip()">Flip</button>
     <span>
-      <label>Seconds per move</label> 
+      <label>Secs</label> 
       <select name="seconds" id="seconds">
         <option value="0.2">0.2</option>
         <option value="0.5">0.5</option>
-        <option value="1">1</option>
+        <option value="1" >1</option>
         <option value="2">2</option>
         <option value="3" selected>3</option>
         <option value="4">4</option>
@@ -42,9 +42,10 @@
       </select>
     </span>
     <hr>
+    <div id="pgn" style="font-size: smaller; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
+    <hr>
     <textarea id="loadfen" style="width:100%" rows="5"></textarea>
     <button onclick="loadfen($('#loadfen').val())">Load FEN</button>
-    <div id="pgn"></div>
 
     <script>
         "use strict"
@@ -102,6 +103,8 @@ function onDrop (source, target) {
 }
 
 let computerMove = function () {
+  $pgn.html(game.pgn() + ' (thinking...)')
+
   analyze(res=>{
     var move = game.move({
       from: fromto[res.from],
@@ -175,7 +178,7 @@ let analyze = function(callback) {
         let sigmoid = 100*event.data.sigmoid
 
         document.getElementById('sigmoid').style.width = sigmoid + "%"
-        callback(event.data)
+        if (callback) callback(event.data)
       }
 
     worker.postMessage({fen, seconds})
