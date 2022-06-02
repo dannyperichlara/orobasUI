@@ -41,11 +41,11 @@
         <option value="30">30</option>
       </select>
     </span>
-    <hr>
-    <div id="pgn" style="font-size: smaller; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
-    <hr>
-    <textarea id="loadfen" style="width:100%" rows="5"></textarea>
-    <button onclick="loadfen($('#loadfen').val())">Load FEN</button>
+    <div style="margin: 10px 0 10px 0;">
+      <input id="loadfen" style="width:50%" rows="5"></input><br>
+      <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
+      <div id="pgn" style="font-size: smaller; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
+    </div>
 
     <script>
         "use strict"
