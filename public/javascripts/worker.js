@@ -1277,14 +1277,14 @@ let AI = {
     random: 40,
     phase: 0,
     htlength: 8e6,
-    pawntlength: 1e6,
-    mindepth: [1,1,1,1],
+    pawntlength: 5e5,
+    mindepth: [6,6,6,6],
     secondspermove: 0.2,
     lastmove: null,
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 12 // +132 ELO
+    nullWindowFactor: 20 // +132 ELO
 }
 
 // ÍNDICES
@@ -1670,10 +1670,10 @@ AI.PSQT_LATE_ENDGAME[KING] = [
     -53, -34, -21, -11, -28, -14, -24, -43,    null,null,null,null,null,null,null,null,
 ]
 
-AI.PAR[0] = [15,6,6,28,29,15,16,20,14,22,22,22,12,27,9,20,19,24,6,0,4,7,12,10,1,6,14,14,25,20,80,39,0,100,18] //OK|-8744761172|0|
+AI.PAR[0] = [15,6,6,28,29,15,16,20,14,24,22,22,12,27,9,20,19,24,6,0,4,7,12,10,1,6,14,14,25,20,80,39,0,100,18] //OK|-8744761172|0|
 AI.PAR[1] = [20,3,12,19,22,16,10,11,3,21,24,18,13,26,4,17,17,11,15,4,3,4,0,7,5,9,12,23,16,25,3,18,0,80,9] //OK|-8741676172|0|
 AI.PAR[2] = [10,3,10,14,19,4,6,16,6,17,19,20,7,19,4,9,13,12,13,8,4,2,7,2,1,2,7,22,16,22,1,19,0,60,9] //OK|-8736442372|0|
-AI.PAR[3] = [13,3,11,16,20,11,3,14,8,21,21,20,10,19,4,12,13,14,18,10,5,2,11,3,4,1,4,20,15,24,5,22,0,40,14] //OK|-8730838252|0|
+AI.PAR[3] = [13,3,11,16,20,11,3,14,8,16,21,20,10,19,4,12,13,14,18,10,5,2,11,3,4,1,4,20,15,24,5,22,0,40,14] //OK|-8730838252|0|
 
 AI.MOB[P] = [134,192,102] //No|-8646107545|0|
 AI.MOB[N] = [59,75,9] //No|-8647936893|0|
@@ -1681,7 +1681,7 @@ AI.MOB[B] = [42,47,7] //No|-8651791852|0|
 AI.MOB[R] = [50,66,9] //No|-8651653412|0|
 AI.MOB[Q] = [9,38,7] //No|-8653106612|0|
 AI.DEFENDED_VALUES[0] = [13,2] //No|-8652793052|0|
-AI.DEFENDED_VALUES[1] = [0,0] //No|-8651143932|0|
+AI.DEFENDED_VALUES[1] = [6,2] //No|-8651143932|0|
 AI.DEFENDED_VALUES[2] = [1,2] //No|-8652059732|0|
 AI.DEFENDED_VALUES[3] = [9,0] //No|-8652602492|0|
 AI.FACTOR[0] = [89,0] //No|-8651303852|0|
@@ -1693,10 +1693,10 @@ AI.FACTOR[5] = [114,1] //No|-8651889252|0|
 AI.FACTOR[6] = [103,2] //No|-8651572172|0|
 AI.FACTOR[7] = [106,7] //No|-8651903332|0|
 AI.FACTOR[8] = [98,2] //No|-8651124492|0|
-AI.PAWNSHIELD = [31,-1,12,-12] //No|-8651756692|0|
+AI.PAWNSHIELD = [31,20,12,0] //No|-8651756692|0|
 AI.POV = [null,82,231,274,393,725] //No|-8652422452|0|
 AI.PEV = [null,112,281,363,511,927] //No|-8650889492|0|
-AI.BISHOP_PAIR = [33,0,1,0] //No|-8651165452|0|
+AI.BISHOP_PAIR = [33,20,0,0] //No|-8651165452|0|
 
 AI.PHASELIMITS = [4,34,72] //No|-183093966|0|
 
@@ -2072,9 +2072,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                 }
 
                 //Levers
-                // if (board.board[i-15] === p || board.board[i-17] === p) {
-                //     positionalScore += AI.LEVERPAWNBONUS[i]
-                // }
+                if (board.board[i-15] === p || board.board[i-17] === p) {
+                    positionalScore += AI.LEVERPAWNBONUS[i]
+                }
 
                 //Knight mobility blocker
                 if (board.board[i-50] === n || board.board[i-46] === n) {
@@ -2128,9 +2128,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                 }
 
                 //Levers
-                // if (board.board[i+15] === P || board.board[i+17] === P) {
-                //     positionalScore -= AI.LEVERPAWNBONUS[112^i]
-                // }
+                if (board.board[i+15] === P || board.board[i+17] === P) {
+                    positionalScore -= AI.LEVERPAWNBONUS[112^i]
+                }
 
                 //Knight mobility blocker
                 if (board.board[i+50] === N || board.board[i+46] === N) {
@@ -2224,12 +2224,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                 }
             } else if (piece === N) {
                 
-
-                // Semi outpost
-                // if (board.ranksW[i] >= 3 && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][9]
-                
                 knightsW++
 
+                // Semi outpost
+                if (board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][9]
+                
                 if (board.board[i + 15] === P || board.board[i + 17] === P) {
                     // positionalScore += AI.OUTPOSTBONUSKNIGHT[i]
 
@@ -2242,10 +2241,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                 
             } else if (piece === n) {
                 
+                knightsB++
 
                 // Semi outpost
-                // if (board.ranksB[i] >= 3 && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][9]
-                knightsB++
+                if (board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][9]
 
                 if (board.board[i - 15] === p || board.board[i - 17] === p) {
                     // positionalScore -= AI.OUTPOSTBONUSKNIGHT[112^i]
@@ -2625,15 +2624,15 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
 
     AI.pnodes++
 
-    // if (hashentry) {
-    //     if (hashentry.hashkey === hashkey) {
-    //         AI.phnodes++
-    //         return hashentry.score
-    //     } else {
-    //         AI.pawncollisions++
-    //         // console.log('collision', total++)
-    //     }
-    // }
+    if (hashentry) {
+        if (hashentry.hashkey === hashkey) {
+            AI.phnodes++
+            return hashentry.score
+        } else {
+            AI.pawncollisions++
+            // console.log('collision', total++)
+        }
+    }
 
     let pawnImbalance = AI.PAR[AI.phase][30]*(pawnindexW.length - pawnindexB.length)
 
@@ -3092,15 +3091,15 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
     
     let hashkey = board.hashkey
 
-    standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
-
-    if (standpat >= beta) {
-        return standpat
+    if (!incheck) {
+        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
+    
+        if (standpat >= beta) {
+            return standpat
+        }
+    
+        if (standpat > alpha) alpha = standpat
     }
-
-    if (standpat > alpha) alpha = standpat
-    // if (!incheck) {
-    // }
 
     let moves = []
 
@@ -3284,9 +3283,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     //     }
     // }
 
+    let incheck = board.isKingInCheck()
     
     //Búsqueda QS
-    if (depth <= 0) {
+    if (!incheck && depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn)
     }
     
@@ -3294,13 +3294,26 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
     let mateE = 0 // Mate threat extension
     
-    let incheck = board.isKingInCheck()
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
 
     let prune = cutNode && depth < 8 && !incheck && ply > 2 && alpha < MATE - AI.totaldepth && AI.phase < LATE_ENDGAME
     // let prune = !incheck && alpha < MATE - AI.totaldepth
 
     if (prune) {
+        // Razoring
+        if (staticeval + MARGIN1*depth < alpha) {
+            // console.log('razor 1')
+            let score = AI.quiescenceSearch(board, alpha-1, alpha, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn)
+            if (score < alpha)
+                // console.log('razor 2')
+                return score
+        }  
+
+        //Futility
+        if (staticeval - MARGIN2*depth >= beta) {
+            return staticeval
+        }
+        
         // Null move pruning
         if (allowNullMove && !lookForMateTurn) {
             // Makes null-move
@@ -3320,22 +3333,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
             }
         }
-
-        if (!mateE) {
-            //Futility
-            if (staticeval - MARGIN2*depth >= beta) {
-                return staticeval
-            }
-
-            // Razoring
-            if (staticeval + MARGIN1*depth < alpha) {
-                // console.log('razor 1')
-                let score = AI.quiescenceSearch(board, alpha-1, alpha, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn)
-                if (score < alpha)
-                    // console.log('razor 2')
-                    return score
-            }    
-        }
     }
 
     // IID
@@ -3349,7 +3346,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         moves = board.getMoves()
         moves = AI.sortMoves(board, moves, turn, ply, depth, ttEntry)
     }
-
 
     let bestmove = moves[0]
     let legal = 0
@@ -3523,7 +3519,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 bestmove = move
                 alpha = score
 
-                if (!lookForMateTurn) AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
+                if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
                 
                 // Fail-high
                 if (score >= beta) {
@@ -3723,7 +3719,7 @@ AI.search = function (board, options) {
     
     AI.lastphase = AI.phase
 
-    AI.createTables(board, true, true, true, true)
+    // AI.createTables(board, true, true, true, true)
 
     if (board.movenumber && board.movenumber === 1) {
         AI.createTables(board, true, true, true, true)
@@ -3809,10 +3805,10 @@ AI.search = function (board, options) {
         // let depthForMate = 0
         // let mateScore = 0
 
-        // while (!mate && depthForMate < 6 && depthForMate < AI.totaldepth) {
-        //     mateScore = AI.PVS(board, -Infinity, 10, depthForMate, 1, true, 0, WHITE)
+        // while (!mate && depthForMate < 23 && depthForMate < AI.totaldepth) {
+        //     mateScore = AI.PVS(board, -Infinity, Infinity, depthForMate, 1, false, 0, WHITE)
 
-        //     // console.log('white', depth, mateScore)
+        //     console.log('white', depth, mateScore)
 
         //     if (Math.abs(mateScore) > VPAWN*10) mate = true
 
@@ -3822,10 +3818,10 @@ AI.search = function (board, options) {
         // mateScore = 0
         // mate = false
         // depthForMate = 0
-        // while (!mate && depthForMate < 6 && depthForMate < AI.totaldepth) {
-        //     mateScore = AI.PVS(board, -Infinity, 10, depthForMate, 1, true, 0, BLACK)
+        // while (!mate && depthForMate < 23 && depthForMate < AI.totaldepth) {
+        //     mateScore = AI.PVS(board, -Infinity, Infinity, depthForMate, 1, false, 0, BLACK)
 
-        //     // console.log('black', depth, mateScore)
+        //     console.log('black', depth, mateScore)
 
         //     if (Math.abs(mateScore) > VPAWN*10) mate = true
 
@@ -3871,7 +3867,8 @@ AI.search = function (board, options) {
 
                 if (AI.stop) break
 
-                // AI.lastscore = score
+                AI.lastscore = score
+
                 // if (!AI.stop) {
                 // }
 
@@ -3905,6 +3902,8 @@ AI.search = function (board, options) {
 
         let sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
 
+        console.log(sigmoid)
+
         AI.lastmove = AI.bestmove
 
         //zugzwang prevention
@@ -3935,7 +3934,7 @@ AI.search = function (board, options) {
             FHF: AI.fhfperc + '%', version: AI.version
         })
 
-        AI.createTables(board, AI.collisions/AI.ttGets > 0.005, AI.collisions/AI.ttGets > 0.005, true, AI.pawncollisions/AI.evalnodes > 0.005)
+        AI.createTables(board, AI.collisions/AI.ttGets > 0.01, AI.collisions/AI.ttGets > 0.01, true, AI.pawncollisions/AI.evalnodes > 0.01)
     })
 }
 
