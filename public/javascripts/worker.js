@@ -3863,7 +3863,7 @@ AI.search = function (board, options) {
                     candidateMoves.push(AI.PV[1])
                 }
 
-                console.log(candidateMoves[candidateMoves.length - 1].key)
+                // console.log(candidateMoves[candidateMoves.length - 1].key)
 
                 if (AI.stop) break
 
