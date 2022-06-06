@@ -2630,7 +2630,6 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
             return hashentry.score
         } else {
             AI.pawncollisions++
-            // console.log('collision', total++)
         }
     }
 
@@ -3315,7 +3314,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         }
         
         // Null move pruning
-        if (allowNullMove && !lookForMateTurn) {
+        if (staticeval < alpha && allowNullMove && !lookForMateTurn) {
             // Makes null-move
             board.changeTurn()
             
@@ -3400,7 +3399,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
         // Enhanced Transposition Cut-Off actual position +12 ELO
         if (!ttEntry) {
-            // total++
             
             let ttETC = AI.ttGet(turn, hashkey)
             
@@ -3421,8 +3419,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
         if (depth >= 3 && legal >=1 && !mateE) {
             R += AI.LMR_TABLE[depth][legal]
-
-            if (isNaN(R)) console.log('no po', depth, E , R, total++)
 
             if (pvNode || incheck) {
                 R--
@@ -3856,14 +3852,14 @@ AI.search = function (board, options) {
                 }
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
-                
+
                 AI.PV = AI.getPV(board, AI.totaldepth)
 
                 if (AI.PV[1]) {
                     candidateMoves.push(AI.PV[1])
                 }
 
-                // console.log(candidateMoves[candidateMoves.length - 1].key)
+                console.log(candidateMoves[candidateMoves.length - 1].key)
 
                 if (AI.stop) break
 
