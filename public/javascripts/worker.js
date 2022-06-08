@@ -649,24 +649,33 @@ let orobas = {
         return this.castlingRights[this.castlingRights.length - 1]
     },
 
+    boardCommonFrom: new Array(128).fill(0),
+
+    squareOrder: [58,23,38,59,24,6,48,51,4,41,22,45,47,57,61,40,7,60,18,53,13,16,26,12,63,5,35,25,52,33,19,32,46,1,14,8,15,36,10,21,27,62,43,11,0,30,37,2,29,49,50,20,54,42,17,3,28,39,55,44,9,31,34,56],
+
     getMoves(forMobility, onlyCaptures) {
         forMobility = !!forMobility
 
-        let mobilityMoves = new Array(13).fill({safe:0, unsafe:0})
+        let mobilityMoves
 
-        mobilityMoves[P] = {safe:0, unsafe: 0}
-        mobilityMoves[N] = {safe:0, unsafe: 0}
-        mobilityMoves[B] = {safe:0, unsafe: 0}
-        mobilityMoves[R] = {safe:0, unsafe: 0}
-        mobilityMoves[Q] = {safe:0, unsafe: 0}
-        mobilityMoves[K] = {safe:0, unsafe: 0}
+        if (forMobility) {
+            mobilityMoves = new Array(13).fill({safe:0, unsafe:0})
+    
+            mobilityMoves[P] = {safe:0, unsafe: 0}
+            mobilityMoves[N] = {safe:0, unsafe: 0}
+            mobilityMoves[B] = {safe:0, unsafe: 0}
+            mobilityMoves[R] = {safe:0, unsafe: 0}
+            mobilityMoves[Q] = {safe:0, unsafe: 0}
+            mobilityMoves[K] = {safe:0, unsafe: 0}
+    
+            mobilityMoves[p] = {safe:0, unsafe: 0}
+            mobilityMoves[n] = {safe:0, unsafe: 0}
+            mobilityMoves[b] = {safe:0, unsafe: 0}
+            mobilityMoves[r] = {safe:0, unsafe: 0}
+            mobilityMoves[q] = {safe:0, unsafe: 0}
+            mobilityMoves[k] = {safe:0, unsafe: 0}
+        }
 
-        mobilityMoves[p] = {safe:0, unsafe: 0}
-        mobilityMoves[n] = {safe:0, unsafe: 0}
-        mobilityMoves[b] = {safe:0, unsafe: 0}
-        mobilityMoves[r] = {safe:0, unsafe: 0}
-        mobilityMoves[q] = {safe:0, unsafe: 0}
-        mobilityMoves[k] = {safe:0, unsafe: 0}
         
         let moves = []
 
@@ -676,10 +685,12 @@ let orobas = {
         let occupiedIndex = 0
         let isWhite = this.turn === WHITE
 
-        for (let i = 0; i < 120; i++) {
-            if (i & 0x88) {
-                i+=7; continue
-            }
+        for (let square = 0; square < 64; square++) {
+            let i = this.board0x88[this.squareOrder[square]]
+
+            // if (i & 0x88) {
+            //     i+=7; continue
+            // }
 
             let piece = this.board[i]
 
@@ -1284,7 +1295,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 20 // +132 ELO
+    nullWindowFactor: 12 // +132 ELO
 }
 
 // ÍNDICES
@@ -2001,11 +2012,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     let positionalScore = 0
 
-    for (let i = 0; i < 120; i++) {
-        if (i & 0x88) {
-            i+=7
-            continue
-        }
+    for (let square = 0; square < 64; square++) {
+        let i = board.board0x88[board.squareOrder[square]]
+
+        // if (i & 0x88) {
+        //     i+=7
+        //     continue
+        // }
 
         let piece = board.board[i]
         
@@ -2558,7 +2571,7 @@ AI.getPawnShield = (board)=>{
 } 
 
 AI.isLazyFutile = (sign, score, alpha, beta)=> {
-    return false
+    // return false
     let signedScore = sign * score
 
     if (signedScore >= beta) {
@@ -3455,9 +3468,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             }
 
 
-            if (R < 0) {
-                R = 0
-            }
+            // if (R < 0) {
+            //     R = 0
+            // }
 
             // let rLimit = legal > 4 && !move.isCapture? 2 : 4
 
@@ -3470,23 +3483,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         if (board.makeMove(move)) {
             // AI.moveTime += (new Date()).getTime() - m0
             legal++
-
-            // Enhanced Transposition Cut-Off +16 ELO
-            let ttETC = AI.ttGet(board.turn, board.hashkey)
-
-            if (!ttEntry && ttETC && ttETC.hashkey === board.hashkey && ttETC.depth >= depth) {
-                AI.etcNodes++
-                
-                let scoreETC = -ttETC.score
-                
-                if (ttETC.flag <= EXACT) {
-                    if (scoreETC < beta) beta = ttETC.score
-                    // console.log('beta')
-                } else if (ttETC.flag === UPPERBOUND) {
-                    if (scoreETC > alpha) alpha = ttETC.score
-                    // console.log('alpha')
-                }
-            }
 
             if (legal === 1) {
                 // El primer movimiento se busca con ventana total y sin reducciones
@@ -3509,6 +3505,24 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             board.unmakeMove(move)
 
             if (AI.stop) return alphaOriginal //tested ok
+
+
+            // Enhanced Transposition Cut-Off +16 ELO
+            let ttETC = AI.ttGet(board.turn, board.hashkey)
+
+            if (!ttEntry && ttETC && ttETC.hashkey === board.hashkey && ttETC.depth >= depth) {
+                AI.etcNodes++
+                
+                let scoreETC = -ttETC.score
+                
+                if (ttETC.flag <= EXACT) {
+                    if (scoreETC < beta) beta = ttETC.score
+                    // console.log('beta')
+                } else if (ttETC.flag === UPPERBOUND) {
+                    if (scoreETC > alpha) alpha = ttETC.score
+                    // console.log('alpha')
+                }
+            }
             
             if (score > alpha) {
                 bestscore = score
@@ -3796,6 +3810,12 @@ AI.search = function (board, options) {
         let alpha = -INFINITY
         let beta = INFINITY
 
+        board.squareOrder = board.squareOrder.sort((a,b)=>{
+            return Math.random() > 0.5? 1 : -1
+        })
+
+        console.log(board.squareOrder)
+
         // //Search checkmates for both turns without opposite moves
         // let mate = false
         // let depthForMate = 0
@@ -3830,6 +3850,8 @@ AI.search = function (board, options) {
 
         let candidateMoves = []
 
+        let score100, sigmoid
+
         if (true) {
             //Iterative Deepening
             for (; depth <= AI.totaldepth; ) {
@@ -3841,6 +3863,8 @@ AI.search = function (board, options) {
                 // }
 
                 AI.iteration++
+
+                postMessage({depth: depth - 1})
 
                 let ttEntry = AI.ttGet(board.turn, board.hashkey)
 
@@ -3881,6 +3905,12 @@ AI.search = function (board, options) {
                 if (AI.PV && !AI.stop) {
                     console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0))
                 }
+
+                score100 = AI.lastscore * (100/VPAWN)
+
+                sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
+
+                postMessage({sigmoid})
             
                 depth++
             }
@@ -3893,10 +3923,6 @@ AI.search = function (board, options) {
         } else {
             console.info('________________________________________________________________________________')
         }
-
-        let score100 = AI.lastscore * (100/VPAWN)
-
-        let sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
 
         console.log(sigmoid)
 
@@ -3938,7 +3964,7 @@ AI.createTables(orobas, true, true, true, true)
 
 onmessage = function (oEvent) {
     orobas.loadFen(oEvent.data.fen)
-    AI.search(orobas, {seconds: parseInt(oEvent.data.seconds)}).then(res=>{
+    AI.search(orobas, {seconds: oEvent.data.seconds}).then(res=>{
         postMessage(res);
     })
 };

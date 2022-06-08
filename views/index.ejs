@@ -11,8 +11,6 @@
     <script src="/javascripts/chess.js"></script>
     <script>
       let worker = new Worker("/javascripts/worker.js")
-
-      
       
     </script>
 </head>
@@ -44,7 +42,8 @@
     <div style="margin: 10px 0 10px 0;">
       <input id="loadfen" style="width:50%" rows="5"></input><br>
       <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
-      <div id="pgn" style="font-size: smaller; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
+      <div id="depth"></div>
+      <div id="pgn" style="font-size: 0.5rem; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
     </div>
 
     <script>
@@ -103,8 +102,6 @@ function onDrop (source, target) {
 }
 
 let computerMove = function () {
-  $pgn.html(game.pgn() + ' (thinking...)')
-
   analyze(res=>{
     var move = game.move({
       from: fromto[res.from],
@@ -176,8 +173,10 @@ let analyze = function(callback) {
 
     worker.onmessage = function(event){
         let sigmoid = 100*event.data.sigmoid
+        let depth = event.data.depth
 
-        document.getElementById('sigmoid').style.width = sigmoid + "%"
+        if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
+        if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
         if (callback) callback(event.data)
       }
 
