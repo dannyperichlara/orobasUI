@@ -3410,37 +3410,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         //Reducciones
         let R = 0
 
-        if (prune && !move.killer1 && legal >= 1) {
-            // Futility Pruning
-            if (depth <= 3) {
-                if (move.isCapture) {
-                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + depth*SMALLMARGIN < alpha) {
-                        continue
-                    }
-                } else {
-                    if (staticeval + depth*SMALLMARGIN < alpha) {
-                        continue
-                    }
-                }
-            }
-
-            // if (cutNode && ply > 1 && i > 12 && !move.isCapture && staticeval > alpha - VERYSMALLMARGIN) {
-            //     let limit = i > 20? 0.85 : 0.8
-            //     if (Math.random() < limit) {
-            //         AI.rnodes++
-            //         continue
-            //     }
-            // }
-
-            if (i > 12 && !move.isCapture && AI.history[ply][piece][move.to] < -16) {
-                let limit = i > 20? 0.85 : 0.5
-                if (Math.random() < limit) {
-                    AI.rnodes++
-                    continue
-                }
-            }
-        }
-
         // Enhanced Transposition Cut-Off actual position +12 ELO
         if (!ttEntry) {
             
@@ -3461,64 +3430,97 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             }
         }
 
-        if (cutNode && depth >= 3/* && legal >=1 */&& !mateE) {
-            R += AI.LMR_TABLE[depth][legal]
-
-            if (pvNode || incheck) {
-                R--
-            }
-
-            if (cutNode && !move.killer1) R++
-    
-            // Reduce negative history
-            if (AI.history[ply][piece][move.to] < 0) R++
-            
-            if (!move.isCapture) {
-                // Move count reductions
-                if (legal >= (3 + depth*depth) / 2) {
-                    R++
-                }
-                
-                // Bad moves reductions
-                if (AI.phase <= EARLY_ENDGAME) {
-                    // console.log('no')
-                    if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-                        R+=4
-                    }
-                    
-                    if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-                        R+=4
-                    }
-                }
-            } else {
-                // if TT Move is a capture
-                if (ttEntry && ttEntry.move.key === move.key) R++
-            }
-
-
-            if (R < 0) {
-                R = 0
-            }
-
-            // let rLimit = legal > 4 && !move.isCapture? 2 : 4
-
-            // if (depth > 6 && Math.abs(alpha - staticeval) > MARGIN3) {
-            //     R = Math.max(R, depth - rLimit)
-            // }
-        }
-
         // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
             // AI.moveTime += (new Date()).getTime() - m0
             legal++
 
-            let inCheckAfterMove = false
-
-            inCheckAfterMove = board.isKingInCheck()
+            let inCheckAfterMove = board.isKingInCheck()
 
             if (inCheckAfterMove) {
                 R = 0
                 E = 0
+            } else {
+                if (prune && !move.killer1 && legal >= 1) {
+                    // Futility Pruning
+                    if (depth <= 3) {
+                        if (move.isCapture) {
+                            if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + depth*SMALLMARGIN < alpha) {
+                                board.unmakeMove(move)
+                                continue
+                            }
+                        } else {
+                            if (staticeval + depth*SMALLMARGIN < alpha) {
+                                board.unmakeMove(move)
+                                continue
+                            }
+                        }
+                    }
+        
+                    // if (cutNode && ply > 1 && i > 12 && !move.isCapture && staticeval > alpha - VERYSMALLMARGIN) {
+                    //     let limit = i > 20? 0.85 : 0.8
+                    //     if (Math.random() < limit) {
+                    //         AI.rnodes++
+                    //          board.unmakeMove()
+                    //         continue
+                    //     }
+                    // }
+        
+                    if (i > 12 && !move.isCapture && AI.history[ply][piece][move.to] < -16) {
+                        let limit = i > 20? 0.85 : 0.5
+                        if (Math.random() < limit) {
+                            AI.rnodes++
+                            board.unmakeMove(move)
+                            continue
+                        }
+                    }
+                }
+
+                if (cutNode && depth >= 3/* && legal >=1 */&& !mateE) {
+                    R += AI.LMR_TABLE[depth][legal]
+        
+                    if (pvNode || incheck) {
+                        R--
+                    }
+        
+                    if (cutNode && !move.killer1) R++
+            
+                    // Reduce negative history
+                    if (AI.history[ply][piece][move.to] < 0) R++
+                    
+                    if (!move.isCapture) {
+                        // Move count reductions
+                        if (legal >= (3 + depth*depth) / 2) {
+                            R++
+                        }
+                        
+                        // Bad moves reductions
+                        if (AI.phase <= EARLY_ENDGAME) {
+                            // console.log('no')
+                            if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
+                                R+=4
+                            }
+                            
+                            if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
+                                R+=4
+                            }
+                        }
+                    } else {
+                        // if TT Move is a capture
+                        if (ttEntry && ttEntry.move.key === move.key) R++
+                    }
+        
+        
+                    if (R < 0) {
+                        R = 0
+                    }
+        
+                    // let rLimit = legal > 4 && !move.isCapture? 2 : 4
+        
+                    // if (depth > 6 && Math.abs(alpha - staticeval) > MARGIN3) {
+                    //     R = Math.max(R, depth - rLimit)
+                    // }
+                }
             }
             
             // Enhanced Transposition Cut-Off +16 ELO
@@ -3605,7 +3607,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     if (legal === 0) {
         if (incheck) {
             // Mate
-            if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, bestmove)
+            if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, null)
             // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
             
             return -MATE + ply
@@ -3987,7 +3989,18 @@ AI.search = function (board, options) {
             FHF: AI.fhfperc + '%', version: AI.version
         })
 
-        AI.createTables(board, AI.collisions/AI.ttGets > 0.005, AI.collisions/AI.ttGets > 0.005, true, AI.pawncollisions/AI.evalnodes > 0.005)
+        let near2mate = false
+
+        if (board.movenumber && board.movenumber > 2) {
+            if (AI.f > MATE - AI.totaldepth) near2mate = true
+            if (AI.f < -MATE + AI.totaldepth) near2mate = true
+        }
+
+        if (!near2mate) {
+            AI.createTables(board, AI.collisions/AI.ttGets > 0.005, AI.collisions/AI.ttGets > 0.005, true, AI.pawncollisions/AI.evalnodes > 0.005)
+        } else {
+            console.log('Near to mate!')
+        }
     })
 }
 
