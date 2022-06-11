@@ -3912,6 +3912,7 @@ AI.search = function (board, options) {
 
                 if (ttEntry && ttEntry.depth >= depth && ttEntry.flag <= EXACT && depth < 9) {
                     AI.f = ttEntry.score
+                    AI.bestmove = ttEntry.move
                 } else {
                     AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
                     // AI.effectiveEvaluations++
