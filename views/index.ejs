@@ -39,6 +39,7 @@
         <option value="30">30</option>
       </select>
     </span>
+    <input type="checkbox" checked="true" id="move">
     <div style="margin: 10px 0 10px 0;">
       <input id="loadfen" style="width:50%" rows="5"></input><br>
       <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
@@ -102,17 +103,21 @@ function onDrop (source, target) {
 }
 
 let computerMove = function () {
-  analyze(res=>{
-    var move = game.move({
-      from: fromto[res.from],
-      to: fromto[res.to],
-      promotion: 'q' // NOTE: always promote to a queen for example simplicity
+  const cb = document.querySelector('#move');
+  
+  if (cb.checked) {
+    analyze(res=>{
+      var move = game.move({
+        from: fromto[res.from],
+        to: fromto[res.to],
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      })
+  
+      board.position(game.fen())
+  
+      updateStatus()
     })
-
-    board.position(game.fen())
-
-    updateStatus()
-  })
+  }
 }
 
 // update the board position after the piece snap
