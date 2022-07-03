@@ -2410,6 +2410,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let darkSquaresBlackBishop = 0
 
     let positionalScore = 0
+    let pieceKingDistance = 0
 
     for (let i = 0; i < 120; i++) {
         if (i & 0x88) {
@@ -2547,15 +2548,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let piecetype = ABS[piece]
 
+        let index = turn === WHITE? i : (112^i)
+        
+        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
+        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
+        
+        psqt += sign*(mgPSQT + egPSQT)
+
         if (piece === K || piece === k || piece === P || piece === p) {
-            let index = turn === WHITE? i : (112^i)
-            
-            let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
-            let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
-            
-            psqt += sign*(mgPSQT + egPSQT)
+            ///////
         } else {
-            // DISTANCE TO THE ENEMY KING
+            // PIECE-KING DISTANCE
     
             if (turn === WHITE) {
                 let verticalDistance = board.ranksW[i] - board.ranksW[board.blackKingIndex]
@@ -2563,22 +2566,24 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
     
-                psqt += 10 * (4 - pieceDistance)
+                pieceKingDistance += 40 * (4 - pieceDistance)
             } else {
                 let verticalDistance = board.ranksB[i] - board.ranksB[board.whiteKingIndex]
                 let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
     
                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
     
-                psqt -= 10 * (4 - pieceDistance)
+                pieceKingDistance -= 40 * (4 - pieceDistance)
             }
+
         }
     }
+    // console.log(pieceKingDistance)
     
     AI.totalmaterial = tempTotalMaterial
 
     // Material + PSQT
-    score += material + psqt + positionalScore | 0
+    score += material + psqt + positionalScore + pieceKingDistance | 0
 
     // Bishop pair
     score += bishopsW >= 2? AI.BISHOP_PAIR[AI.phase] : 0
@@ -2613,21 +2618,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
     
-    if (AI.isLazyFutile(sign, score, alpha, alpha + beta)) {
+    // if (AI.isLazyFutile(sign, score, alpha, alpha + beta)) {
         
-        let nullWindowScore = (score / AI.nullWindowFactor | 0)
+    //     let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
-        AI.evalTable[board.hashkey % this.htlength] = {
-            hashkey: board.hashkey,
-            score: nullWindowScore
-        }
-        return sign*nullWindowScore
-    }
+    //     AI.evalTable[board.hashkey % this.htlength] = {
+    //         hashkey: board.hashkey,
+    //         score: nullWindowScore
+    //     }
+    //     return sign*nullWindowScore
+    // }
 
-    // Mobility
-    score += AI.getMobility(board)
-
+    
     if (!incheck && pvNode) {
+        // Mobility
+        score += AI.getMobility(board)
 
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             let nullWindowScore = (score / AI.nullWindowFactor | 0)
@@ -3638,7 +3643,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     if (prune) {
         // //Futility pruning
         if (depth < 9 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
-            AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
+            // AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
             return staticeval
         }
         
@@ -3654,7 +3659,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             board.changeTurn()
 
             if (nullScore >= beta) {
-                AI.ttSave(turn, hashkey, nullScore, LOWERBOUND, depth, EMPTYMOVE)
+                // AI.ttSave(turn, hashkey, nullScore, LOWERBOUND, depth, EMPTYMOVE)
 
                 return nullScore
             } else {
@@ -3669,7 +3674,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (staticeval + MARGIN3 + MARGIN2*depth < alpha) {
                 let score = AI.quiescenceSearch(board, alpha-1, alpha, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn)
                 if (score < alpha) {
-                    AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
+                    // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
                     return score
                 }
             }
@@ -3680,7 +3685,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar)
         
                     if (score < beta) {
-                        AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
+                        // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
                         return score
                     }
                 } else {
