@@ -1677,6 +1677,80 @@ AI.PSQT_LATE_ENDGAME[KING] = [
     -53, -34, -21, -11, -28, -14, -24, -43,    null,null,null,null,null,null,null,null,
 ]
 
+AI.PIECEDISTANCE = []
+
+AI.PIECEDISTANCE[N] = [
+    6,	5,	4,	5,	5,	5,	4,	5,	4,	5,	5,	5,	4,	5,	6,
+    5,	4,	5,	4,	3,	4,	3,	4,	3,	4,	3,	4,	5,	4,	5,
+    4,	5,	4,	3,	4,	3,	4,	3,	4,	3,	4,	3,	4,	5,	4,
+    5,	4,	3,	4,	3,	2,	3,	2,	3,	2,	3,	4,	3,	4,	5,
+    5,	3,	4,	3,	2,	3,	2,	3,	2,	3,	2,	3,	4,	3,	5,
+    5,	4,	3,	2,	3,	4,	1,	2,	1,	4,	3,	2,	3,	4,	5,
+    4,	3,	4,	3,	2,	1,	2,	3,	2,	1,	2,	3,	4,	3,	4,
+    5,	4,	3,	2,	3,	2,	3,	0,	3,	2,	3,	2,	3,	4,	5,
+    4,	3,	4,	3,	2,	1,	2,	3,	2,	1,	2,	3,	4,	3,	4,
+    5,	4,	3,	2,	3,	4,	1,	2,	1,	4,	3,	2,	3,	4,	5,
+    5,	3,	4,	3,	2,	3,	2,	3,	2,	3,	2,	3,	4,	3,	5,
+    5,	4,	3,	4,	3,	2,	3,	2,	3,	2,	3,	4,	3,	4,	5,
+    4,	5,	4,	3,	4,	3,	4,	3,	4,	3,	4,	3,	4,	5,	4,
+    5,	4,	5,	4,	3,	4,	3,	4,	3,	4,	3,	4,	5,	4,	5,
+    6,	5,	4,	5,	5,	5,	4,	5,	4,	5,	5,	5,	4,	5,	6,
+]
+
+AI.PIECEDISTANCE[R] = [
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    1,	1,	1,	1,	1,	1,	1,	0,	1,	1,	1,	1,	1,	1,	1,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	2,
+]
+
+AI.PIECEDISTANCE[B] = [
+    1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,
+    1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,
+    2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,
+    2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,
+    2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,
+    2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,
+    2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,
+    2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	0.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,
+    2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,
+    2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,
+    2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,
+    2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,	2.0,
+    2.0,	1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,	2.0,
+    1.5,	1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,	1.5,
+    1.0,	1.5,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	2.0,	1.5,	1.0,
+]
+
+AI.PIECEDISTANCE[Q] = [
+    1,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	1,
+    2,	1,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	1,	2,
+    2,	2,	1,	2,	2,	2,	2,	1,	2,	2,	2,	2,	1,	2,	2,
+    2,	2,	2,	1,	2,	2,	2,	1,	2,	2,	2,	1,	2,	2,	2,
+    2,	2,	2,	2,	1,	2,	2,	1,	2,	2,	1,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	1,	2,	1,	2,	1,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	2,	1,	1,	1,	2,	2,	2,	2,	2,	2,
+    1,	1,	1,	1,	1,	1,	1,	0,	1,	1,	1,	1,	1,	1,	1,
+    2,	2,	2,	2,	2,	2,	1,	1,	1,	2,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	2,	1,	2,	1,	2,	1,	2,	2,	2,	2,	2,
+    2,	2,	2,	2,	1,	2,	2,	1,	2,	2,	1,	2,	2,	2,	2,
+    2,	2,	2,	1,	2,	2,	2,	1,	2,	2,	2,	1,	2,	2,	2,
+    2,	2,	1,	2,	2,	2,	2,	1,	2,	2,	2,	2,	1,	2,	2,
+    2,	1,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	1,	2,
+    1,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	2,	2,	2,	1,
+]
+
 AI.PAR[0] = [
     40, //0 center control
     20, //1 outer center lever
@@ -2341,14 +2415,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let sumMaterial = true // Sum material only if piece is not a pawn
 
-        //Distance to the enemy king
-        if (piece !== K && board.color(piece) === WHITE) {
-            score -= (3 - AI.phase)*distance(board, i, board.blackKingIndex)/2 | 0
-        }
+        // //Distance to the enemy king
+        // if (piece !== K && board.color(piece) === WHITE) {
+        //     score -= (3 - AI.phase)*distance(board, i, board.blackKingIndex)/2 | 0
+        // }
 
-        if (piece !== k && board.color(piece) === BLACK) {
-            score += (3 - AI.phase)*distance(board, i, board.whiteKingIndex)/2 | 0
-        }
+        // if (piece !== k && board.color(piece) === BLACK) {
+        //     score += (3 - AI.phase)*distance(board, i, board.whiteKingIndex)/2 | 0
+        // }
 
         if (piece === P) {
             pawnindexW.push(i)
@@ -2461,14 +2535,34 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             tempTotalMaterial += sumMaterial? AI.PIECE_VALUES[OPENING][ABS[piece]] : 0 //Not-pawn material
         }
 
-
-        let index = turn === WHITE? i : (112^i)
         let piecetype = ABS[piece]
-        
-        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
-        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
-        
-        psqt += sign*(mgPSQT + egPSQT)
+
+        if (piece === K || piece === k || piece === P || piece === p) {
+            let index = turn === WHITE? i : (112^i)
+            
+            let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
+            let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
+            
+            psqt += sign*(mgPSQT + egPSQT)
+        } else {
+            // DISTANCE TO THE ENEMY KING
+    
+            if (turn === WHITE) {
+                let verticalDistance = board.ranksW[i] - board.ranksW[board.blackKingIndex]
+                let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
+    
+                let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+    
+                psqt += 20 * (1 - pieceDistance)
+            } else {
+                let verticalDistance = board.ranksB[i] - board.ranksB[board.whiteKingIndex]
+                let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
+    
+                let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+    
+                psqt -= 20 * (1 - pieceDistance)
+            }
+        }
     }
     
     AI.totalmaterial = tempTotalMaterial
@@ -2509,20 +2603,21 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
     
-    // if (AI.isLazyFutile(sign, score, alpha, alpha + beta)) {
+    if (AI.isLazyFutile(sign, score, alpha, alpha + beta)) {
         
-    //     let nullWindowScore = (score / AI.nullWindowFactor | 0)
+        let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
-    //     AI.evalTable[board.hashkey % this.htlength] = {
-    //         hashkey: board.hashkey,
-    //         score: nullWindowScore
-    //     }
-    //     return sign*nullWindowScore
-    // }
+        AI.evalTable[board.hashkey % this.htlength] = {
+            hashkey: board.hashkey,
+            score: nullWindowScore
+        }
+        return sign*nullWindowScore
+    }
+
+    // Mobility
+    score += AI.getMobility(board)
 
     if (!incheck && pvNode) {
-        // Mobility
-        score += AI.getMobility(board)
 
         if (AI.isLazyFutile(sign, score, alpha, beta)) {
             let nullWindowScore = (score / AI.nullWindowFactor | 0)
