@@ -1283,8 +1283,8 @@ let AI = {
     fh: 0,
     random: 0,
     phase: 0,
-    htlength: 8e6,
-    pawntlength: 5e5,
+    htlength: 16e6,
+    pawntlength: 1e6,
     mindepth: [4,4,4,4],
     secondspermove: 0.2,
     lastmove: null,
@@ -2483,17 +2483,17 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Pawn structure
     score += AI.getStructure(board, pawnindexW, pawnindexB)
 
-    if (incheck) {
+    // if (incheck) {
             
-        let nullWindowScore = (score / AI.nullWindowFactor | 0)
+    //     let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
-        AI.evalTable[board.hashkey % this.htlength] = {
-            hashkey: board.hashkey,
-            score: nullWindowScore
-        }
+    //     AI.evalTable[board.hashkey % this.htlength] = {
+    //         hashkey: board.hashkey,
+    //         score: nullWindowScore
+    //     }
 
-        return sign*nullWindowScore
-    }
+    //     return sign*nullWindowScore
+    // }
 
     if (AI.phase === LATE_ENDGAME && alpha > VPAWN*5) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
@@ -2509,16 +2509,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
     
-    if (AI.isLazyFutile(sign, score, alpha, alpha + beta)) {
+    // if (AI.isLazyFutile(sign, score, alpha, alpha + beta)) {
         
-        let nullWindowScore = (score / AI.nullWindowFactor | 0)
+    //     let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
-        AI.evalTable[board.hashkey % this.htlength] = {
-            hashkey: board.hashkey,
-            score: nullWindowScore
-        }
-        return sign*nullWindowScore
-    }
+    //     AI.evalTable[board.hashkey % this.htlength] = {
+    //         hashkey: board.hashkey,
+    //         score: nullWindowScore
+    //     }
+    //     return sign*nullWindowScore
+    // }
 
     if (!incheck && pvNode) {
         // Mobility
@@ -3168,9 +3168,9 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             // éxito en otras posiciones.
             if (!AI.history[ply]) ply = AI.totaldepth
 
-            let hvalue = AI.history[ply][move.piece][move.to]
+            let hvalue = AI.history[ply][move.piece][move.to] | 0
 
-            if (hvalue) {
+            if (hvalue && AI.iteration < 10) {
                 move.score += hvalue
 
                 sortedMoves.push(move)
@@ -3527,6 +3527,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let mateE = 0 // Mate threat extension
     
     let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
+
     let prune = ttEntry && cutNode && !incheck && ply > 2 && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
@@ -3973,10 +3974,8 @@ AI.search = function (board, options) {
         if (changeofphase) {
             // AI.createTables(board, true, true, true, true)
         }
-
         
         AI.f = AI.lastscore / AI.nullWindowFactor | 0
-        console.log(AI.f)
     }
     
     if (!AI.f) AI.f = 0
@@ -4154,8 +4153,6 @@ AI.search = function (board, options) {
         } else {
             console.info('________________________________________________________________________________')
         }
-
-        console.log(sigmoid)
 
         AI.lastmove = AI.bestmove
 
