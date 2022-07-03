@@ -2555,9 +2555,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         
         psqt += sign*(mgPSQT + egPSQT)
 
-        if (piece === K || piece === k || piece === P || piece === p) {
-            ///////
-        } else {
+        if (piecetype === N || piecetype === B || piecetype === R || piecetype === Q) {
             // PIECE-KING DISTANCE
     
             if (turn === WHITE) {
@@ -3680,7 +3678,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             }
             
             // Beta razoring
-            if (staticeval + MARGIN1 < beta) { // likely a fail-low node ?
+            if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
                 if (depth <= 3) {
                     let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar)
         
