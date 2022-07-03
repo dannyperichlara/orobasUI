@@ -2252,7 +2252,12 @@ AI.microeval = {
         //defended rook in rank 5
         if (board.ranksW[i] === 5) {
             if (board.board[i + 15] === P || board.board[i + 17] === P) positionalScore += AI.PAR[AI.phase][13]
-        } 
+        }
+
+        //Rook in 7th
+        if (board.ranksW[board.blackKingIndex] - board.ranksW[i] === 1 ) {
+            positionalScore += 40
+        }
 
         return positionalScore
     },
@@ -2267,6 +2272,11 @@ AI.microeval = {
         //defended rook in rank 5
         if (board.ranksB[i] === 5) {
             if (board.board[i - 15] === p || board.board[i - 17] === p) positionalScore -= AI.PAR[AI.phase][13]
+        }
+
+        //Rook in 7th
+        if (board.ranksB[board.whiteKingIndex] - board.ranksB[i] === 1 ) {
+            positionalScore -= 40
         }
 
         return positionalScore
@@ -2553,14 +2563,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
     
-                psqt += 20 * (1 - pieceDistance)
+                psqt += 10 * (4 - pieceDistance)
             } else {
                 let verticalDistance = board.ranksB[i] - board.ranksB[board.whiteKingIndex]
                 let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
     
                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
     
-                psqt -= 20 * (1 - pieceDistance)
+                psqt -= 10 * (4 - pieceDistance)
             }
         }
     }
