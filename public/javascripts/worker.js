@@ -2155,6 +2155,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Material
     score += material | 0
 
+    // Bishop pair
+    score += bishopsW >= 2? AI.BISHOP_PAIR[AI.phase] : 0
+    score -= bishopsB >= 2? AI.BISHOP_PAIR[AI.phase] : 0
+
     if (!incheck && AI.isLazyFutile(sign, score, alpha, alpha + VPAWN2)) {
         let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
@@ -2166,17 +2170,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         return sign*nullWindowScore
     }
     
-    // Positional
-    let positional = psqt + positionalScore + pieceKingDistance | 0
-
-    score += positional
-
-    // Bishop pair
-    score += bishopsW >= 2? AI.BISHOP_PAIR[AI.phase] : 0
-    score -= bishopsB >= 2? AI.BISHOP_PAIR[AI.phase] : 0
-
     // Pawn structure
-    score += AI.getStructure(board, pawnindexW, pawnindexB)
+    let structure = AI.getStructure(board, pawnindexW, pawnindexB)
+
+    // Positional
+    let positional = psqt + structure + positionalScore + pieceKingDistance | 0
+
+    score += positional | 0
 
     if (AI.phase === LATE_ENDGAME && alpha > VPAWN*5) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
@@ -3518,7 +3518,7 @@ AI.getPV = function (board, length) {
 // https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d) {
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // return AI.PVS(board, lowerbound, upperbound, d, 1, true)
+    if (d <= 2) return AI.PVS(board, f - 10, f + 10, d, 1, true)
     
     let g = f
 
@@ -3662,7 +3662,7 @@ AI.search = function (board, options) {
         
         AI.previousls = AI.lastscore
 
-        let depth = 0
+        let depth = 1
         let alpha = -INFINITY
         let beta = INFINITY
 
