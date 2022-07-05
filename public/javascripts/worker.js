@@ -2155,7 +2155,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Material
     score += material | 0
 
-    if (!incheck && AI.isLazyFutile(sign, score, alpha, alpha + AI.PIECE_VALUES[OPENING][N])) {
+    if (!incheck && AI.isLazyFutile(sign, score, alpha, alpha + VPAWN2)) {
         let nullWindowScore = (score / AI.nullWindowFactor | 0)
         
         AI.evalTable[board.hashkey % this.htlength] = {
@@ -2425,7 +2425,7 @@ AI.getMobility = (board)=>{
     blackMobility += AI.MOB[Q][0] * (blackMoves[q].unsafe) + AI.MOB[Q][1] * (blackMoves[q].safe) - AI.MOB[Q][2] | 0
     // blackMobility += AI.MOB[K][0] * (blackMoves[k].unsafe) + AI.MOB[K][1] * (blackMoves[k].safe) - AI.MOB[K][2] | 0
 
-    score = (whiteMobility - blackMobility) / 10 | 0
+    score = whiteMobility - blackMobility | 0
 
     return score
 }
@@ -2907,7 +2907,6 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 }
 
 AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove) {
-
     AI.qsnodes++
 
     let turn = board.turn
@@ -2939,6 +2938,9 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
     moves = AI.sortMoves(board, moves, turn, ply, depth, ttEntry)
 
     for (let i = 0, len = moves.length; i < len; i++) {
+
+        if (legal >= 1 && ply > this.iteration + 1) continue
+
         let move = moves[i]
 
         // Bad captures pruning (+34 ELO)
@@ -3245,7 +3247,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 R = 0
                 E = 0
             } else {
-                if (prune && !move.killer1 && alpha > alphaOriginal) {
+                if (prune && !move.killer1) {
                     // Futility Pruning
                     if (move.isCapture) {
                         if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
@@ -3261,14 +3263,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     // if (depth <= 3) {
                     // }
         
-                    // if (cutNode && i > 6 && !move.isCapture && staticeval > alpha + VERYSMALLMARGIN) {
-                    //     let limit = i > 12? 0.9 : 0.85
-                    //     if (Math.random() < limit) {
-                    //         AI.rnodes++
-                    //          board.unmakeMove()
-                    //         continue
-                    //     }
-                    // }
+                    if (cutNode && i > 6 && !move.isCapture && staticeval > alpha + VERYSMALLMARGIN) {
+                        let limit = i > 12? 0.9 : 0.85
+                        if (Math.random() < limit) {
+                            AI.rnodes++
+                             board.unmakeMove(move)
+                            continue
+                        }
+                    }
                 }
 
                 if (depth >= 3 && legal >= 1 && !mateE) {
@@ -3363,7 +3365,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     
                     AI.fh++
 
-                    AI.mostCommonSquares[board.board64[move.from]]++
+                    // AI.mostCommonSquares[board.board64[move.from]]++
 
                     // AI.PV[ply] = move
                     
@@ -3512,39 +3514,6 @@ AI.getPV = function (board, length) {
     
     return PV
 }
-
-// https://www.chessprogramming.org/MTD(f) +188 ELO
-// AI.MTDF = function (board, f, d, lowerbound, upperbound) {
-//     //Esta línea permite que el algoritmo funcione como PVS normal
-//     // return AI.PVS(board, lowerbound, upperbound, d, 1, true)
-    
-//     let bound = [lowerbound, upperbound] // lower, upper
-//     let lastIterationF = f
-
-//     do {
-//         let beta = f + (f === bound[0])
-//         // f = AI.PVS(board, d < 8? beta - 2 : beta - 1, beta, d, 1, true)
-//         f = AI.PVS(board, beta - 1, beta, d, 1, true)
-//         bound[(f < beta) | 0] = f
-//     } while (bound[0] < bound[1] && !AI.stop)
-
-//     if (AI.stop) {
-//         return lastIterationF
-//     } else {
-//         return f
-//     }
-// }
-
-// function MTDF(root : node_type; f : integer; d : integer) : integer;
-//       g := f;
-//       upperbound := +INFINITY;
-//       lowerbound := -INFINITY;
-//       repeat
-//             if g == lowerbound then beta := g + 1 else beta := g;
-//             g := AlphaBetaWithMemory(root, beta - 1, beta, d);
-//             if g < beta then upperbound := g else lowerbound := g;
-//       until lowerbound >= upperbound;
-//       return g;
 
 // https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d) {
@@ -3706,7 +3675,7 @@ AI.search = function (board, options) {
         // let depthForMate = 0
         // let mateScore = 0
 
-        // while (!mate && depthForMate < 23 && depthForMate < AI.totaldepth) {
+        // while (!mate && depthForMate < 6 && depthForMate < AI.totaldepth) {
         //     mateScore = AI.PVS(board, -Infinity, Infinity, depthForMate, 1, false, 0, WHITE)
 
         //     console.log('white', depth, mateScore)
@@ -3719,7 +3688,7 @@ AI.search = function (board, options) {
         // mateScore = 0
         // mate = false
         // depthForMate = 0
-        // while (!mate && depthForMate < 23 && depthForMate < AI.totaldepth) {
+        // while (!mate && depthForMate < 6 && depthForMate < AI.totaldepth) {
         //     mateScore = AI.PVS(board, -Infinity, Infinity, depthForMate, 1, false, 0, BLACK)
 
         //     console.log('black', depth, mateScore)
