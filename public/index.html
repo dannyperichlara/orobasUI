@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orobas Chess Engine</title>
+    <link rel="stylesheet" href="/stylesheets/chessboard-1.0.0.css">
+    <script src="/javascripts/jquery.js"></script>
+    <script src="/javascripts/chessboard-1.0.0.min.js"></script>
+    <script src="/javascripts/chess.js"></script>
+    <script>
+      let worker = new Worker("/javascripts/worker.js")
+      
+    </script>
+</head>
+<body style="overflow: hidden; font-family: Helvetica">
+    <div id="board" style="max-width: 100%; width: 420px; margin-bottom: 10px;"></div>
+    <div style="background-color: #000; width: 414px; max-width: 100%; border: 1px solid #000; margin-bottom: 10px;">
+      <div id="sigmoid" style="transition: width 0.4s; width: 50%; background-color: #FFF; height: 10px;"></div>
+    </div>
+    <button style="padding: 10px;" onclick="location.reload()">New</button>
+    <button style="padding: 10px;" onclick="analyze()">Eval (console)</button>
+    <button style="padding: 10px;" onclick="computerMove()">Move</button>
+    <button style="padding: 10px;" onclick="undo()">Undo</button>
+    <button style="padding: 10px;" onclick="board.flip()">Flip</button>
+    <span>
+      <label>Secs</label> 
+      <select name="seconds" id="seconds">
+        <option value="0.2">0.2</option>
+        <option value="0.5">0.5</option>
+        <option value="1" >1</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+      </select>
+    </span>
+    <input type="checkbox" checked="true" id="move">
+    <div style="margin: 10px 0 10px 0;">
+      <input id="loadfen" style="width:50%" rows="5"></input> 
+      <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
+      <div id="depth"></div>
+      <div id="pgn" style="font-size: 0.7rem; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
+    </div>
+
+    <script>
+        "use strict"
+        
+        var board = null
+var game = new Chess()
+var $status = $('#status')
+var $fen = $('#fen')
+var $pgn = $('#pgn')
+
+let loadfen = function(fen){
+  game.load(fen)
+  board.position(game.fen())
+  updateStatus()
+}
+
+let fromto = [
+  'a1','b1','c1','d1','e1','f1','g1','h1',
+  'a2','b2','c2','d2','e2','f2','g2','h2',
+  'a3','b3','c3','d3','e3','f3','g3','h3',
+  'a4','b4','c4','d4','e4','f4','g4','h4',
+  'a5','b5','c5','d5','e5','f5','g5','h5',
+  'a6','b6','c6','d6','e6','f6','g6','h6',
+  'a7','b7','c7','d7','e7','f7','g7','h7',
+  'a8','b8','c8','d8','e8','f8','g8','h8',
+  ]
+
+function onDragStart (source, piece, position, orientation) {
+  // do not pick up pieces if the game is over
+  if (game.game_over()) return false
+
+  // only pick up pieces for the side to move
+  if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+    return false
+  }
+}
+
+function onDrop (source, target) {
+  // see if the move is legal
+  var move = game.move({
+    from: source,
+    to: target,
+    // promotion: 'q' // NOTE: always promote to a queen for example simplicity
+  })
+
+  // illegal move
+  if (move === null) return 'snapback'
+
+  updateStatus()
+
+  computerMove()
+
+  
+}
+
+let computerMove = function () {
+  const cb = document.querySelector('#move');
+  
+  if (cb.checked) {
+    analyze(res=>{
+      var move = game.move({
+        from: fromto[res.from],
+        to: fromto[res.to],
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      })
+  
+      board.position(game.fen())
+  
+      updateStatus()
+    })
+  }
+}
+
+// update the board position after the piece snap
+// for castling, en passant, pawn promotion
+function onSnapEnd () {
+  board.position(game.fen())
+}
+
+function updateStatus () {
+  var status = ''
+
+  var moveColor = 'White'
+  if (game.turn() === 'b') {
+    moveColor = 'Black'
+  }
+
+  // checkmate?
+  if (game.in_checkmate()) {
+    status = 'Game over, ' + moveColor + ' is in checkmate.'
+  }
+
+  // draw?
+  else if (game.in_draw()) {
+    status = 'Game over, drawn position'
+  }
+
+  // game still on
+  else {
+    status = moveColor + ' to move'
+
+    // check?
+    if (game.in_check()) {
+      status += ', ' + moveColor + ' is in check'
+    }
+  }
+
+  $status.html(status)
+  $fen.html(game.fen())
+  $pgn.html(game.pgn())
+}
+
+var config = {
+  draggable: true,
+  position: 'start',
+  onDragStart: onDragStart,
+  onDrop: onDrop,
+  onSnapEnd: onSnapEnd
+}
+board = Chessboard('board', config)
+
+updateStatus()
+
+let analyze = function(callback) {
+    let turn = game.turn() === 'w'? 0 : 1
+
+    let fen = game.fen()
+    let seconds = $('#seconds').val()
+
+    worker.onmessage = function(event){
+        let sigmoid = 100*event.data.sigmoid
+        let depth = event.data.depth
+
+        if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
+        if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
+        if (callback) callback(event.data)
+      }
+
+    worker.postMessage({fen, seconds})
+
+
+    // fetch(`http://${location.hostname}:3666?fen=` + fen
+    //                                       + '&turn=' + turn
+    //                                       + '&seconds=' + seconds,
+    // {
+    //     method: 'GET',
+    // }).then(res=>{
+    //     return res.json()
+    // }).then(res=>{
+    //     console.log(JSON.stringify(res))
+
+    //     let sigmoid = 100*res.sigmoid
+
+    //     document.getElementById('sigmoid').style.width = sigmoid + "%"
+
+    //     if (callback) callback(res)
+    // })
+}
+
+let undo = function () {
+  game.undo(); board.position(game.fen()); updateStatus()
+}
+
+if (new Date().getTime() % 2 === 1) {
+  board.flip()
+  computerMove()
+}
+
+</script>
+</body>
+</html>
