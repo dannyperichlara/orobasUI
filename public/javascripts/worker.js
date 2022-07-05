@@ -1347,9 +1347,9 @@ const MIDGAME = 1
 const EARLY_ENDGAME = 2
 const LATE_ENDGAME = 3
 
-const LOWERbOUND = -1
+const LOWERBOUND = -1
 const EXACT = 0
-const UPPERbOUND = 1
+const UPPERBOUND = 1
 
 const VPAWN = 100
 const VPAWN2 = VPAWN / 2 | 0
@@ -2757,7 +2757,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
         let ttEntryMove = false
 
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
-        if (ttEntry && ttEntry.flag < UPPERbOUND && move.key === ttEntry.move.key) {
+        if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
             move.score += 2e9
             sortedMoves.push(move)
@@ -2803,10 +2803,10 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 
             continue
         } else {
-            if ((ttEntryMove || move.pv) && !move.isCapture) {
-                unsortedMoves.push(move)
-                continue
-            }
+            // if ((ttEntryMove || move.pv) && !move.isCapture) {
+            //     unsortedMoves.push(move)
+            //     continue
+            // }
 
             // CRITERIO: La jugada es un movimiento Killer
             // (Los killers son movimientos que anteriormente han generado Fail-Highs en el mismo ply)
@@ -2938,9 +2938,6 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
     moves = AI.sortMoves(board, moves, turn, ply, depth, ttEntry)
 
     for (let i = 0, len = moves.length; i < len; i++) {
-
-        if (legal >= 1 && ply > this.iteration + 1) continue
-
         let move = moves[i]
 
         // Bad captures pruning (+34 ELO)
@@ -2958,7 +2955,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
             board.unmakeMove(move)
 
             if (score >= beta) {
-                // AI.ttSave(turn, hashkey, score, LOWERbOUND, depth, move)
+                // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
                 return score
             }
 
@@ -3070,9 +3067,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     if (ttEntry && ttEntry.depth >= depth) {
         if (ttEntry.flag === EXACT) {
             return ttEntry.score
-        } else if (ttEntry.flag === LOWERbOUND) {
+        } else if (ttEntry.flag === LOWERBOUND) {
             if (ttEntry.score > alpha) alpha = ttEntry.score
-        } else if (ttEntry.flag === UPPERbOUND) {
+        } else if (ttEntry.flag === UPPERBOUND) {
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
@@ -3091,11 +3088,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     //         let ttScore = -ttOppositeEntry.score
 
-    //         if (ttOppositeEntry.flag === LOWERbOUND) {
+    //         if (ttOppositeEntry.flag === LOWERBOUND) {
     //             if (ttScore < beta) {
     //                 beta = ttScore
     //             }
-    //         } else if (ttOppositeEntry.flag === UPPERbOUND) {
+    //         } else if (ttOppositeEntry.flag === UPPERBOUND) {
                 
     //             if (ttScore > alpha) {
     //                 alpha = ttScore
@@ -3124,7 +3121,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     if (prune) {
         // //Futility pruning
         if (depth < 9 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
-            // AI.ttSave(turn, hashkey, staticeval, LOWERbOUND, depth, EMPTYMOVE)
+            // AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
             return staticeval
         }
         
@@ -3140,7 +3137,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             board.changeTurn()
 
             if (nullScore >= beta) {
-                // AI.ttSave(turn, hashkey, nullScore, LOWERbOUND, depth, EMPTYMOVE)
+                // AI.ttSave(turn, hashkey, nullScore, LOWERBOUND, depth, EMPTYMOVE)
 
                 return nullScore
             } else {
@@ -3155,7 +3152,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (staticeval + MARGIN3 + MARGIN2*depth < alpha) {
                 let score = AI.quiescenceSearch(board, alpha-1, alpha, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
                 if (score < alpha) {
-                    // AI.ttSave(turn, hashkey, score, UPPERbOUND, depth, EMPTYMOVE)
+                    // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
                     return score
                 }
             }
@@ -3166,7 +3163,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
         
                     if (score < beta) {
-                        // AI.ttSave(turn, hashkey, score, UPPERbOUND, depth, EMPTYMOVE)
+                        // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
                         return score
                     }
                 } else {
@@ -3224,9 +3221,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         //     if (ttETC && ttETC.hashkey === hashkey && ttETC.depth >= depth) {
         //         AI.etcNodes++
         //         // max++
-        //         if (ttETC.flag === LOWERbOUND) {
+        //         if (ttETC.flag === LOWERBOUND) {
         //             if (ttETC.score > alpha) alpha = ttETC.score
-        //         } else if (ttETC.flag === UPPERbOUND) {
+        //         } else if (ttETC.flag === UPPERBOUND) {
         //             if (ttETC.score < beta) beta = ttETC.score
         //         } else { // EXACT
         //             if (ttETC.score > alpha) { // > beta?
@@ -3317,7 +3314,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             //     if (ttETC.flag <= EXACT) {
             //         if (scoreETC < beta) beta = ttETC.score
             //         // console.log('beta')
-            //     } else if (ttETC.flag === UPPERbOUND) {
+            //     } else if (ttETC.flag === UPPERBOUND) {
             //         if (scoreETC > alpha) alpha = ttETC.score
             //         // console.log('alpha')
             //     }
@@ -3369,7 +3366,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
                     // AI.PV[ply] = move
                     
-                    //LOWERbOUND
+                    //LOWERBOUND
                     
                     if (!move.isCapture) {
                         if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].key != move.key) {
@@ -3382,7 +3379,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     }
                     
                     if (!lookForMateTurn && allowNullMove) {
-                        AI.ttSave(turn, hashkey, score, LOWERbOUND, depth + E - R, move)
+                        AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
                     }
                     
                     return score
@@ -3406,13 +3403,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         if (incheck) {
             // Mate
             if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, null)
-            // AI.ttSave(turn, hashkey, -MATE + ply, LOWERbOUND, depth, bestmove)
+            // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
             
             return -MATE + ply
         } else {
             // Ahogado
             if (!lookForMateTurn) AI.ttSave(turn, hashkey, DRAW, EXACT, depth, bestmove)
-            // AI.ttSave(turn, hashkey, DRAW, LOWERbOUND, depth, bestmove)
+            // AI.ttSave(turn, hashkey, DRAW, LOWERBOUND, depth, bestmove)
             
             return DRAW
         }
@@ -3424,15 +3421,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             // Mejor movimiento
             if (bestmove) {         
                 if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, bestscore, EXACT, depth, bestmove)
-                // AI.ttSave(turn, hashkey, bestscore, LOWERbOUND, depth, bestmove)
+                // AI.ttSave(turn, hashkey, bestscore, LOWERBOUND, depth, bestmove)
             } else {
                 console.log(' no po')
             }
             
             return bestscore
         } else {
-            //Upperbound
-            if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, alphaOriginal, UPPERbOUND, depth, bestmove)
+            //UpperBound
+            if (!lookForMateTurn && allowNullMove) AI.ttSave(turn, hashkey, alphaOriginal, UPPERBOUND, depth, bestmove)
 
             return alphaOriginal
         }
@@ -3522,15 +3519,15 @@ AI.MTDF = function (board, f, d) {
     
     let g = f
 
-    let upperbound = +INFINITY
-    let lowerbound = -INFINITY
+    let upperBound = +INFINITY
+    let lowerBound = -INFINITY
 
     let lastIterationF = f
 
     let beta
 
     do {
-        if (g === lowerbound) {
+        if (g === lowerBound) {
             beta = g + 1
         } else {
             beta = g
@@ -3540,11 +3537,11 @@ AI.MTDF = function (board, f, d) {
         g = AI.PVS(board, beta - 2, beta, d, 1, true)
 
         if (g < beta) {
-            upperbound = g
+            upperBound = g
         } else {
-            lowerbound = g
+            lowerBound = g
         }
-    } while (lowerbound < upperbound)
+    } while (lowerBound < upperBound)
 
 
     if (AI.stop) {
