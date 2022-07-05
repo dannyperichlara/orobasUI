@@ -2254,24 +2254,24 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             return sign*nullWindowScore
         }
     
-        // Expensive center control
-       if (AI.phase <= MIDGAME) {
-            for (let i = 0, len=WIDECENTER.length; i < len; i++) {
-                score += AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
-                score -= AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
-            }
-        }
+    //     // Expensive center control
+    //    if (AI.phase <= MIDGAME) {
+    //         for (let i = 0, len=WIDECENTER.length; i < len; i++) {
+    //             score += AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
+    //             score -= AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
+    //         }
+    //     }
     
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
+        // if (AI.isLazyFutile(sign, score, alpha, beta)) {
             
-            let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
+        //     let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
             
-            AI.evalTable[board.hashkey % this.htlength] = {
-                hashkey: board.hashkey,
-                score: nullWindowScore
-            }
-            return sign*nullWindowScore
-        }
+        //     AI.evalTable[board.hashkey % this.htlength] = {
+        //         hashkey: board.hashkey,
+        //         score: nullWindowScore
+        //     }
+        //     return sign*nullWindowScore
+        // }
 
         if (AI.phase >= EARLY_ENDGAME) {
             if (score > VPAWNx2) {
