@@ -43,9 +43,7 @@ AI.PAR[0] = [
 
 	//Other
 	40,  //35 Tempo bonus
-
-    //Piece-distance value
-	40,  //36 Tempo bonus
+	20,  //36 Piece-distance value
 ]
 
 AI.PAR[3] = AI.PAR[2] = AI.PAR[1] = AI.PAR[0]

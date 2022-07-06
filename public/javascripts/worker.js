@@ -1781,7 +1781,7 @@ AI.microeval = {
         let positionalScore = 0
 
         // Semi outpost
-        if (AI.phase <= MIDGAME && board.ranksW[i] >= 3 && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][9]
+        if (AI.phase <= EARLY_ENDGAME && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][9]
 
         if (board.board[i + 15] === P || board.board[i + 17] === P) {
             positionalScore += AI.OUTPOSTBONUSKNIGHT[i]
@@ -1800,7 +1800,7 @@ AI.microeval = {
         let positionalScore = 0
 
         // Semi outpost
-        if (AI.phase <= MIDGAME && board.ranksB[i] >= 3 && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][9]
+        if (AI.phase <= EARLY_ENDGAME && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][9]
 
         if (board.board[i - 15] === p || board.board[i - 17] === p) {
             positionalScore -= AI.OUTPOSTBONUSKNIGHT[112^i]
@@ -2839,7 +2839,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             }
 
             // CRITERIO: Enroque
-            if (move.castleSide && AI.phase === OPENING) {
+            if (move.castleSide && AI.phase <= MIDGAME) {
                 move.score += 2e6
 
                 sortedMoves.push(move)
