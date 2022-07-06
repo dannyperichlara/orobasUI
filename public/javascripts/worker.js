@@ -1892,7 +1892,7 @@ AI.microeval = {
     [K]: (board, i)=>{
         let positionalScore = 0
 
-        if (board.whiteKingIndex === 118 && board.board[119] === R) positionalScore -= VPAWN
+        // if (board.whiteKingIndex === 118 && board.board[119] === R) positionalScore -= VPAWN
         // if (board.whiteKingIndex === 117 && board.board[119] === R) positionalScore -= VPAWN2
         // if (board.whiteKingIndex === 117 && board.board[118] === R) positionalScore -= VPAWN
 
@@ -1902,7 +1902,7 @@ AI.microeval = {
     [k]: (board, i)=>{
         let positionalScore = 0
 
-        if (board.blackKingIndex === 6 && board.board[7] === r) positionalScore += VPAWN
+        // if (board.blackKingIndex === 6 && board.board[7] === r) positionalScore += VPAWN
         // if (board.blackKingIndex === 5 && board.board[7] === r) positionalScore += VPAWN2
         // if (board.blackKingIndex === 5 && board.board[6] === r) positionalScore += VPAWN
 
@@ -2351,12 +2351,12 @@ AI.getPawnShield = (board)=>{
     if (board.whiteKingIndex !== 116) {
         score += board.board[board.whiteKingIndex-15] === P? bonus : 0
         score += board.board[board.whiteKingIndex-16] === P? bonus : 0
-        score += board.board[board.whiteKingIndex-16] === B? AI.PAR[AI.phase][29] : 0
+        // score += board.board[board.whiteKingIndex-16] === B? AI.PAR[AI.phase][29] : 0
         score += board.board[board.whiteKingIndex-17] === P? bonus : 0
 
-        if (AI.phase <= MIDGAME && board.board[board.whiteKingIndex-16] === 0) {
-            score -= VPAWN
-        }
+        // if (AI.phase <= MIDGAME && board.board[board.whiteKingIndex-16] === 0) {
+        //     score -= VPAWN
+        // }
 
         //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
@@ -2366,12 +2366,12 @@ AI.getPawnShield = (board)=>{
     if (board.blackKingIndex !== 4) {
         score -= board.board[board.blackKingIndex+15] === p? bonus : 0
         score -= board.board[board.blackKingIndex+16] === p? bonus : 0
-        score -= board.board[board.blackKingIndex+16] === b? AI.PAR[AI.phase][29] : 0
+        // score -= board.board[board.blackKingIndex+16] === b? AI.PAR[AI.phase][29] : 0
         score -= board.board[board.blackKingIndex+17] === p? bonus : 0
 
-        if (AI.phase <= MIDGAME && board.board[board.blackKingIndex+16] === 0) {
-            score += VPAWN
-        }
+        // if (AI.phase <= MIDGAME && board.board[board.blackKingIndex+16] === 0) {
+        //     score += VPAWN
+        // }
 
         //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
@@ -2762,7 +2762,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             move.score += 2e9
             sortedMoves.push(move)
             ttEntryMove = true
-            // continue
+            continue
         }
 
         // CRITERIO 2: La jugada está en la Variante Principal anterior
@@ -2771,7 +2771,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             move.pv = true
             move.score += 2e8
             sortedMoves.push(move)
-            // continue
+            continue
         }
         
         if (move.isCapture) {
@@ -3116,11 +3116,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let enPassantSquare = board.enPassantSquares[board.enPassantSquares.length - 1]
 
-    let prune = ttEntry && cutNode && !incheck && ply > 2 && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
+    let prune = ttEntry && AI.PV[ply] && depth < 9 && cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
         // //Futility pruning
-        if (depth < 9 && staticeval - MARGIN2*depth >= beta && Math.abs(alpha) < MARGIN10) {
+        if (/*depth < 9 &&*/ staticeval - MARGIN2*depth >= beta) {
             // AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
             return staticeval
         }
@@ -3183,7 +3183,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     // IID
     if (!ttEntry && depth > 2) depth--
 
-    let moves = board.getMoves(false, false)
+    let moves = []
+
+    moves = board.getMoves(false, false)
 
     moves = AI.sortMoves(board, moves, turn, ply, depth, ttEntry)
 
@@ -3260,14 +3262,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     // if (depth <= 3) {
                     // }
         
-                    if (cutNode && i > 6 && !move.isCapture && staticeval > alpha + VERYSMALLMARGIN) {
-                        let limit = i > 12? 0.9 : 0.85
-                        if (Math.random() < limit) {
-                            AI.rnodes++
-                             board.unmakeMove(move)
-                            continue
-                        }
-                    }
+                    // if (cutNode && i > 12 && !move.isCapture && !move.castleSide/* && staticeval > alpha - VERYSMALLMARGIN*/) {
+                    //     let limit = i > 20? 0.9 : 0.85
+                    //     if (Math.random() < limit) {
+                    //         AI.rnodes++
+                    //          board.unmakeMove(move)
+                    //         continue
+                    //     }
+                    // }
                 }
 
                 if (depth >= 3 && legal >= 1 && !mateE) {
