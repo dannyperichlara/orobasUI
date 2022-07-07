@@ -1918,9 +1918,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     if (!AI.phase) AI.phase = 0
 
-    // let t0 = Date.now()
     // illegalMovesSoFar = illegalMovesSoFar | 0
-
+    
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     this.evalnodes++
     let turn = board.turn
@@ -1932,8 +1931,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         return sign*evalEntry.score
     }
 
+    // let t0 = Date.now()
+
     alpha = alpha*this.nullWindowFactor | 0
-    // beta = alpha + 100
     beta = alpha + this.nullWindowFactor
 
     let score = tempoBonus + (AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0)
@@ -1984,6 +1984,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let positionalScore = 0
     let pieceKingDistance = 0
 
+    let pieceCount = new Array(13).fill(0)
+
     for (let i = 0; i < 120; i++) {
         if (i & 0x88) {
             i+=7
@@ -1998,15 +2000,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let sumMaterial = true // Sum material only if piece is not a pawn
 
-        //Distance to the enemy king
-        if (piece !== K && board.color(piece) === WHITE) {
-            score -= (3 - AI.phase)*distance(board, i, board.blackKingIndex)/2 | 0
-        }
-
-        if (piece !== k && board.color(piece) === BLACK) {
-            score += (3 - AI.phase)*distance(board, i, board.whiteKingIndex)/2 | 0
-        }
-
         if (piece === P) {
             pawnindexW.push(i)
             // sumMaterial = false
@@ -2015,117 +2008,29 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             // sumMaterial = false
         }
 
-        if (piece === B) {
-            bishopsW++
-
-            bishopsindexW.push(i)
-
-            if (AI.phase === OPENING) {
-                if ((i === 83 || i === 84) && board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][33]
-    
-                // Bishop blocked by own pawns
-                if (board.board[i-15] === P) positionalScore -= AI.PAR[AI.phase][34]
-                if (board.board[i-17] === P) positionalScore -= AI.PAR[AI.phase][34]
-            }
-        } else if (piece === b) {
-            bishopsB++
-
-            bishopsindexB.push(i)
-
-            if (AI.phase === OPENING) {
-                if ((i === 35 || i === 36) && board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][33]
-    
-                // Bishop blocked by own pawns
-                if (board.board[i+15] === p) positionalScore += AI.PAR[AI.phase][34]
-                if (board.board[i+17] === p) positionalScore += AI.PAR[AI.phase][34]
-            }
-        }
-
-        if (pvNode) {
-            positionalScore += AI.microeval[piece](board, i)
-
-            if (piece === P) {
-                if (board.colorOfSquare(i)) {
-                    lightSquaresWhitePawns++
-
-                    if (board.board[i-16] === p) {
-                        blockedLightSquaresWhitePawns++
-                        positionalScore += AI.BLOCKEDPAWNBONUS[i]
-                    }
-                } else {
-                    darkSquaresWhitePawns++
-                    if (board.board[i-16] === p) {
-                        blockedDarkSquaresWhitePawns++
-                        positionalScore += AI.BLOCKEDPAWNBONUS[i]
-                    }
-                }
-            } else if (piece === p) {
-                if (board.colorOfSquare(i)) {
-                    lightSquaresBlackPawns++
-                    if (board.board[i+16] === P) {
-                        blockedLightSquaresBlackPawns++
-                        positionalScore -= AI.BLOCKEDPAWNBONUS[112^i]
-                    }
-                } else {
-                    darkSquaresBlackPawns++
-                    if (board.board[i+16] === P) {
-                        blockedDarkSquaresBlackPawns++
-                        positionalScore -= AI.BLOCKEDPAWNBONUS[112^i]
-                    }
-                }
-            } else if (piece === B) {
-                if (board.colorOfSquare(i)) {
-                    lightSquaresWhiteBishop++
-                } else {
-                    darkSquaresWhiteBishop++
-                }
-            } else if (piece === b) {
-                if (board.colorOfSquare(i)) {
-                    lightSquaresBlackBishop++
-                } else {
-                    darkSquaresBlackBishop++
-                }
-            } else if (piece === N) {     
-                knightsW++
-            } else if (piece === n) { 
-                knightsB++
-            } else if (piece === R) {
-                rookscolumnsW.push(board.columns[i])
-                rooksW++
-            } else if (piece === r) {
-                rooksB++
-                rookscolumnsB.push(board.columns[i])
-            } else if (piece === Q) {
-                queensW++
-            } else if (piece === q) {
-                queensB++
-            } else if (piece === K) {
-
-            } else if (piece === k) {
-
-            }
-        }
+        pieceCount[piece]++
 
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
-        if (piece !== K && piece !== k) {
-            let mgMaterial = mgFactor * AI.PIECE_VALUES[OPENING][piece]
-            let egMaterial = egFactor * AI.PIECE_VALUES[LATE_ENDGAME][piece]
-    
-            material += (mgMaterial + egMaterial) | 0 //Material
-    
-            tempTotalMaterial += sumMaterial? AI.PIECE_VALUES[OPENING][ABS[piece]] : 0 //Not-pawn material
-        }
+        // MATERIAL
+        let mgMaterial = mgFactor * AI.PIECE_VALUES[OPENING][piece]
+        let egMaterial = egFactor * AI.PIECE_VALUES[LATE_ENDGAME][piece]
+
+        material += (mgMaterial + egMaterial) | 0 //Material
+
+        tempTotalMaterial += sumMaterial? AI.PIECE_VALUES[OPENING][ABS[piece]] : 0 //Not-pawn material
 
         let piecetype = ABS[piece]
 
-        let index = turn === WHITE? i : (112^i)
-        
-        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
-        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
-        
-        psqt += sign*(mgPSQT + egPSQT)
+        if (piecetype === K) {
+            let index = turn === WHITE? i : (112^i)
+            
+            let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
+            let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
+            
+            psqt += sign*(mgPSQT + egPSQT)
+        }
 
         if (piecetype === N || piecetype === B || piecetype === R || piecetype === Q) {
             // PIECE-KING DISTANCE
@@ -2148,27 +2053,15 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         }
     }
-    // console.log(pieceKingDistance)
     
     AI.totalmaterial = tempTotalMaterial
 
     // Material
     score += material | 0
-
-    // Bishop pair
-    score += bishopsW >= 2? AI.BISHOP_PAIR[AI.phase] : 0
-    score -= bishopsB >= 2? AI.BISHOP_PAIR[AI.phase] : 0
-
-    if (!incheck && AI.isLazyFutile(sign, score, alpha, alpha + VPAWN2)) {
-        let nullWindowScore = (score / AI.nullWindowFactor | 0)
-        
-        AI.evalTable[board.hashkey % this.htlength] = {
-            hashkey: board.hashkey,
-            score: nullWindowScore
-        }
-
-        return sign*nullWindowScore
-    }
+    
+    // // Bishop pair
+    score += pieceCount[B] > 1? AI.BISHOP_PAIR[AI.phase] : 0
+    score -= pieceCount[b] > 1? AI.BISHOP_PAIR[AI.phase] : 0
     
     // Pawn structure
     let structure = AI.getStructure(board, pawnindexW, pawnindexB)
@@ -2177,7 +2070,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let positional = psqt + structure + positionalScore + pieceKingDistance | 0
 
     score += positional | 0
-
+    
     if (AI.phase === LATE_ENDGAME && alpha > VPAWN*5) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
@@ -2192,142 +2085,23 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
 
-    // if (incheck) {
-            
-    //     let nullWindowScore = (score / AI.nullWindowFactor | 0)
-        
-    //     AI.evalTable[board.hashkey % this.htlength] = {
-    //         hashkey: board.hashkey,
-    //         score: nullWindowScore
-    //     }
+    // Mobility
+    score += AI.getMobility(board)
 
-    //     return sign*nullWindowScore
-    // }
-    
-    if (pvNode) {
-        // Mobility
-        score += AI.getMobility(board)
+    // Is king under attack
+    score -= AI.PAR[AI.phase][15]*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
+    score -= AI.PAR[AI.phase][16]*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
+    score -= AI.PAR[AI.phase][17]*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, true)
 
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
-            let nullWindowScore = (score / AI.nullWindowFactor | 0)
-            
-            AI.evalTable[board.hashkey % this.htlength] = {
-                hashkey: board.hashkey,
-                score: nullWindowScore
-            }
+    score += AI.PAR[AI.phase][15]*board.isSquareAttacked(board.blackKingIndex+15, WHITE, true)
+    score += AI.PAR[AI.phase][16]*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
+    score += AI.PAR[AI.phase][17]*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
 
-            return sign*nullWindowScore
-        }
-
-
-        // Pawns on same squares of bishops //8 for MG, 15 for EG
-        let badPawns = 0
-            badPawns+= (AI.PAR[AI.phase][18]*lightSquaresWhiteBishop*lightSquaresWhitePawns + AI.PAR[AI.phase][18]*darkSquaresWhiteBishop*darkSquaresWhitePawns)
-            badPawns+= (AI.PAR[AI.phase][18]*lightSquaresWhiteBishop*blockedLightSquaresWhitePawns + AI.PAR[AI.phase][18]*darkSquaresWhiteBishop*blockedDarkSquaresWhitePawns)
-            badPawns+= (AI.PAR[AI.phase][18]*lightSquaresWhiteBishop*blockedLightSquaresBlackPawns + AI.PAR[AI.phase][18]*darkSquaresWhiteBishop*blockedDarkSquaresBlackPawns)
-            
-            badPawns-= (AI.PAR[AI.phase][18]*lightSquaresBlackBishop*lightSquaresBlackPawns + AI.PAR[AI.phase][18]*darkSquaresBlackBishop*darkSquaresBlackPawns)
-            badPawns-= (AI.PAR[AI.phase][18]*lightSquaresBlackBishop*blockedLightSquaresBlackPawns + AI.PAR[AI.phase][18]*darkSquaresBlackBishop*blockedDarkSquaresBlackPawns)
-            badPawns-= (AI.PAR[AI.phase][18]*lightSquaresBlackBishop*blockedLightSquaresWhitePawns + AI.PAR[AI.phase][18]*darkSquaresBlackBishop*blockedDarkSquaresWhitePawns)
-    
-        score -= badPawns
-
-        // Is king under attack
-        if (AI.phase >= MIDGAME) {
-            score -= AI.PAR[AI.phase][15]*board.isSquareAttacked(board.whiteKingIndex-15, BLACK, true)
-            score -= AI.PAR[AI.phase][16]*board.isSquareAttacked(board.whiteKingIndex-16, BLACK, true)
-            score -= AI.PAR[AI.phase][17]*board.isSquareAttacked(board.whiteKingIndex-17, BLACK, true)
-
-            score += AI.PAR[AI.phase][15]*board.isSquareAttacked(board.blackKingIndex+15, WHITE, true)
-            score += AI.PAR[AI.phase][16]*board.isSquareAttacked(board.blackKingIndex+16, WHITE, true)
-            score += AI.PAR[AI.phase][17]*board.isSquareAttacked(board.blackKingIndex+17, WHITE, true)
-        }
-
-        if (AI.isLazyFutile(sign, score, alpha, beta)) {
-            
-            let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
-            
-            AI.evalTable[board.hashkey % this.htlength] = {
-                hashkey: board.hashkey,
-                score: nullWindowScore
-            }
-            return sign*nullWindowScore
-        }
-    
-    //     // Expensive center control
-    //    if (AI.phase <= MIDGAME) {
-    //         for (let i = 0, len=WIDECENTER.length; i < len; i++) {
-    //             score += AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
-    //             score -= AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
-    //         }
-    //     }
-    
-        // if (AI.isLazyFutile(sign, score, alpha, beta)) {
-            
-        //     let nullWindowScore = (alpha / AI.nullWindowFactor | 0) + 1
-            
-        //     AI.evalTable[board.hashkey % this.htlength] = {
-        //         hashkey: board.hashkey,
-        //         score: nullWindowScore
-        //     }
-        //     return sign*nullWindowScore
-        // }
-
-        if (AI.phase >= EARLY_ENDGAME) {
-            if (score > VPAWNx2) {
-                if (queensW >= queensB) score += AI.PAR[AI.phase][22]
-                if (rooksW >= rooksB) score += AI.PAR[AI.phase][22]
-                
-            }
-                
-            if (score < -VPAWNx2) {
-                if (queensB >= queensW) score -= AI.PAR[AI.phase][22]
-                if (rooksB >= rooksW) score -= AI.PAR[AI.phase][22]
-            }
-
-        }
-
-        // Knights with blocked pawns
-        let blockedWhitePawns = blockedLightSquaresWhitePawns + blockedDarkSquaresWhitePawns
-        let blockedBlackPawns = blockedLightSquaresBlackPawns + blockedDarkSquaresBlackPawns
-
-        score += AI.PAR[AI.phase][23]*blockedWhitePawns*knightsW
-        score -= AI.PAR[AI.phase][23]*blockedBlackPawns*knightsB
-    
-        //Pawn span (distance between first and last pawn)
-        let spanbonus = AI.phase <= MIDGAME? AI.PAR[AI.phase][24] : AI.PAR[AI.phase][25]
-    
-        if (pawnindexW.length > 1) {
-            score += spanbonus*(board.columns[pawnindexW[pawnindexW.length - 1]] - board.columns[pawnindexW[0]])
-        }
-    
-        if (pawnindexB.length > 1) {
-            score -= spanbonus*(board.columns[pawnindexB[pawnindexB.length - 1]] - board.columns[pawnindexB[0]])
-        }
-    
-        // adjacent bishops
-        if (bishopsW === 2) {
-            if (Math.abs(board.diagonals1[bishopsindexW[0]] - board.diagonals1[bishopsindexW[1]]) === 1) score += AI.PAR[AI.phase][26]
-            if (Math.abs(board.diagonals2[bishopsindexW[0]] - board.diagonals2[bishopsindexW[1]]) === 1) score += AI.PAR[AI.phase][26]
-        }
-    
-        if (bishopsB === 2) {
-            if (Math.abs(board.diagonals1[bishopsindexB[0]] - board.diagonals1[bishopsindexB[1]]) === 1) score -= AI.PAR[AI.phase][26]
-            if (Math.abs(board.diagonals2[bishopsindexB[0]] - board.diagonals2[bishopsindexB[1]]) === 1) score -= AI.PAR[AI.phase][26]
-        }
-    
-        //Rook battery
-        if (AI.phase <= MIDGAME) {
-            if (rookscolumnsW.length === 2) {
-                if (rookscolumnsW[0] === rookscolumnsW[1]) score += AI.PAR[AI.phase][27]
-            }
-    
-            if (rookscolumnsB.length === 2) {
-                if (rookscolumnsB[0] === rookscolumnsB[1]) score -= AI.PAR[AI.phase][27]
-            }
-        }
+    // Expensive center control
+    for (let i = 0, len=WIDECENTER.length; i < len; i++) {
+        score += AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], WHITE, true)
+        score -= AI.PAR[AI.phase][19] * board.isSquareAttacked(WIDECENTER[i], BLACK, true)
     }
-
 
     let nullWindowScore = score / AI.nullWindowFactor | 0
 
@@ -2351,12 +2125,12 @@ AI.getPawnShield = (board)=>{
     if (board.whiteKingIndex !== 116) {
         score += board.board[board.whiteKingIndex-15] === P? bonus : 0
         score += board.board[board.whiteKingIndex-16] === P? bonus : 0
-        // score += board.board[board.whiteKingIndex-16] === B? AI.PAR[AI.phase][29] : 0
+        score += board.board[board.whiteKingIndex-16] === B? AI.PAR[AI.phase][29] : 0
         score += board.board[board.whiteKingIndex-17] === P? bonus : 0
 
-        // if (AI.phase <= MIDGAME && board.board[board.whiteKingIndex-16] === 0) {
-        //     score -= VPAWN
-        // }
+        if (AI.phase <= MIDGAME && board.board[board.whiteKingIndex-16] === 0) {
+            score -= VPAWN
+        }
 
         //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
@@ -2366,12 +2140,12 @@ AI.getPawnShield = (board)=>{
     if (board.blackKingIndex !== 4) {
         score -= board.board[board.blackKingIndex+15] === p? bonus : 0
         score -= board.board[board.blackKingIndex+16] === p? bonus : 0
-        // score -= board.board[board.blackKingIndex+16] === b? AI.PAR[AI.phase][29] : 0
+        score -= board.board[board.blackKingIndex+16] === b? AI.PAR[AI.phase][29] : 0
         score -= board.board[board.blackKingIndex+17] === p? bonus : 0
 
-        // if (AI.phase <= MIDGAME && board.board[board.blackKingIndex+16] === 0) {
-        //     score += VPAWN
-        // }
+        if (AI.phase <= MIDGAME && board.board[board.blackKingIndex+16] === 0) {
+            score += VPAWN
+        }
 
         //TODO: Penalty for doubled pawns in king shelter (mg: 15, eg: 8)
     }
@@ -2405,8 +2179,6 @@ AI.getMobility = (board)=>{
         board.changeTurn()
     }
 
-    // console.log(whiteMoves, blackMoves)
-
     let whiteMobility = 0
 
     whiteMobility += AI.MOB[P][0] * (whiteMoves[P].unsafe) + AI.MOB[P][1] * (whiteMoves[P].safe) - AI.MOB[P][2] | 0
@@ -2414,7 +2186,6 @@ AI.getMobility = (board)=>{
     whiteMobility += AI.MOB[B][0] * (whiteMoves[B].unsafe) + AI.MOB[B][1] * (whiteMoves[B].safe) - AI.MOB[B][2] | 0
     whiteMobility += AI.MOB[R][0] * (whiteMoves[R].unsafe) + AI.MOB[R][1] * (whiteMoves[R].safe) - AI.MOB[R][2] | 0
     whiteMobility += AI.MOB[Q][0] * (whiteMoves[Q].unsafe) + AI.MOB[Q][1] * (whiteMoves[Q].safe) - AI.MOB[Q][2] | 0
-    // whiteMobility += AI.MOB[K][0] * (whiteMoves[K].unsafe) + AI.MOB[K][1] * (whiteMoves[K].safe) - AI.MOB[K][2] | 0
 
     let blackMobility = 0
     
@@ -2423,7 +2194,6 @@ AI.getMobility = (board)=>{
     blackMobility += AI.MOB[B][0] * (blackMoves[b].unsafe) + AI.MOB[B][1] * (blackMoves[b].safe) - AI.MOB[B][2] | 0
     blackMobility += AI.MOB[R][0] * (blackMoves[r].unsafe) + AI.MOB[R][1] * (blackMoves[r].safe) - AI.MOB[R][2] | 0
     blackMobility += AI.MOB[Q][0] * (blackMoves[q].unsafe) + AI.MOB[Q][1] * (blackMoves[q].safe) - AI.MOB[Q][2] | 0
-    // blackMobility += AI.MOB[K][0] * (blackMoves[k].unsafe) + AI.MOB[K][1] * (blackMoves[k].safe) - AI.MOB[K][2] | 0
 
     score = whiteMobility - blackMobility | 0
 
@@ -2777,27 +2547,28 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
             
-            if (move.mvvlva >= 6000) {
-                // CRITERIO 3: La jugada es una captura posiblemente ganadora
-                move.score += 1e7 + move.mvvlva
+            move.score += 1e7 + move.mvvlva
+            
+            // if (move.mvvlva >= 6000) {
+            //     // CRITERIO 3: La jugada es una captura posiblemente ganadora
                 
-                if (board.turn === WHITE) {
-                    if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
-                        move.score += 4e6 + move.mvvlva
-                    } else {
-                        move.score += 1e7 + move.mvvlva
-                    }
-                } else {
-                    if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
-                        move.score += 4e6 + move.mvvlva
-                    } else {
-                        move.score += 1e7 + move.mvvlva
-                    }
-                }
-            } else {
-                // CRITERIO 5: La jugada es una captura probablemente perdedora
-                move.score += 4e6 + move.mvvlva
-            }
+            //     if (board.turn === WHITE) {
+            //         if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
+            //             move.score += 4e6 + move.mvvlva
+            //         } else {
+            //             move.score += 1e7 + move.mvvlva
+            //         }
+            //     } else {
+            //         if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
+            //             move.score += 4e6 + move.mvvlva
+            //         } else {
+            //             move.score += 1e7 + move.mvvlva
+            //         }
+            //     }
+            // } else {
+            //     // CRITERIO 5: La jugada es una captura probablemente perdedora
+            //     move.score += 4e6 + move.mvvlva
+            // }
 
             sortedMoves.push(move)
 
@@ -2839,8 +2610,12 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             }
 
             // CRITERIO: Enroque
-            if (move.castleSide && AI.phase <= MIDGAME) {
-                move.score += 2e6
+            if (move.castleSide) {
+                if (AI.phase === OPENING) {
+                    move.score += 1e8
+                } else if (AI.phase === MIDGAME) {
+                    move.score += 2e6
+                }
 
                 sortedMoves.push(move)
 
@@ -2907,6 +2682,13 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 }
 
 AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove) {
+    
+    // // Avoids QS explosion
+    // if (ply > AI.iteration + 4) {
+    //     // console.log('Oops')
+    //     return alpha
+    // }
+    
     AI.qsnodes++
 
     let turn = board.turn
@@ -3011,12 +2793,10 @@ AI.ttGet = function (turn, hashkey) {
 }
 
 AI.saveHistory = function (ply, move, value) {
-    AI.history[ply][move.piece][move.to] += 32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512 | 0
-    AI.history[ply + 2][move.piece][move.to] += 32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512 | 0
-
-    if (ply > 2) {
-        AI.history[ply - 2][move.piece][move.to] += 32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512 | 0
+    for (let i = 0; i < 3; i++) {
+        AI.history[ply + 2*i][move.piece][move.to] += 32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512 | 0
     }
+
 }
 
 // PRINCIPAL VARIATION SEARCH
@@ -3116,11 +2896,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let enPassantSquare = board.enPassantSquares[board.enPassantSquares.length - 1]
 
-    let prune = ttEntry && AI.PV[ply] && depth < 9 && cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
+    // console.log(ttEntry, AI.PV[ply])
+
+    let prune = ttEntry && depth < 9 && cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
         // //Futility pruning
-        if (/*depth < 9 &&*/ staticeval - MARGIN2*depth >= beta) {
+        if (staticeval - MARGIN2*depth >= beta) {
             // AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
             return staticeval
         }
@@ -3246,7 +3028,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 R = 0
                 E = 0
             } else {
-                if (prune && !move.killer1) {
+                if (prune && !move.killer1 && !move.castleSide) {
                     // Futility Pruning
                     if (move.isCapture) {
                         if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
@@ -3517,7 +3299,7 @@ AI.getPV = function (board, length) {
 // https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d) {
     //Esta línea permite que el algoritmo funcione como PVS normal
-    if (d <= 2) return AI.PVS(board, f - 10, f + 10, d, 1, true)
+    // if (d <= 2) return AI.PVS(board, f - 10, f + 10, d, 1, true)
     
     let g = f
 
@@ -3536,7 +3318,7 @@ AI.MTDF = function (board, f, d) {
         }
 
         // g = AI.PVS(board, beta - 1, beta, d, 1, true)
-        g = AI.PVS(board, beta - 2, beta, d, 1, true)
+        g = AI.PVS(board, beta - 1, beta, d, 1, true)
 
         if (g < beta) {
             upperBound = g
@@ -3814,7 +3596,7 @@ AI.search = function (board, options) {
         }
 
         if (!near2mate) {
-            AI.createTables(board, AI.collisions/AI.ttGets > 0.01, AI.collisions/AI.ttGets > 0.01, true, AI.pawncollisions/AI.evalnodes > 0.01)
+            AI.createTables(board, AI.collisions/AI.ttGets > 0.01, AI.collisions/AI.ttGets > 0.01, true, false)
         } else {
             console.log('Near to mate!')
         }
