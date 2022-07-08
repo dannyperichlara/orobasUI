@@ -1754,9 +1754,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Material
     score += material | 0
     
-    // // Bishop pair
-    // score += pieceCount[B] > 1? AI.BISHOP_PAIR[AI.phase] : 0
-    // score -= pieceCount[b] > 1? AI.BISHOP_PAIR[AI.phase] : 0
+    // Bishop pair
+    score += pieceCount[B] > 1? AI.BISHOP_PAIR[AI.phase] : 0
+    score -= pieceCount[b] > 1? AI.BISHOP_PAIR[AI.phase] : 0
     
     // Pawn structure
     let structure = AI.getStructure(board, pawnindexW, pawnindexB)
@@ -1799,8 +1799,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     // Positional
     let positional = psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
+    
+    // to logistic
+    positional = AI.logistic(positional, 0.02, 120) | 0
 
-    score += AI.logistic(positional, 0.02, 100) | 0
+    score += positional
 
     let nullWindowScore = score / AI.nullWindowFactor | 0
 
