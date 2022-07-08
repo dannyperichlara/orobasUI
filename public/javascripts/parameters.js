@@ -43,7 +43,8 @@ AI.PAR[0] = [
 
 	//Other
 	40,  //35 Tempo bonus
-	20,  //36 Piece-distance value
+	20,  //36 Piece-distance value (to the enemy king)
+	4,  //37 Piece-distance value (to the own king)
 ]
 
 AI.PAR[3] = AI.PAR[2] = AI.PAR[1] = AI.PAR[0]
