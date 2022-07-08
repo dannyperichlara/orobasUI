@@ -1755,8 +1755,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     score += material | 0
     
     // // Bishop pair
-    score += pieceCount[B] > 1? AI.BISHOP_PAIR[AI.phase] : 0
-    score -= pieceCount[b] > 1? AI.BISHOP_PAIR[AI.phase] : 0
+    // score += pieceCount[B] > 1? AI.BISHOP_PAIR[AI.phase] : 0
+    // score -= pieceCount[b] > 1? AI.BISHOP_PAIR[AI.phase] : 0
     
     // Pawn structure
     let structure = AI.getStructure(board, pawnindexW, pawnindexB)
@@ -1800,7 +1800,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Positional
     let positional = psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
 
-    score += positional | 0
+    score += AI.logistic(positional, 0.02, 100) | 0
 
     let nullWindowScore = score / AI.nullWindowFactor | 0
 
@@ -1813,6 +1813,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // AI.evalTime += t1 - t0
 
     return sign*nullWindowScore
+}
+
+AI.logistic = (x, k, limit)=> {
+    return 2*limit / (1 + Math.exp(-k * x)) - limit
 }
 
 AI.getPawnShield = (board)=>{
@@ -3021,7 +3025,6 @@ AI.MTDF = function (board, f, d) {
             beta = g
         }
 
-        // g = AI.PVS(board, beta - 1, beta, d, 1, true)
         g = AI.PVS(board, beta - 1, beta, d, 1, true)
 
         if (g < beta) {
@@ -3087,24 +3090,6 @@ AI.search = function (board, options) {
     
     if (!AI.f) AI.f = 0
 
-    AI.absurd = [
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-    ]
-
-    AI.RANDOMLIST = new Array(218)
-
-    for (let i = 0; i < 218; i++) {
-        AI.RANDOMLIST[i] = Math.sqrt(2) * Math.sqrt(Math.log(i) / (i - 1))
-    }
-
-    AI.RANDOMLIST[0] = 1
-    AI.RANDOMLIST[1] = 1
-
-    // console.log(AI.RANDOMLIST)
-
-    // process.exit()
-
     return new Promise((resolve, reject) => {
         let color = board.turn
 
@@ -3147,7 +3132,7 @@ AI.search = function (board, options) {
         
         AI.previousls = AI.lastscore
 
-        let depth = 1
+        let depth = 0
         let alpha = -INFINITY
         let beta = INFINITY
 
