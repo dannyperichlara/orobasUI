@@ -1660,7 +1660,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let mgFactor = AI.totalmaterial / AI.maxMaterialValue
     let egFactor = 1 - mgFactor
 
-    let positionalScore = 0
     let pieceKingDistance = 0
 
     let pieceCount = new Array(13).fill(0)
