@@ -1805,7 +1805,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let positional = psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
     
     // to logistic
-    positional = AI.logistic(positional, 0.02, 120) | 0
+    positional = AI.logistic(positional, 200) | 0
 
     score += positional
 
@@ -1822,8 +1822,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     return sign*nullWindowScore
 }
 
-AI.logistic = (x, k, limit)=> {
-    return 2*limit / (1 + Math.exp(-k * x)) - limit
+AI.logistic = (x, limit)=> {
+    return 2*limit / (1 + Math.exp(-x/(0.5*limit))) - limit
 }
 
 AI.getPawnShield = (board)=>{
@@ -2339,7 +2339,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 
             let hvalue = AI.history[ply][move.piece][move.to] | 0
 
-            if (hvalue && AI.iteration < 10) {
+            if (hvalue) {
                 move.score += hvalue
 
                 sortedMoves.push(move)
@@ -2506,7 +2506,7 @@ AI.ttGet = function (turn, hashkey) {
 AI.saveHistory = function (ply, move, value) {
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 6; i++) {
         if (value > 0) {
             AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
         } else {
