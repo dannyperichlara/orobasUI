@@ -2343,6 +2343,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 continue
             } else {
                 // unsortedMoves.push(move)
+                // continue
 
                 if (AI.phase <= MIDGAME) {
                     if (turn === WHITE) {
@@ -2501,7 +2502,7 @@ AI.ttGet = function (turn, hashkey) {
 AI.saveHistory = function (ply, move, value) {
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 3; i++) {
         if (value > 0) {
             AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
         } else {
@@ -2530,8 +2531,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         alpha = mating_value
         if (beta <= mating_value) return mating_value
     }
-
-    let alphaOriginal = alpha
 
     let turn = board.turn
     let hashkey = board.hashkey
@@ -2685,8 +2684,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let bestmove = moves[0]
     let legal = 0
     let illegalMoves = 0
-    let bestscore = -INFINITY
-    let score = alpha
+    
+    let alphaOriginal = alpha
+    let bestscore = alpha
+    let score = -INFINITY
 
     let E = 0
 
@@ -2864,11 +2865,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     //LOWERBOUND
                     
                     if (!move.isCapture) {
-                        if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].key != move.key) {
-                                AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
-                        }
+                        // if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].key != move.key) {
+                        //         AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
+                        // }
                         
-                        AI.killers[turn | 0][ply][0] = move
+                        // AI.killers[turn | 0][ply][0] = move
                         
                         AI.saveHistory(ply, move, legal*depth*depth)
                     }
@@ -2932,41 +2933,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     }
 }
 
-AI.setPhase = function (board) {
-    AI.nofpieces = 0
-
-    for (let e of board.board) {
-        if (e !== null && e !== 0) AI.nofpieces++
-    }
-    
-    AI.phase = 0
-
-    //MIDGAME
-    if (AI.nofpieces <= 28 || (board.movenumber && board.movenumber > 8)) {
-        AI.phase = 1
-    }
-
-    let queens = 0
-
-    for (let e of board.board) {
-        if (e === q || e === Q) queens++
-    }
-
-    //EARLY ENDGAME (the king enters)
-    if (queens === 0 && AI.nofpieces > 12) {
-        if (AI.nofpieces <= 24 || Math.abs(AI.lastscore) > AI.PIECE_VALUES[OPENING][ROOK]) {
-            AI.phase = 2
-        }
-    }
-
-    //LATE ENDGAME
-    if (AI.nofpieces <= 12 || (queens === 0 && Math.abs(AI.lastscore) >= AI.PIECE_VALUES[OPENING][QUEEN])) {
-        AI.phase = 3
-    }
-
-    // AI.randomizePSQT()
-}
-
 AI.getPV = function (board, length) {
     let PV = [null]
     let startinghashkey = board.hashkey
@@ -3010,11 +2976,11 @@ AI.getPV = function (board, length) {
 // https://www.chessprogramming.org/MTD(f) +188 ELO
 AI.MTDF = function (board, f, d) {
     //Esta línea permite que el algoritmo funcione como PVS normal
-    // if (d <= 2) return AI.PVS(board, f - 10, f + 10, d, 1, true)
+    // return AI.PVS(board, -INFINITY, INFINITY, d, 1, true)
     
     let g = f
 
-    let upperBound = +INFINITY
+    let upperBound = INFINITY
     let lowerBound = -INFINITY
 
     let lastIterationF = f
@@ -3028,7 +2994,7 @@ AI.MTDF = function (board, f, d) {
             beta = g
         }
 
-        g = AI.PVS(board, beta - 1, beta, d, 1, true)
+        g = AI.PVS(board, beta - 1, beta, d, 1, true, 0, false)
 
         if (g < beta) {
             upperBound = g
@@ -3071,7 +3037,7 @@ AI.search = function (board, options) {
     let nmoves = board.movenumber * 2
     let changeofphase = false
     
-    AI.setPhase(board)
+    AI.phase = 0
     
     if (AI.lastphase !== AI.phase) changeofphase = true
     
@@ -3135,7 +3101,7 @@ AI.search = function (board, options) {
         
         AI.previousls = AI.lastscore
 
-        let depth = 0
+        let depth = 1
         let alpha = -INFINITY
         let beta = INFINITY
 
@@ -3207,7 +3173,9 @@ AI.search = function (board, options) {
                     AI.bestmove = ttEntry.move
                 }
                 
-                AI.f = AI.MTDF(board, AI.f, depth, alpha, beta)
+                let mtdfScore = AI.MTDF(board, AI.f, depth)
+                if (!AI.stop) AI.f = mtdfScore
+                
 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
