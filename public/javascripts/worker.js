@@ -1700,11 +1700,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             
             psqt += sign*(mgPSQT + egPSQT)
         } else if (piecetype === P) {
-            if (turn === WHITE) {
-                psqt += 10*board.ranksW[i]
-            } else {
-                psqt -= 10*board.ranksB[i]
-            }
+
         } else {
             // PIECE-KING DISTANCE (N, B, R and Q)
     
