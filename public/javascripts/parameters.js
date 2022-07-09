@@ -35,7 +35,7 @@ AI.PAR[0] = [
     //Structure
     20, //30 pawn imbalance
     40, //31 backward pawns
-    4, //32 space
+    10, //32 space
 
     //Bishops
     100, //33 in front of pawn at opening
