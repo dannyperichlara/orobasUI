@@ -1801,7 +1801,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let positional = psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
     
     // to logistic
-    positional = AI.logistic(positional, 0.02, 120) | 0
+    positional = AI.logistic(positional, 0.02, Math.max(material + 120, 120)) | 0
 
     score += positional
 
@@ -2518,19 +2518,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     // if (depth > max) console.log('Max depth', max++)
 
-    let mating_value = MATE - ply;
+    // let mating_value = MATE - ply;
 
-    if (mating_value < beta) {
-        beta = mating_value
-        if (alpha >= mating_value) return mating_value
-    }
+    // if (mating_value < beta) {
+    //     beta = mating_value
+    //     if (alpha >= mating_value) return mating_value
+    // }
 
-    mating_value = -MATE + ply;
+    // mating_value = -MATE + ply;
 
-    if (mating_value > alpha) {
-        alpha = mating_value
-        if (beta <= mating_value) return mating_value
-    }
+    // if (mating_value > alpha) {
+    //     alpha = mating_value
+    //     if (beta <= mating_value) return mating_value
+    // }
 
     let turn = board.turn
     let hashkey = board.hashkey
@@ -2791,12 +2791,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
 
                 if (R < 0) R = 0
-
-                let rLimit = legal > 4 && !move.isCapture? 6 : 8
-
-                if (depth > 10 && Math.abs(alpha - staticeval) > MARGIN3) {
-                    R = Math.max(R, depth - rLimit)
-                }
             }
             
             // // Enhanced Transposition Cut-Off +16 ELO
@@ -3168,7 +3162,7 @@ AI.search = function (board, options) {
 
                 let ttEntry = AI.ttGet(board.turn, board.hashkey)
 
-                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth >= depth) {
+                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth > depth) {
                     AI.f = ttEntry.score
                     AI.bestmove = ttEntry.move
                 }
