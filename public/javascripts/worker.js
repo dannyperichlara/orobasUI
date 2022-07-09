@@ -1805,7 +1805,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let positional = psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
     
     // to logistic
-    positional = AI.logistic(positional, 0.02, Math.max(material + 120, 120)) | 0
+    positional = AI.logistic(positional, 0.02, 120) | 0
 
     score += positional
 
@@ -2843,7 +2843,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
             }
 
-            board.unmakeMove(move)
+            // board.unmakeMove(move)
 
             if (AI.stop) return alphaOriginal //tested ok
             
@@ -2874,20 +2874,26 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     
                     if (!lookForMateTurn && allowNullMove) {
                         AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
+                        AI.ttSave(board.turn, board.hashkey, -score, UPPERBOUND, depth - 1 + E - R, EMPTYMOVE)
                     }
+
+                    board.unmakeMove(move)
                     
                     return score
                 }
 
+                
                 bestscore = score
                 bestmove = move
                 alpha = score
 
                 if (!move.isCapture) { AI.saveHistory(ply, move, depth) }
-
+                
             } else {
                 if (!move.isCapture) { AI.saveHistory(ply, move, -depth*depth) }
             }
+
+            board.unmakeMove(move)
         } else {
             illegalMoves++
         }
@@ -3169,12 +3175,11 @@ AI.search = function (board, options) {
                 if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth > depth) {
                     AI.f = ttEntry.score
                     AI.bestmove = ttEntry.move
+                } else {
+                    let mtdfScore = AI.MTDF(board, AI.f, depth)
+                    if (!AI.stop) AI.f = mtdfScore
                 }
                 
-                let mtdfScore = AI.MTDF(board, AI.f, depth)
-                if (!AI.stop) AI.f = mtdfScore
-                
-
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
                 AI.PV = AI.getPV(board, AI.totaldepth)
