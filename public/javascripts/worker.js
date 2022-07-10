@@ -2781,6 +2781,9 @@ AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
         return
     }
 
+    if (score > MATE - AI.totaldepth) return
+    if (score < -MATE + AI.totaldepth) return
+
     AI.hashTable[turn][hashkey % AI.htlength] = {
         hashkey,
         score,
@@ -2867,9 +2870,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let opponentTurn = turn === WHITE? BLACK : WHITE
     let sign = turn === WHITE? 1 : -1
 
+    //Búsqueda QS
+    if (depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
+    }
+
     if (ttEntry && ttEntry.depth >= depth) {
         if (ttEntry.flag === EXACT) {
-            return ttEntry.score
+            // return ttEntry.score
+            alpha = ttEntry.score
         } else if (ttEntry.flag === LOWERBOUND) {
             if (ttEntry.score > alpha) alpha = ttEntry.score
         } else if (ttEntry.flag === UPPERBOUND) {
@@ -2877,9 +2886,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         }
 
         if (alpha >= beta) {
-            if (depth > 0) {
-                return ttEntry.score
-            } 
+            return ttEntry.score
         }
     }
 
@@ -2905,11 +2912,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     // }
 
     let incheck = board.isKingInCheck()
-
-    //Búsqueda QS
-    if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
-    }
 
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
     
