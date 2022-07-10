@@ -1283,8 +1283,8 @@ let AI = {
     fh: 0,
     random: 0,
     phase: 0,
-    htlength: 16e6,
-    pawntlength: 1e6,
+    htlength: 8e6,
+    pawntlength: 5e5,
     mindepth: [4,4,4,4],
     secondspermove: 0.2,
     lastmove: null,
@@ -1529,9 +1529,10 @@ let distance = (board, sq1, sq2)=>{
 // Valor para determinar orden de capturas,
 // prefiriendo la víctima más valiosa con el atacante más débil
 //https://open-chess.org/viewtopic.php?t=3058
+// /*P*/[6002, 20225, 20250, 20400, 20800, 26900],
 let mvvlvaScores = [
     /* P      N      B      R      Q      K
-/*P*/[6002, 20225, 20250, 20400, 20800, 26900],
+/*P*/[6100, 20225, 20250, 20400, 20800, 26900],
 /*N*/[4775,  6004, 20025, 20175, 20575, 26675],
 /*B*/[4750,  4975,  6006, 20150, 20550, 26650],
 /*R*/[4600,  4825,  4850,  6008, 20400, 26500],
@@ -1621,6 +1622,313 @@ AI.randomizePSQT = function () {
     }
 }
 
+AI.microeval = {
+    [P]: (board, i)=> {
+        let positionalScore = 0
+        //Defended
+        if (board.board[i+15] === P || board.board[i+17] === P) {
+            positionalScore += AI.DEFENDEDPAWNBONUS[i]
+        }
+
+        //Aligned
+        if (board.board[i+1] === P || board.board[i-1] === P) {
+            positionalScore += AI.ALIGNEDPAWNBONUS[i]
+        }
+
+        //Neighbour
+        if (board.board[i+2] === P || board.board[i-2] === P) {
+            positionalScore += AI.NEIGHBOURPAWNBONUS[i]
+        }
+
+        //Levers
+        if (board.board[i-15] === p || board.board[i-17] === p) {
+            positionalScore += AI.LEVERPAWNBONUS[i]
+        }
+
+        //Knight mobility blocker
+        if (board.board[i-50] === n || board.board[i-46] === n) {
+            positionalScore += AI.PAR[AI.phase][3]
+        }
+
+
+        if (AI.phase <= MIDGAME) {
+            //Center control
+            if (i === 68 && board.board[51] === 0) positionalScore+=AI.PAR[AI.phase][0]
+            if (i === 67 && board.board[52] === 0) positionalScore+=AI.PAR[AI.phase][0]
+
+            // Outer central lever
+            if (i === 66 && (board.board[51] === p || board.board[51] === 0)) {
+                positionalScore+=AI.PAR[AI.phase][1]
+
+                if (board.board[81] === P || board.board[83] === P) positionalScore += AI.PAR[AI.phase][2]
+            } 
+            
+            if (i === 69 && (board.board[52] === p || board.board[52] === 0)) {
+                positionalScore+=AI.PAR[AI.phase][1]
+
+                if (board.board[84] === P || board.board[86] === P) positionalScore += AI.PAR[AI.phase][2]
+            }
+        }
+
+        return positionalScore
+    },
+
+    [p]: (board,i)=>{
+        let positionalScore = 0
+
+        //Defended
+        if (board.board[i-15] === p || board.board[i-17] === p) {
+            positionalScore -= AI.DEFENDEDPAWNBONUS[112^i]
+        }
+
+        //Aligned
+        if (board.board[i+1] === p || board.board[i-1] === p) {
+            positionalScore -= AI.ALIGNEDPAWNBONUS[112^i]
+        }
+
+        //Neighbour
+        if (board.board[i+2] === p || board.board[i-2] === p) {
+            positionalScore -= AI.NEIGHBOURPAWNBONUS[112^i]
+        }
+
+        //Levers
+        if (board.board[i+15] === P || board.board[i+17] === P) {
+            positionalScore -= AI.LEVERPAWNBONUS[112^i]
+        }
+
+        //Knight mobility blocker
+        if (board.board[i+50] === N || board.board[i+46] === N) {
+            positionalScore -= AI.PAR[AI.phase][3]
+        }
+
+        if (AI.phase <= MIDGAME) {
+            //Center control
+            if (i === 51 && board.board[68] === 0) positionalScore-=AI.PAR[AI.phase][0]
+            if (i === 52 && board.board[67] === 0) positionalScore-=AI.PAR[AI.phase][0]
+
+            //Outer central lever
+            if (i === 50 && (board.board[67] === P || board.board[67] === 0)) {
+                positionalScore-=AI.PAR[AI.phase][1]
+                if (board.board[33] === p || board.board[35] === p) positionalScore -= AI.PAR[AI.phase][2]
+            } 
+            if (i === 53 && (board.board[68] === P || board.board[68] === 0)) {
+                positionalScore-=AI.PAR[AI.phase][1]
+                if (board.board[36] === p || board.board[38] === p) positionalScore -= AI.PAR[AI.phase][2]
+            } 
+        }
+
+        return positionalScore
+    },
+
+    [B]: (board, i)=>{
+        let positionalScore = 0
+
+        if (AI.phase === OPENING) {
+            // In front of pawn at opening
+            if ((i === 83 || i === 84) && board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][33]
+
+            // Bishop blocked by own pawns
+            if (board.board[i-15] === P) positionalScore -= AI.PAR[AI.phase][34]
+            if (board.board[i-17] === P) positionalScore -= AI.PAR[AI.phase][34]
+        }
+
+        // Blocks knight mobility
+        if (board.board[i-48] === n) positionalScore += AI.PAR[AI.phase][4]
+
+        //Semi outpost
+        if (AI.phase <= MIDGAME && board.ranksW[i] >= 3 && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][5]
+
+        //X-Rays
+        if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
+            positionalScore += AI.PAR[AI.phase][6]
+        } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
+            positionalScore += AI.PAR[AI.phase][6]
+        }
+
+        if (board.board[i + 15] === P || board.board[i + 17] === P) {
+            positionalScore += AI.OUTPOSTBONUSBISHOP[i]
+
+            //pawn in front of outpost bishop
+            if (board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][7]
+
+            //outpost bishop in rank 6
+            if (board.ranksW[i] === 6) positionalScore += AI.PAR[AI.phase][8]
+        }
+
+        return positionalScore
+    },
+
+    [b]: (board, i)=>{
+        let positionalScore = 0
+
+        if (AI.phase === OPENING) {
+            // In front of pawn at opening
+            if ((i === 35 || i === 36) && board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][33]
+
+            // Bishop blocked by own pawns
+            if (board.board[i+15] === p) positionalScore += AI.PAR[AI.phase][34]
+            if (board.board[i+17] === p) positionalScore += AI.PAR[AI.phase][34]
+        }
+
+        // Blocks knight mobility
+        if (board.board[i+48] === N) positionalScore -= AI.PAR[AI.phase][4]
+
+        //Semi outpost
+        if (board.ranksB[i] >= 3 && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][5]
+
+        // X-Rays
+        if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
+            positionalScore -= AI.PAR[AI.phase][6]
+        } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
+            positionalScore -= AI.PAR[AI.phase][6]
+        }
+
+        if (board.board[i - 15] === p || board.board[i - 17] === p) {
+            positionalScore -= AI.OUTPOSTBONUSBISHOP[112^i]
+
+            //pawn in front of outpost bishop
+            if (board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][7]
+
+            //outpost bishop in rank 6
+            if (board.ranksB[i] === 6) positionalScore -= AI.PAR[AI.phase][8]
+        }
+
+        return positionalScore
+    },
+
+    [N]: (board, i)=>{
+        let positionalScore = 0
+
+        // Semi outpost
+        if (AI.phase <= EARLY_ENDGAME && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][9]
+
+        if (board.board[i + 15] === P || board.board[i + 17] === P) {
+            positionalScore += AI.OUTPOSTBONUSKNIGHT[i]
+
+            //enemy pawn in front of outpost knight
+            if (board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][10]
+
+            //outpost knight in rank 6
+            if (board.ranksW[i] === 6) positionalScore += AI.PAR[AI.phase][11]
+        }
+
+        return positionalScore
+    },
+
+    [n]: (board, i)=>{
+        let positionalScore = 0
+
+        // Semi outpost
+        if (AI.phase <= EARLY_ENDGAME && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][9]
+
+        if (board.board[i - 15] === p || board.board[i - 17] === p) {
+            positionalScore -= AI.OUTPOSTBONUSKNIGHT[112^i]
+
+            if (board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][10]
+
+            if (board.ranksB[i] === 6) positionalScore -= AI.PAR[AI.phase][11]
+        }
+
+        return positionalScore
+    },
+
+    [R]: (board, i)=>{
+        let positionalScore = 0
+
+        // X-Rays
+        if (board.columns[i] === board.columns[board.blackKingIndex]) positionalScore += AI.PAR[AI.phase][12]
+        if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) positionalScore += AI.PAR[AI.phase][12]
+
+        //defended rook in rank 5
+        if (board.ranksW[i] === 5) {
+            if (board.board[i + 15] === P || board.board[i + 17] === P) positionalScore += AI.PAR[AI.phase][13]
+        }
+
+        //Rook in 7th
+        if (board.ranksW[board.blackKingIndex] - board.ranksW[i] === 1 ) {
+            positionalScore += 40
+        }
+
+        return positionalScore
+    },
+
+    [r]: (board, i)=>{
+        let positionalScore = 0
+
+        // X-Rays
+        if (board.columns[i] === board.columns[board.whiteKingIndex]) positionalScore -= AI.PAR[AI.phase][12]
+        if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) positionalScore -= AI.PAR[AI.phase][12]
+
+        //defended rook in rank 5
+        if (board.ranksB[i] === 5) {
+            if (board.board[i - 15] === p || board.board[i - 17] === p) positionalScore -= AI.PAR[AI.phase][13]
+        }
+
+        //Rook in 7th
+        if (board.ranksB[board.whiteKingIndex] - board.ranksB[i] === 1 ) {
+            positionalScore -= 40
+        }
+
+        return positionalScore
+    },
+
+    [Q]: (board, i)=>{
+        let positionalScore = 0
+
+        if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
+            positionalScore += AI.PAR[AI.phase][14]
+        } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
+            positionalScore += AI.PAR[AI.phase][14]
+        }
+
+        if (board.columns[i] === board.columns[board.blackKingIndex]) {
+            positionalScore += AI.PAR[AI.phase][14]
+        } else if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) {
+            positionalScore += AI.PAR[AI.phase][14]
+        }
+
+        return positionalScore
+    },
+
+    [q]: (board, i)=>{
+        let positionalScore = 0
+
+        if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
+            positionalScore -= AI.PAR[AI.phase][14]
+        } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
+            positionalScore -= AI.PAR[AI.phase][14]
+        }
+
+        if (board.columns[i] === board.columns[board.whiteKingIndex]) {
+            positionalScore -= AI.PAR[AI.phase][14]
+        } else if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) {
+            positionalScore -= AI.PAR[AI.phase][14]
+        }
+
+        return positionalScore
+    },
+
+    [K]: (board, i)=>{
+        let positionalScore = 0
+
+        // if (board.whiteKingIndex === 118 && board.board[119] === R) positionalScore -= VPAWN
+        // if (board.whiteKingIndex === 117 && board.board[119] === R) positionalScore -= VPAWN2
+        // if (board.whiteKingIndex === 117 && board.board[118] === R) positionalScore -= VPAWN
+
+        return positionalScore
+    },
+
+    [k]: (board, i)=>{
+        let positionalScore = 0
+
+        // if (board.blackKingIndex === 6 && board.board[7] === r) positionalScore += VPAWN
+        // if (board.blackKingIndex === 5 && board.board[7] === r) positionalScore += VPAWN2
+        // if (board.blackKingIndex === 5 && board.board[6] === r) positionalScore += VPAWN
+
+        return positionalScore
+    }
+}
+
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) {
     let advance = 100 * (1 - AI.totalmaterial / AI.maxMaterialValue)
@@ -1654,6 +1962,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     let material = 0
     let psqt = 0
+    let microeval = 0
 
     let tempTotalMaterial = 0
 
@@ -1681,6 +1990,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
+        if (pvNode) microeval += AI.microeval[piece](board, i)
+
         // MATERIAL
         let mgMaterial = mgFactor * AI.PIECE_VALUES[OPENING][piece]
         let egMaterial = egFactor * AI.PIECE_VALUES[LATE_ENDGAME][piece]
@@ -1692,13 +2003,15 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let piecetype = ABS[piece]
 
-        if (true || piecetype === K) {
-            let index = turn === WHITE? i : (112^i)
-            
-            let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
-            let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
-            
-            psqt += sign*(mgPSQT + egPSQT)
+        let index = turn === WHITE? i : (112^i)
+        
+        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
+        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
+        
+        psqt += sign*(mgPSQT + egPSQT)
+
+        if (piecetype === K) {
+
         } else if (piecetype === P) {
             if (piece === P) {
                 pawnindexW.push(i)
@@ -1802,7 +2115,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     // Positional
-    let positional = psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
+    let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
     
     // to logistic
     positional = AI.logistic(positional, 200) | 0
