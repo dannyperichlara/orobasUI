@@ -1564,10 +1564,6 @@ AI.createTables = function (board, tt, ev, hh, pp) {
     // console.log('Creating tables', tt, ev, hh, pp)
 
     if (hh) {
-        if  (AI.history) {
-            AI.history.splice(0,2)
-        }
-
         AI.history = new Array(AI.totaldepth + 1)
 
         for (let ply = 0; ply < AI.totaldepth + 1; ply++) {
@@ -1592,17 +1588,14 @@ AI.createTables = function (board, tt, ev, hh, pp) {
 
 
     if (tt) {
-        delete AI.hashTable
         AI.hashTable = [null, new Array(this.htlength).fill(null), new Array(this.htlength).fill(null)]
     }
 
     if (ev) {
-        delete AI.evalTable
         AI.evalTable = (new Array(this.htlength)).fill(null)
     }
 
     if (pp) {
-        delete AI.pawnTable
         AI.pawnTable = (new Array(this.pawntlength)).fill(null)
 
         AI.phnodes = 0
@@ -2003,14 +1996,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let piecetype = ABS[piece]
 
-        let index = turn === WHITE? i : (112^i)
         
-        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
-        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
-        
-        psqt += sign*(mgPSQT + egPSQT)
-
         if (piecetype === K) {
+            let index = turn === WHITE? i : (112^i)
+            
+            let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
+            let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
+            
+            psqt += sign*(mgPSQT + egPSQT)
 
         } else if (piecetype === P) {
             if (piece === P) {
@@ -2116,9 +2109,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     // Positional
     let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
+
+    if (material !== 0) {
+        let advantageFactor = 0.0043 * material + 1 | 0
+        positional = positional / advantageFactor | 0
+    }
     
     // to logistic
-    positional = AI.logistic(positional, 200) | 0
+    // positional = AI.logistic(positional, 200) | 0
 
     score += positional
 
@@ -2817,7 +2815,7 @@ AI.ttGet = function (turn, hashkey) {
 AI.saveHistory = function (ply, move, value) {
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 3; i++) {
         if (value > 0) {
             AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
         } else {
@@ -2870,24 +2868,24 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let opponentTurn = turn === WHITE? BLACK : WHITE
     let sign = turn === WHITE? 1 : -1
 
-    //Búsqueda QS
-    if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
-    }
-
     if (ttEntry && ttEntry.depth >= depth) {
-        if (ttEntry.flag === EXACT) {
-            // return ttEntry.score
-            alpha = ttEntry.score
+        if (ttEntry.flag === EXACT && depth > 0) {
+            return ttEntry.score
+            // alpha = ttEntry.score
         } else if (ttEntry.flag === LOWERBOUND) {
             if (ttEntry.score > alpha) alpha = ttEntry.score
         } else if (ttEntry.flag === UPPERBOUND) {
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
-        if (alpha >= beta) {
+        if (depth > 0 && alpha >= beta) {
             return ttEntry.score
         }
+    }
+
+    //Búsqueda QS
+    if (depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
     }
 
     // if (!ttEntry) {
@@ -3082,13 +3080,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
 
                 if (!mateE) {
-                    R += AI.LMR_TABLE[depth + 2][legal + 1]
+                    R += AI.LMR_TABLE[depth][legal]
                 }
 
-                if (pvNode || incheck || inCheckAfterMove) R--
+                // if (pvNode || incheck || inCheckAfterMove) R--
 
                 if (!incheck) {
-                    if (cutNode || (AI.history[ply][piece][move.to] < 0)) R++
+                    if (cutNode) R++
+
+                    if (AI.history[ply][piece][move.to] < 0) R++
                     
                     if (!move.isCapture) {
                         // Bad moves reductions
@@ -3185,7 +3185,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     
                     if (!lookForMateTurn && allowNullMove) {
                         AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
-                        AI.ttSave(board.turn, board.hashkey, -score, UPPERBOUND, depth - 1 + E - R, EMPTYMOVE)
+                        // AI.ttSave(board.turn, board.hashkey, -score, UPPERBOUND, depth - 1 + E - R, EMPTYMOVE)
                     }
 
                     board.unmakeMove(move)
