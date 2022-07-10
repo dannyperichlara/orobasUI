@@ -3079,8 +3079,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     // }
                 }
 
-                if (depth >= 3 && legal >= 1 && !mateE) {
-                    R += AI.LMR_TABLE[depth][legal]
+                if (!mateE) {
+                    R += AI.LMR_TABLE[depth + 2][legal + 1]
                 }
 
                 if (pvNode || incheck || inCheckAfterMove) R--
