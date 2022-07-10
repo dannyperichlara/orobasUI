@@ -1692,7 +1692,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let piecetype = ABS[piece]
 
-        if (piecetype === K) {
+        if (true || piecetype === K) {
             let index = turn === WHITE? i : (112^i)
             
             let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
@@ -2212,8 +2212,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
     let killer1, killer2
     try {
 
-        // let t0 = (new Date).getTime()
-    
+        
         if (AI.killers) {
             killer1 = AI.killers[turn][ply][0]
             killer2 = AI.killers[turn][ply][1]
@@ -2221,6 +2220,8 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
     } catch(err) {
         console.log('error', ply)
     }
+
+    // let t0 = (new Date).getTime()
 
     let sortedMoves = []
     let unsortedMoves = []
@@ -2257,28 +2258,28 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
             
-            move.score += 1e7 + move.mvvlva
+            // move.score += 1e7 + move.mvvlva
             
-            // if (move.mvvlva >= 6000) {
-            //     // CRITERIO 3: La jugada es una captura posiblemente ganadora
+            if (move.mvvlva >= 6000) {
+                // CRITERIO 3: La jugada es una captura posiblemente ganadora
                 
-            //     if (board.turn === WHITE) {
-            //         if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
-            //             move.score += 4e6 + move.mvvlva
-            //         } else {
-            //             move.score += 1e7 + move.mvvlva
-            //         }
-            //     } else {
-            //         if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
-            //             move.score += 4e6 + move.mvvlva
-            //         } else {
-            //             move.score += 1e7 + move.mvvlva
-            //         }
-            //     }
-            // } else {
-            //     // CRITERIO 5: La jugada es una captura probablemente perdedora
-            //     move.score += 4e6 + move.mvvlva
-            // }
+                if (board.turn === WHITE) {
+                    if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
+                        move.score += 4e6 + move.mvvlva
+                    } else {
+                        move.score += 1e7 + move.mvvlva
+                    }
+                } else {
+                    if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
+                        move.score += 4e6 + move.mvvlva
+                    } else {
+                        move.score += 1e7 + move.mvvlva
+                    }
+                }
+            } else {
+                // CRITERIO 5: La jugada es una captura probablemente perdedora
+                move.score += 4e6 + move.mvvlva
+            }
 
             sortedMoves.push(move)
 
@@ -2322,7 +2323,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             // CRITERIO: Enroque
             if (move.castleSide) {
                 if (AI.phase === OPENING) {
-                    move.score += 1e8
+                    move.score += 4e6
                 } else if (AI.phase === MIDGAME) {
                     move.score += 2e6
                 }
@@ -2376,12 +2377,6 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             return b.score - a.score
         })
     }
-
-    // if (sortedMoves.length > 1) {
-    //     sortedMoves = sort(sortedMoves).by([
-    //         { desc: u => u.score }
-    //     ])
-    // }
 
     moves = sortedMoves.concat(unsortedMoves)
 
@@ -2549,7 +2544,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
     AI.nodes++
     
-    if (AI.iteration > AI.mindepth[AI.phase]) {
+    // Date.now es un algoritmo que consume mucho tiempo; por esa razón revisa cada 1000 nodos
+    if (AI.iteration > AI.mindepth[AI.phase] && AI.nodes % 1000 === 0) {
         if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
         }
