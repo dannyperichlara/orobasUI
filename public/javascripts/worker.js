@@ -2,6 +2,36 @@
 
 // 2rq1rk1/1pb2ppp/p1n2n2/4p1B1/2P4N/1P1B3P/P2N1PP1/2RQ1RK1 b - - 0 15
 
+console.time()
+
+for (let i = 0; i < 10000000; i++) {
+    Math.random()
+}
+
+console.timeEnd()
+
+let randomNumbers = new Array(10000).fill(Math.random())
+
+for (let i = 0; i < randomNumbers.length; i++) {
+    randomNumbers[i] = Math.random()
+}
+
+let randomIndex = 0
+
+Math.random = ()=>{
+    return randomNumbers[randomIndex++ % 80000]
+}
+
+console.time()
+
+for (let i = 0; i < 10000000; i++) {
+    Math.random()
+}
+
+console.timeEnd()
+
+
+
 const P =   1
 const N =   2
 const B =   3
@@ -1281,7 +1311,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 40,
     phase: 0,
     htlength: 8e6,
     pawntlength: 5e5,
@@ -1449,7 +1479,7 @@ console.log(AI.PIECE_VALUES[OPENING])
 console.log('Max material value', AI.maxMaterialValue)
 
 // CONSTANTES
-const MATE = (AI.maxMaterialValue + 16*VPAWN) / AI.nullWindowFactor | 0
+const MATE = (AI.maxMaterialValue / 2) / AI.nullWindowFactor | 0
 const DRAW = 0
 const INFINITY = MATE + 1 | 0
 
@@ -2108,7 +2138,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     // Positional
-    let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
+    let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack | 0
 
     if (material !== 0) {
         let advantageFactor = 0.0043 * material + 1 | 0
@@ -2624,7 +2654,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             
             // CRITERIO: La jugada es una promoción
             if (move.promotingPiece) {
-                move.score += 3e6
+                move.score += 1e8
 
                 sortedMoves.push(move)
 
@@ -2634,11 +2664,11 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             // CRITERIO: Enroque
             if (move.castleSide) {
                 if (AI.phase === OPENING) {
-                    move.score += 4e6
-                } else if (AI.phase === MIDGAME) {
-                    move.score += 2e6
+                    move.score += 1e8
+                } else {
+                    move.score += 8e6
                 }
-
+                
                 sortedMoves.push(move)
 
                 continue
@@ -2658,22 +2688,25 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 
                 continue
             } else {
+
                 // unsortedMoves.push(move)
                 // continue
 
-                if (AI.phase <= MIDGAME) {
-                    if (turn === WHITE) {
-                        move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
-                    } else {
-                        move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
-                    }
-                } else {
-                    if (turn === WHITE) {
-                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
-                    } else {
-                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
-                    }
-                }
+                // if (AI.phase <= MIDGAME) {
+                //     if (turn === WHITE) {
+                //         move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
+                //     } else {
+                //         move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
+                //     }
+                // } else {
+                //     if (turn === WHITE) {
+                //         move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
+                //     } else {
+                //         move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
+                //     }
+                // }
+
+                move.score = Math.random() * 1000 | 0
 
                 sortedMoves.push(move)
             }
@@ -2815,7 +2848,7 @@ AI.ttGet = function (turn, hashkey) {
 AI.saveHistory = function (ply, move, value) {
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 10; i++) {
         if (value > 0) {
             AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
         } else {
@@ -3174,11 +3207,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     //LOWERBOUND
                     
                     if (!move.isCapture) {
-                        // if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].key != move.key) {
-                        //         AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
-                        // }
+                        if (AI.killers[turn | 0][ply][0] && AI.killers[turn | 0][ply][0].key != move.key) {
+                                AI.killers[turn | 0][ply][1] = AI.killers[turn | 0][ply][0]
+                        }
                         
-                        // AI.killers[turn | 0][ply][0] = move
+                        AI.killers[turn | 0][ply][0] = move
                         
                         AI.saveHistory(ply, move, legal*depth*depth)
                     }
@@ -3328,6 +3361,7 @@ AI.MTDF = function (board, f, d) {
 
 
 AI.search = function (board, options) {
+    console.log('Board Zobrist Hash', board.hashkey)
     AI.sortingTime = 0
     AI.searchTime0 = Date.now()
     AI.collisions = 0
