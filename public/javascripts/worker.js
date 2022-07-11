@@ -10,7 +10,7 @@ for (let i = 0; i < 10000000; i++) {
 
 console.timeEnd()
 
-let randomNumbers = new Array(10000).fill(Math.random())
+let randomNumbers = new Array(8000).fill(Math.random())
 
 for (let i = 0; i < randomNumbers.length; i++) {
     randomNumbers[i] = Math.random()
@@ -19,7 +19,7 @@ for (let i = 0; i < randomNumbers.length; i++) {
 let randomIndex = 0
 
 Math.random = ()=>{
-    return randomNumbers[randomIndex++ % 80000]
+    return randomNumbers[randomIndex++ % 8000]
 }
 
 console.time()
@@ -1618,6 +1618,9 @@ AI.createTables = function (board, tt, ev, hh, pp) {
 
 
     if (tt) {
+        AI.collisions = 0
+        AI.ttGets = 0
+
         AI.hashTable = [null, new Array(this.htlength).fill(null), new Array(this.htlength).fill(null)]
     }
 
@@ -1626,6 +1629,9 @@ AI.createTables = function (board, tt, ev, hh, pp) {
     }
 
     if (pp) {
+        AI.pawncollisions = 0
+        AI.phnodes = 0
+
         AI.pawnTable = (new Array(this.pawntlength)).fill(null)
 
         AI.phnodes = 0
@@ -1962,21 +1968,25 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     // illegalMovesSoFar = illegalMovesSoFar | 0
     
-    let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     this.evalnodes++
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
     let tempoBonus = AI.PAR[AI.phase][35]*sign
+    
+    let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     
     if (evalEntry && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
         return sign*evalEntry.score
     }
 
+    // if (pvNode) console.log(pvNode)
+    
     // let t0 = Date.now()
 
     alpha = alpha*this.nullWindowFactor | 0
     beta = alpha + this.nullWindowFactor
+
 
     let score = tempoBonus + (AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0)
 
@@ -2578,6 +2588,10 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 
         let ttEntryMove = false
 
+        // move.score = Math.random()
+        // sortedMoves.push(move)
+        // continue
+
         // CRITERIO 1: La jugada está en la Tabla de Trasposición
         if (ttEntry && ttEntry.flag < UPPERBOUND && move.key === ttEntry.move.key) {
             move.tt = true
@@ -2587,14 +2601,14 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             continue
         }
 
-        // CRITERIO 2: La jugada está en la Variante Principal anterior
-        if (AI.PV[ply] && AI.PV[ply].key === move.key) {
-            // console.log(move.key)
-            move.pv = true
-            move.score += 2e8
-            sortedMoves.push(move)
-            continue
-        }
+        // // CRITERIO 2: La jugada está en la Variante Principal anterior
+        // if (AI.PV[ply] && AI.PV[ply].key === move.key) {
+        //     // console.log(move.key)
+        //     move.pv = true
+        //     move.score += 2e8
+        //     sortedMoves.push(move)
+        //     continue
+        // }
         
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
@@ -2706,9 +2720,11 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 //     }
                 // }
 
-                move.score = Math.random() * 1000 | 0
+                move.score = Math.random() | 0
 
                 sortedMoves.push(move)
+
+                continue
             }
         }
     }
@@ -2750,7 +2766,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
     let incheck = board.isKingInCheck()
 
     if (!incheck) {
-        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, false, illegalMovesSoFar) | 0
+        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
     
         if (standpat >= beta) {
             return standpat
@@ -2776,7 +2792,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
         let move = moves[i]
 
         // Bad captures pruning (+34 ELO)
-        if (move.mvvlva < 6000 && !incheck) {
+        if (!pvNode && move.mvvlva < 6000 && !incheck) {
             if (board.isSquareAttacked(move.to, opponentTurn, false, false)) continue
         }
 
@@ -2844,7 +2860,7 @@ AI.ttGet = function (turn, hashkey) {
         } else {
             AI.collisions++
             // console.log('Collision', AI.collisions)
-            // AI.hashTable[turn][hashkey % AI.htlength] = null
+            AI.hashTable[turn][hashkey % AI.htlength] = null
             return null
         }
     } else {
@@ -2890,7 +2906,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let ttEntry = AI.ttGet(turn, hashkey)
 
-    let pvNode = ply == 1 || beta - alpha > 1 || (ttEntry && ttEntry.flag === EXACT) // PV-Node
+    let pvNode = ply === 1 || beta - alpha > 1 || (ttEntry && ttEntry.flag <= EXACT) // PV-Node
     
     let cutNode = !pvNode
     
@@ -3127,7 +3143,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
                 // if (pvNode || incheck || inCheckAfterMove) R--
 
-                if (!incheck) {
+                if (!incheck && !inCheckAfterMove) {
                     if (cutNode) R++
 
                     if (AI.history[ply][piece][move.to] < 0) R++
@@ -3592,7 +3608,7 @@ AI.search = function (board, options) {
                     'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
                     'ETC (%): ', (AI.etcNodes/AI.nodes*1000 | 0) / 10,
                     'Collisions (%): ', (AI.collisions/AI.ttGets*1000 | 0) / 10,
-                    'Pawn Collisions (%): ', (AI.pawncollisions/AI.evalnodes*1000 | 0) / 10,
+                    'Pawn Collisions (%): ', (AI.pawncollisions/AI.phnodes*1000 | 0) / 10,
                     'NPS: ', (AI.nodes + AI.qsnodes) / options.seconds | 0,
         )
 
@@ -3613,7 +3629,7 @@ AI.search = function (board, options) {
         }
 
         if (!near2mate) {
-            AI.createTables(board, AI.collisions/AI.ttGets > 0.01, AI.collisions/AI.ttGets > 0.01, true, false)
+            AI.createTables(board, AI.collisions/AI.ttGets > 0.01, AI.collisions/AI.ttGets > 0.01, true, AI.pawncollisions/AI.phnodes > 0.01)
         } else {
             console.log('Near to mate!')
         }
