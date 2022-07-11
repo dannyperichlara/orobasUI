@@ -2747,20 +2747,23 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
     let standpat = alpha // Only to prevent undefined values for standpat
     
     let hashkey = board.hashkey
+    let incheck = board.isKingInCheck()
 
-    standpat = AI.evaluate(board, ply, alpha, beta, pvNode, false, illegalMovesSoFar) | 0
-
-    if (standpat >= beta) {
-        return standpat
+    if (!incheck) {
+        standpat = AI.evaluate(board, ply, alpha, beta, pvNode, false, illegalMovesSoFar) | 0
+    
+        if (standpat >= beta) {
+            return standpat
+        }
+    
+        if (standpat > alpha) alpha = standpat
+    
+        if (standpat + MARGIN10 < alpha) return alpha
     }
 
-    if (standpat > alpha) alpha = standpat
+    let moves = board.getMoves(false, !incheck)
 
-    if (standpat + MARGIN10 < alpha) return alpha
-
-    let moves = board.getMoves(false, true)
-
-    if (moves.length === 0) {
+    if (moves.length === 0 && !incheck) {
         return alpha
     }
     
@@ -2773,7 +2776,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
         let move = moves[i]
 
         // Bad captures pruning (+34 ELO)
-        if (move.mvvlva < 6000) {
+        if (move.mvvlva < 6000 && !incheck) {
             if (board.isSquareAttacked(move.to, opponentTurn, false, false)) continue
         }
 
@@ -2795,6 +2798,10 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
                 alpha = score
             }
         }
+    }
+
+    if (incheck && !legal) {
+        return -MATE + ply
     }
 
     return alpha
