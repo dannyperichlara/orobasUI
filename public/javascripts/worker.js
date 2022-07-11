@@ -3005,21 +3005,23 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                         return score
                     }
                 } else {
-                    if (staticeval + MARGIN3 < beta) {
+                    if (staticeval + MARGIN10 < beta) {
                         depth-=2
                     }
 
-                    if (staticeval + MARGIN2 < beta) {
+                    if (staticeval + MARGIN3 < beta) {
                         depth--
                     }
                 }
                 
             }
         }
-    }
 
+    }
+    
     // IID
     if (!ttEntry && depth > 2) depth--
+
 
     let moves = []
 
