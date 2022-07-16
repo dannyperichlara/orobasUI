@@ -10,7 +10,7 @@ for (let i = 0; i < 10000000; i++) {
 
 console.timeEnd()
 
-let randomNumbers = new Array(8000).fill(Math.random())
+let randomNumbers = new Array(8000).fill(0)
 
 for (let i = 0; i < randomNumbers.length; i++) {
     randomNumbers[i] = Math.random()
@@ -1311,7 +1311,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 40,
+    random: 0,
     phase: 0,
     htlength: 8e6,
     pawntlength: 5e5,
@@ -1562,7 +1562,7 @@ let distance = (board, sq1, sq2)=>{
 // /*P*/[6002, 20225, 20250, 20400, 20800, 26900],
 let mvvlvaScores = [
     /* P      N      B      R      Q      K
-/*P*/[6100, 20225, 20250, 20400, 20800, 26900],
+/*P*/[6002, 20225, 20250, 20400, 20800, 26900],
 /*N*/[4775,  6004, 20025, 20175, 20575, 26675],
 /*B*/[4750,  4975,  6006, 20150, 20550, 26650],
 /*R*/[4600,  4825,  4850,  6008, 20400, 26500],
@@ -2148,7 +2148,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     // Positional
-    let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack | 0
+    let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
 
     if (material !== 0) {
         let advantageFactor = 0.0043 * material + 1 | 0
@@ -2156,7 +2156,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
     
     // to logistic
-    // positional = AI.logistic(positional, 200) | 0
+    positional = AI.logistic(positional, 200) | 0
 
     score += positional
 
@@ -2601,14 +2601,14 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             continue
         }
 
-        // // CRITERIO 2: La jugada está en la Variante Principal anterior
-        // if (AI.PV[ply] && AI.PV[ply].key === move.key) {
-        //     // console.log(move.key)
-        //     move.pv = true
-        //     move.score += 2e8
-        //     sortedMoves.push(move)
-        //     continue
-        // }
+        // CRITERIO 2: La jugada está en la Variante Principal anterior
+        if (AI.PV[ply] && AI.PV[ply].key === move.key) {
+            // console.log(move.key)
+            move.pv = true
+            move.score += 2e8
+            sortedMoves.push(move)
+            continue
+        }
         
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
@@ -2706,21 +2706,21 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 // unsortedMoves.push(move)
                 // continue
 
-                // if (AI.phase <= MIDGAME) {
-                //     if (turn === WHITE) {
-                //         move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
-                //     } else {
-                //         move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
-                //     }
-                // } else {
-                //     if (turn === WHITE) {
-                //         move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
-                //     } else {
-                //         move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
-                //     }
-                // }
+                if (AI.phase <= MIDGAME) {
+                    if (turn === WHITE) {
+                        move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
+                    } else {
+                        move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
+                    }
+                } else {
+                    if (turn === WHITE) {
+                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
+                    } else {
+                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
+                    }
+                }
 
-                move.score = Math.random() | 0
+                // move.score = Math.random() | 0
 
                 sortedMoves.push(move)
 
@@ -2871,7 +2871,7 @@ AI.ttGet = function (turn, hashkey) {
 AI.saveHistory = function (ply, move, value) {
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 3; i++) {
         if (value > 0) {
             AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
         } else {
@@ -2887,19 +2887,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     // if (depth > max) console.log('Max depth', max++)
 
-    // let mating_value = MATE - ply;
+    let mating_value = MATE - ply;
 
-    // if (mating_value < beta) {
-    //     beta = mating_value
-    //     if (alpha >= mating_value) return mating_value
-    // }
+    if (mating_value < beta) {
+        beta = mating_value
+        if (alpha >= mating_value) return mating_value
+    }
 
-    // mating_value = -MATE + ply;
+    mating_value = -MATE + ply;
 
-    // if (mating_value > alpha) {
-    //     alpha = mating_value
-    //     if (beta <= mating_value) return mating_value
-    // }
+    if (mating_value > alpha) {
+        alpha = mating_value
+        if (beta <= mating_value) return mating_value
+    }
 
     let turn = board.turn
     let hashkey = board.hashkey
@@ -2934,7 +2934,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
-        if (depth > 0 && alpha >= beta) {
+        if (/*depth > 0 && */alpha >= beta) {
             return ttEntry.score
         }
     }
@@ -2982,7 +2982,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     if (prune) {
         // //Futility pruning
         if (staticeval - MARGIN2*depth >= beta) {
-            // AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
+            AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
             return staticeval
         }
         
@@ -3545,10 +3545,10 @@ AI.search = function (board, options) {
                 if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth > depth) {
                     AI.f = ttEntry.score
                     AI.bestmove = ttEntry.move
-                } else {
-                    let mtdfScore = AI.MTDF(board, AI.f, depth)
-                    if (!AI.stop) AI.f = mtdfScore
                 }
+                
+                let mtdfScore = AI.MTDF(board, AI.f, depth)
+                if (!AI.stop) AI.f = mtdfScore
                 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
