@@ -2150,13 +2150,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Positional
     let positional = microeval + psqt + structure + pieceKingDistance + mobility + underAttack + centerControl | 0
 
-    if (material !== 0) {
-        let advantageFactor = 0.0043 * material + 1 | 0
-        positional = positional / advantageFactor | 0
-    }
+    // if (material !== 0) {
+    //     let advantageFactor = 0.0043 * material + 1 | 0
+    //     positional = positional / advantageFactor | 0
+    // }
     
-    // to logistic
-    positional = AI.logistic(positional, 200) | 0
+    // // to logistic
+    // positional = AI.logistic(positional, 200) | 0
 
     score += positional
 
@@ -2906,7 +2906,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let ttEntry = AI.ttGet(turn, hashkey)
 
-    let pvNode = ply === 1 || beta - alpha > 1 || (ttEntry && ttEntry.flag <= EXACT) // PV-Node
+    let pvNode = ply === 1 || beta - alpha > 1// || (ttEntry && ttEntry.flag <= EXACT) // PV-Node
     
     let cutNode = !pvNode
     
@@ -2977,7 +2977,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     // console.log(ttEntry, AI.PV[ply])
 
-    let prune = ttEntry && depth < 9 && cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
+    let prune = /*ttEntry &&*/ depth < 9 && cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
         // //Futility pruning
@@ -3141,7 +3141,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     R += AI.LMR_TABLE[depth][legal]
                 }
 
-                // if (pvNode || incheck || inCheckAfterMove) R--
+                if (pvNode || incheck || inCheckAfterMove) R--
 
                 if (!incheck && !inCheckAfterMove) {
                     if (cutNode) R++
