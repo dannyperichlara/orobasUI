@@ -2835,8 +2835,8 @@ AI.ttSave = function (turn, hashkey, score, flag, depth, move) {
         return
     }
 
-    if (score > MATE - AI.totaldepth) return
-    if (score < -MATE + AI.totaldepth) return
+    // if (score > MATE - AI.totaldepth) return
+    // if (score < -MATE + AI.totaldepth) return
 
     AI.hashTable[turn][hashkey % AI.htlength] = {
         hashkey,
