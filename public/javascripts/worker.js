@@ -2156,7 +2156,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // }
     
     // // to logistic
-    // positional = AI.logistic(positional, 200) | 0
+    positional = AI.logistic(positional, 100) | 0
 
     score += positional
 
@@ -2173,8 +2173,22 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     return sign*nullWindowScore
 }
 
+AI.logisticTable = new Map()
+
 AI.logistic = (x, limit)=> {
-    return 2*limit / (1 + Math.exp(-x/(0.5*limit))) - limit
+    if (!x) return 0
+
+    let logisticEntry = AI.logisticTable[x]
+
+    if (logisticEntry) {
+        return logisticEntry
+    }
+
+    let logistic = 2*limit / (1 + Math.exp(-x/(0.5*limit))) - limit | 0
+
+    AI.logisticTable[x] = logistic
+
+    return logistic
 }
 
 AI.getPawnShield = (board)=>{
