@@ -42,7 +42,7 @@ AI.PAR[0] = [
     40,  //34 blocked by own pawn
 
 	//Other
-	40,  //35 Tempo bonus
+	43,  //35 Tempo bonus
 	20,  //36 Piece-distance value (to the enemy king)
 	4,  //37 Piece-distance value (to the own king)
 ]

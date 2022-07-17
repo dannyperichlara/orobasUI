@@ -1971,13 +1971,13 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     this.evalnodes++
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let tempoBonus = AI.PAR[AI.phase][35]*sign
-    
+    let tempoBonus = sign * (AI.PAR[AI.phase][35] - 1.643*ply) | 0 // y = -1,6435x + 43,043
+
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     
     if (evalEntry && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
-        return sign*evalEntry.score
+        return sign * (evalEntry.score + tempoBonus) / AI.nullWindowFactor
     }
 
     // if (pvNode) console.log(pvNode)
@@ -1988,7 +1988,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     beta = alpha + this.nullWindowFactor
 
 
-    let score = tempoBonus + (AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0)
+    let score = (AI.random? Math.random()*AI.random - AI.random/2 | 0 : 0)
 
     let pawnindexW = []
     let pawnindexB = []
@@ -2023,7 +2023,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         let turn = board.color(piece)
         let sign = turn === WHITE? 1 : -1
 
-        if (pvNode) microeval += AI.microeval[piece](board, i)
+        // if (pvNode) microeval += AI.microeval[piece](board, i)
 
         // MATERIAL
         let mgMaterial = mgFactor * AI.PIECE_VALUES[OPENING][piece]
@@ -2160,12 +2160,15 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     score += positional
 
-    let nullWindowScore = score / AI.nullWindowFactor | 0
-
+    
     AI.evalTable[board.hashkey % this.htlength] = {
         hashkey: board.hashkey,
-        score: nullWindowScore
+        score
     }
+
+    score += tempoBonus
+    
+    let nullWindowScore = score / AI.nullWindowFactor | 0
 
     // let t1 = Date.now()
     // AI.evalTime += t1 - t0
@@ -3256,8 +3259,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     }
                     
                     if (!lookForMateTurn && allowNullMove) {
-                        AI.ttSave(turn, hashkey, score, LOWERBOUND, depth + E - R, move)
-                        // AI.ttSave(board.turn, board.hashkey, -score, UPPERBOUND, depth - 1 + E - R, EMPTYMOVE)
+                        AI.ttSave(turn, hashkey, beta, LOWERBOUND, depth, move)
+                        AI.ttSave(board.turn, board.hashkey, -score, UPPERBOUND, depth - 1 + E - R, EMPTYMOVE)
                     }
 
                     board.unmakeMove(move)
