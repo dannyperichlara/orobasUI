@@ -2036,14 +2036,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let piecetype = ABS[piece]
 
+        let index = turn === WHITE? i : (112^i)
+        
+        let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
+        let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
+        
+        psqt += sign*(mgPSQT + egPSQT)
         
         if (piecetype === K) {
-            let index = turn === WHITE? i : (112^i)
-            
-            let mgPSQT = AI.PSQT_OPENING[piecetype][index] * mgFactor | 0
-            let egPSQT = AI.PSQT_LATE_ENDGAME[piecetype][index] * egFactor | 0
-            
-            psqt += sign*(mgPSQT + egPSQT)
 
         } else if (piecetype === P) {
             if (piece === P) {
@@ -2994,11 +2994,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     // console.log(ttEntry, AI.PV[ply])
 
-    let prune = /*ttEntry &&*/ depth < 9 && cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
+    let prune = /*depth < 9 &&*/ cutNode && !incheck/* && ply > 2*/ && !enPassantSquare && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
         // //Futility pruning
-        if (staticeval - MARGIN2*depth >= beta) {
+        if (depth < 9 && staticeval - MARGIN2*depth >= beta) {
             AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
             return staticeval
         }
