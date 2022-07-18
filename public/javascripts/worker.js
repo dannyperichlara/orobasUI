@@ -2888,7 +2888,7 @@ AI.ttGet = function (turn, hashkey) {
 AI.saveHistory = function (ply, move, value) {
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 6; i++) {
         if (value > 0) {
             AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
         } else {
