@@ -2065,15 +2065,15 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                     pieceKingDistance += AI.PAR[AI.phase][36] * (4 - pieceDistance)
                 }
 
-                // To the own king
-                {
-                    let verticalDistance = board.ranksW[i] - board.ranksW[board.whiteKingIndex]
-                    let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
+                // // To the own king
+                // {
+                //     let verticalDistance = board.ranksW[i] - board.ranksW[board.whiteKingIndex]
+                //     let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
         
-                    let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+                //     let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
         
-                    pieceKingDistance += AI.PAR[AI.phase][37] * (4 - pieceDistance)
-                }
+                //     pieceKingDistance += AI.PAR[AI.phase][37] * (4 - pieceDistance)
+                // }
             } else {
                 // To the enemy king
                 {
@@ -2085,15 +2085,15 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
                     pieceKingDistance -= AI.PAR[AI.phase][36] * (4 - pieceDistance)
                 }
 
-                // To the own king
-                {
-                    let verticalDistance = board.ranksB[i] - board.ranksB[board.blackKingIndex]
-                    let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
+                // // To the own king
+                // {
+                //     let verticalDistance = board.ranksB[i] - board.ranksB[board.blackKingIndex]
+                //     let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
         
-                    let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+                //     let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
         
-                    pieceKingDistance -= AI.PAR[AI.phase][37] * (4 - pieceDistance)
-                }
+                //     pieceKingDistance -= AI.PAR[AI.phase][37] * (4 - pieceDistance)
+                // }
             }
 
         }
