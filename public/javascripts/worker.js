@@ -3235,7 +3235,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             
             if (score > alpha) {
                 // Fail-high
-                if (score >= beta) {
+                if (AI.iteration < 6? depth > 2 && score >= beta : score >= beta) {
                     if (legal === 1) {
                         AI.fhf++
                     }
@@ -3244,8 +3244,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
                     // AI.mostCommonSquares[board.board64[move.from]]++
 
-                    // AI.PV[ply] = move
-                    
                     //LOWERBOUND
                     
                     if (!move.isCapture) {
