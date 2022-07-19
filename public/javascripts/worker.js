@@ -3087,7 +3087,14 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let E = 0
 
+    let maxMoves = 3 + depth*depth
+
     for (let i = 0, len = moves.length; i < len; i++) {
+        if (prune && legal > maxMoves) {
+            AI.maxMovesCount++
+            break
+        }
+
         let move = moves[i]
         let piece = move.piece
 
@@ -3483,6 +3490,7 @@ AI.search = function (board, options) {
         AI.iteration = 0
         AI.PV = AI.getPV(board, 1)
         AI.stop = false
+        AI.maxMovesCount = 0
 
         AI.changeinPV = true
 
@@ -3592,7 +3600,7 @@ AI.search = function (board, options) {
                 // console.log(depth, `FHF: ${AI.fhfperc}%`)
 
                 if (AI.PV && !AI.stop) {
-                    console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0))
+                    console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0), 'Moves Count Pruning:', AI.maxMovesCount)
                 }
 
                 score100 = AI.lastscore * (100/VPAWN)
