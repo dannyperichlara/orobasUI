@@ -3087,9 +3087,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let E = 0
 
-    let maxMoves = 3 + depth*depth
+    let maxMoves = 3 + depth*depth // For moves count pruning, inspired in Stockfish - Not fully tested
 
     for (let i = 0, len = moves.length; i < len; i++) {
+        // Moves count pruning, inspired in Stockfish - Not fully tested
         if (prune && legal > maxMoves) {
             AI.maxMovesCount++
             break
@@ -3268,7 +3269,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                         
                         AI.killers[turn | 0][ply][0] = move
                         
-                        AI.saveHistory(ply, move, legal*depth*depth)
+                        AI.saveHistory(ply, move, (i + 1)*depth*depth)
                     }
                     
                     if (!lookForMateTurn && allowNullMove) {
@@ -3286,7 +3287,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 bestmove = move
                 alpha = score
 
-                if (!move.isCapture) { AI.saveHistory(ply, move, depth) }
+                if (!move.isCapture) { AI.saveHistory(ply, move, (i + 1) * depth) }
                 
             } else {
                 if (!move.isCapture) { AI.saveHistory(ply, move, -depth*depth) }
