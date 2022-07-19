@@ -43,14 +43,14 @@ AI.PSQT_OPENING[ROOK] = [
 ]
 
 AI.PSQT_OPENING[QUEEN] = [
-  -8,-6,-4,-2,-2,-4,-6,-8,null,null,null,null,null,null,null,null,
-  -6,-4,-2,0,0,-2,-4,-6,null,null,null,null,null,null,null,null,
-  -4,-2,0,2,2,0,-2,-4,null,null,null,null,null,null,null,null,
-  -2,0,2,4,4,2,0,-2,null,null,null,null,null,null,null,null,
-  -2,0,2,4,4,2,0,-2,null,null,null,null,null,null,null,null,
-  -4,-2,0,2,2,0,-2,-4,null,null,null,null,null,null,null,null,
-  -6,-4,-2,0,0,-2,-4,-6,null,null,null,null,null,null,null,null,
-  -8,-6,-4,-2,-2,-4,-6,-8,null,null,null,null,null,null,null,null,
+  -70,-60,-50,-40,-40,-50,-60,-70,null,null,null,null,null,null,null,null,
+  -60,-50,-40,-30,-30,-40,-50,-60,null,null,null,null,null,null,null,null,
+  -50,-40,-30,-20,-20,-30,-40,-50,null,null,null,null,null,null,null,null,
+  -40,-30,-20,-10,-10,-20,-30,-40,null,null,null,null,null,null,null,null,
+  -30,-20,-10,0,0,-10,-20,-30,null,null,null,null,null,null,null,null,
+  -20,-10,0,10,10,0,-10,-20,null,null,null,null,null,null,null,null,
+  -10,0,10,20,20,10,0,-10,null,null,null,null,null,null,null,null,
+  -20,-10,0,10,10,0,-10,-20,null,null,null,null,null,null,null,null,
 ]
 
 AI.PSQT_OPENING[KING] = [
