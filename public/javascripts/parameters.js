@@ -14,11 +14,11 @@ AI.PAR[0] = [
     20, //12 Rook x-rays
     10, //13 defended rook in rank 5
     20, //14 queen x-rays
-    20, //15 is king under attack1
-    20, //16 is king under attack2
-    20, //17 is king under attack3,
+    40, //15 is king under attack1
+    40, //16 is king under attack2
+    40, //17 is king under attack3,
     10, //18 pawns at same squares as bishops
-    10, //19 Expensive center control ---
+    20, //19 Expensive center control ---
     10, //20 Occupied by 1 ---
     5,  //21 Occupied by 2 ---
     10, //22 incentive for keeping queens and rooks in advantage ---
@@ -71,10 +71,10 @@ AI.PAWNSHIELD = [32,24,16,8] //No|-8651756692|0|
 // AI.POV = [null,100,410,445,580,1250] //No|-8652422452|0|
 // AI.PEV = [null,114,342,362,624,1140] //No|-8650889492|0|
 
-AI.POV = [null,72,300,325,425,912] //No|-8652422452|0|
-AI.PEV = [null,100,300,317,547,999] //No|-8650889492|0|
+AI.POV = [null,100,300,300,500,900] //No|-8652422452|0|
+AI.PEV = [null,100,300,317,500,1000] //No|-8650889492|0|
 
-AI.BISHOP_PAIR = [10, 24, 40, 50]
+AI.BISHOP_PAIR = [50, 50, 50, 50]
 
 AI.PHASELIMITS = [2,34,72] //No|-183093966|0|
 

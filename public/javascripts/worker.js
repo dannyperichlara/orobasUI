@@ -1315,7 +1315,7 @@ let AI = {
     phase: 0,
     htlength: 8e6,
     pawntlength: 5e5,
-    mindepth: [4,4,4,4],
+    mindepth: [1,1,1,1],
     secondspermove: 0.2,
     lastmove: null,
     f: 0,
@@ -2156,7 +2156,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // }
     
     // // to logistic
-    positional = AI.logistic(positional, 100) | 0
+    positional = AI.logistic(positional, 25 * ply) | 0
 
     score += positional
 
@@ -2723,21 +2723,21 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 // unsortedMoves.push(move)
                 // continue
 
-                // if (AI.phase <= MIDGAME) {
-                //     if (turn === WHITE) {
-                //         move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
-                //     } else {
-                //         move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
-                //     }
-                // } else {
-                //     if (turn === WHITE) {
-                //         move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
-                //     } else {
-                //         move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
-                //     }
-                // }
+                if (AI.phase <= MIDGAME) {
+                    if (turn === WHITE) {
+                        move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
+                    } else {
+                        move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
+                    }
+                } else {
+                    if (turn === WHITE) {
+                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
+                    } else {
+                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
+                    }
+                }
 
-                move.score = Math.random() * 100 | 0
+                move.score = Math.random() * 40 | 0
 
                 sortedMoves.push(move)
 
@@ -3243,7 +3243,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             
             if (score > alpha) {
                 // Fail-high
-                if (AI.iteration < 6? depth > 2 && score >= beta : score >= beta) {
+                if (AI.iteration < 4? depth > 2 && score >= beta : score >= beta) {
                     if (legal === 1) {
                         AI.fhf++
                     }
