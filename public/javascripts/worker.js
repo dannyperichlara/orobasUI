@@ -2886,14 +2886,21 @@ AI.ttGet = function (turn, hashkey) {
 }
 
 AI.saveHistory = function (ply, move, value) {
+    let ahead = 6 //plies ahead
+    let limit = this.totaldepth - ahead
     let adjustedValue =  32 * value - AI.history[ply][move.piece][move.to]*Math.abs(value)/512
 
-    for (let i = 0; i < 6; i++) {
-        if (value > 0) {
-            AI.history[ply + 2*i][move.piece][move.to] += adjustedValue / i | 0
-        } else {
-            AI.history[ply + 2*i][move.piece][move.to] += value | 0
+    for (let i = 0; i < ahead; i++) {
+        let plyAhead = ply + 2*i
+
+        if (plyAhead < limit) {
+            if (value > 0) {
+                AI.history[plyAhead][move.piece][move.to] += adjustedValue / i | 0
+            } else {
+                AI.history[plyAhead][move.piece][move.to] += value | 0
+            }
         }
+
     }    
 }
 
@@ -2956,10 +2963,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         }
     }
 
+    
     //Búsqueda QS
     if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
     }
+
+    let incheck = board.isKingInCheck()
 
     // if (!ttEntry) {
     //     let ttOppositeEntry = AI.ttGet(turn === WHITE? BLACK : WHITE, hashkey)
@@ -2981,8 +2991,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     //         }
     //     }
     // }
-
-    let incheck = board.isKingInCheck()
 
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
     
@@ -3623,7 +3631,7 @@ AI.search = function (board, options) {
                     'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
                     'ETC (%): ', (AI.etcNodes/AI.nodes*1000 | 0) / 10,
                     'Collisions (%): ', (AI.collisions/AI.ttGets*1000 | 0) / 10,
-                    'Pawn Collisions (%): ', (AI.pawncollisions/AI.phnodes*1000 | 0) / 10,
+                    'Pawn Collisions (%): ', (AI.pawncollisions/AI.pnodes*1000 | 0) / 10,
                     'NPS: ', (AI.nodes + AI.qsnodes) / options.seconds | 0,
         )
 
