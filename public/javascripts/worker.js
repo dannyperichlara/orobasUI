@@ -1977,7 +1977,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
     if (evalEntry && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
-        return sign * (evalEntry.score + tempoBonus) / AI.nullWindowFactor
+        return sign * Math.round((evalEntry.score + tempoBonus) / AI.nullWindowFactor)
     }
 
     // if (pvNode) console.log(pvNode)
@@ -2160,7 +2160,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     score += positional
 
-    
+    // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
         hashkey: board.hashkey,
         score
@@ -2168,12 +2168,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     score += tempoBonus
     
-    let nullWindowScore = score / AI.nullWindowFactor | 0
+    let nullWindowScore = score / AI.nullWindowFactor
 
     // let t1 = Date.now()
     // AI.evalTime += t1 - t0
 
-    return sign*nullWindowScore
+    return sign * Math.round(nullWindowScore)
 }
 
 AI.logisticTable = new Map()
