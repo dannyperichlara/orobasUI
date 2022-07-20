@@ -3033,36 +3033,34 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             }
         }
 
-        if (depth <= 3) {
-            // Alpha Razoring
-            if (staticeval + MARGIN3 + MARGIN2*depth < alpha) {
-                let score = AI.quiescenceSearch(board, alpha-1, alpha, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
-                if (score < alpha) {
+        // Alpha Razoring
+        if (staticeval + MARGIN3 + MARGIN2*depth < alpha) {
+            let score = AI.quiescenceSearch(board, alpha-1, alpha, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
+            if (score < alpha) {
+                // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
+                return score
+            }
+        }
+        
+        // Beta razoring
+        if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
+            if (depth <= 3) {
+                let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
+    
+                if (score < beta) {
                     // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
                     return score
                 }
+            } else {
+                if (staticeval + MARGIN10 < beta) {
+                    depth-=2
+                }
+
+                if (staticeval + MARGIN3 < beta) {
+                    depth--
+                }
             }
             
-            // Beta razoring
-            if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
-                if (depth <= 3) {
-                    let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
-        
-                    if (score < beta) {
-                        // AI.ttSave(turn, hashkey, score, UPPERBOUND, depth, EMPTYMOVE)
-                        return score
-                    }
-                } else {
-                    if (staticeval + MARGIN10 < beta) {
-                        depth-=2
-                    }
-
-                    if (staticeval + MARGIN3 < beta) {
-                        depth--
-                    }
-                }
-                
-            }
         }
 
     }
