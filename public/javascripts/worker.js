@@ -3088,12 +3088,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let maxMoves = 3 + depth*depth // For moves count pruning, inspired in Stockfish - Not fully tested
 
     for (let i = 0, len = moves.length; i < len; i++) {
-        // Moves count pruning, inspired in Stockfish - Not fully tested
-        if (prune && legal > maxMoves) {
-            AI.maxMovesCount++
-            break
-        }
-
         let move = moves[i]
         let piece = move.piece
 
@@ -3178,6 +3172,12 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     if (cutNode) R++
 
                     if (AI.history[ply][piece][move.to] < 0) R++
+
+                    // Moves count reductions, inspired in Stockfish - Not fully tested
+                    if (legal > maxMoves) {
+                        AI.maxMovesCount++
+                        R++
+                    }
                     
                     if (!move.isCapture) {
                         // Bad moves reductions
