@@ -1971,7 +1971,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     this.evalnodes++
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let tempoBonus =0 // sign * (AI.PAR[AI.phase][35] - 1.643*ply) | 0 // y = -1,6435x + 43,043
+    let tempoBonus = 0 // sign * (AI.PAR[AI.phase][35] - 1.643*ply) | 0 // y = -1,6435x + 43,043
 
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     
@@ -2061,60 +2061,60 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         
         psqt += sign*(mgPSQT + egPSQT)
         
-        // if (piecetype === K) {
+    //     if (piecetype === K) {
 
-        // } else if (piecetype === P) {
-        //     if (piece === P) {
-        //         pawnindexW.push(i)
-        //     } else if (piece === p) {
-        //         pawnindexB.push(i)
-        //     }
-        // } else {
-        //     // PIECE-KING DISTANCE (N, B, R and Q)
+    //     } else if (piecetype === P) {
+    //         if (piece === P) {
+    //             pawnindexW.push(i)
+    //         } else if (piece === p) {
+    //             pawnindexB.push(i)
+    //         }
+    //     } else {
+    //         // PIECE-KING DISTANCE (N, B, R and Q)
     
-        //     if (turn === WHITE) {
-        //         // To the enemy king
-        //         {
-        //             let verticalDistance = board.ranksW[i] - board.ranksW[board.blackKingIndex]
-        //             let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
+    //         if (turn === WHITE) {
+    //             // To the enemy king
+    //             {
+    //                 let verticalDistance = board.ranksW[i] - board.ranksW[board.blackKingIndex]
+    //                 let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
         
-        //             let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+    //                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
         
-        //             pieceKingDistance += AI.PAR[AI.phase][36] * (4 - pieceDistance)
-        //         }
+    //                 pieceKingDistance += AI.PAR[AI.phase][36] * (4 - pieceDistance)
+    //             }
 
-        //         // // To the own king
-        //         // {
-        //         //     let verticalDistance = board.ranksW[i] - board.ranksW[board.whiteKingIndex]
-        //         //     let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
+    //             // To the own king
+    //             {
+    //                 let verticalDistance = board.ranksW[i] - board.ranksW[board.whiteKingIndex]
+    //                 let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
         
-        //         //     let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+    //                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
         
-        //         //     pieceKingDistance += AI.PAR[AI.phase][37] * (4 - pieceDistance)
-        //         // }
-        //     } else {
-        //         // To the enemy king
-        //         {
-        //             let verticalDistance = board.ranksB[i] - board.ranksB[board.whiteKingIndex]
-        //             let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
+    //                 pieceKingDistance += AI.PAR[AI.phase][37] * (4 - pieceDistance)
+    //             }
+    //         } else {
+    //             // To the enemy king
+    //             {
+    //                 let verticalDistance = board.ranksB[i] - board.ranksB[board.whiteKingIndex]
+    //                 let horizontalDistance = board.columns[i] - board.columns[board.whiteKingIndex]
         
-        //             let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+    //                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
         
-        //             pieceKingDistance -= AI.PAR[AI.phase][36] * (4 - pieceDistance)
-        //         }
+    //                 pieceKingDistance -= AI.PAR[AI.phase][36] * (4 - pieceDistance)
+    //             }
 
-        //         // // To the own king
-        //         // {
-        //         //     let verticalDistance = board.ranksB[i] - board.ranksB[board.blackKingIndex]
-        //         //     let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
+    //             // To the own king
+    //             {
+    //                 let verticalDistance = board.ranksB[i] - board.ranksB[board.blackKingIndex]
+    //                 let horizontalDistance = board.columns[i] - board.columns[board.blackKingIndex]
         
-        //         //     let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
+    //                 let pieceDistance = AI.PIECEDISTANCE[piecetype][112 + 15*verticalDistance + horizontalDistance]
         
-        //         //     pieceKingDistance -= AI.PAR[AI.phase][37] * (4 - pieceDistance)
-        //         // }
-        //     }
+    //                 pieceKingDistance -= AI.PAR[AI.phase][37] * (4 - pieceDistance)
+    //             }
+    //         }
 
-        // }
+    //     }
     }
     
     AI.totalmaterial = tempTotalMaterial
@@ -2181,7 +2181,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     let positional = AI.getPositional(board, pieces)
 
-    score += positional + psqt
+    score += 4 * positional + psqt / 2 | 0
 
     // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
@@ -2200,20 +2200,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 }
 
 AI.getPositional = (board, pieces)=>{
-    let score = 0
-
     let whiteScore = 0
     let blackScore = 0
 
     for (let i = 0; i < pieces[P].length; i++) {
-        // // P-P
-        // if (AI.phase <= MIDGAME) {
-        //     whiteScore += 7 - AI.CENTERMANHATTAN[pieces[P][i]] // Hacia el centro
-        // } else {
-        //     whiteScore += 7 - board.ranksW[pieces[P][i]] // Avance
-        // }
-
-
+        // P-P
         for (let j = i + 1; j < pieces[P].length; j++) {
             let distance = Math.abs(pieces[P][i] - pieces[P][j])
 
@@ -2224,7 +2215,7 @@ AI.getPositional = (board, pieces)=>{
             if (distance === 1) whiteScore++
 
             // Doubled
-            if (board.columns[pieces[P][i]] === board.columns[pieces[P][j]]) whiteScore--
+            if (board.columns[pieces[P][i]] === board.columns[pieces[P][j]]) whiteScore-=2
         }
 
         // P-N
@@ -2236,11 +2227,18 @@ AI.getPositional = (board, pieces)=>{
     
             // Semi Outpost
             if (distance === -16) whiteScore++
+
+            // Blocks own knight moves
+            if (distance === -33 || distance === -31 || distance === -18 || distance === -14) whiteScore--
         }
 
         // P-B
 
         for (let j = 0; j < pieces[B].length; j++) {
+            let distance = pieces[P][i] - pieces[B][j]
+
+            if (distance === 16) whiteScore-=2
+
             let diagonalMatch1 = (board.diagonals1[pieces[P][i]] === board.diagonals1[pieces[B][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[P][i]] === board.diagonals2[pieces[B][j]])
     
@@ -2263,18 +2261,43 @@ AI.getPositional = (board, pieces)=>{
         // P-Q
         
         // P-K
-        for (let j = i + 1; j < pieces[K].length; j++) {
+        for (let j = 0; j < pieces[K].length; j++) {
             let distance = pieces[P][i] - pieces[K][j]
     
             // Pawn shield
             if (distance === -15 || distance === -16 || distance === -17) whiteScore+=3
+        }
+
+        //P-n
+        for (let j = 0; j < pieces[n].length; j++) {
+            let distance = pieces[P][i] - pieces[n][j]
+    
+            // Pawn shield
+            if (distance === 50 || distance === 48 || distance === 46 || distance === 35 || distance === 29) whiteScore++
+        }
+
+        // P-b
+        for (let j = 0; j < pieces[b].length; j++) {
+            let diagonalMatch1 = (board.diagonals1[pieces[P][i]] === board.diagonals1[pieces[b][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[P][i]] === board.diagonals2[pieces[b][j]])
+    
+            if (diagonalMatch1 || diagonalMatch2) {
+                whiteScore++
+            }
+        }
+
+        // P-p
+        for (let j = 0; j < pieces[p].length; j++) {
+            // Blocked column
+            if (board.columns[pieces[P][i]] === board.columns[pieces[p][j]]) whiteScore--
+            if (board.columns[pieces[P][i]] + 1 === board.columns[pieces[p][j]]) whiteScore--
+            if (board.columns[pieces[P][i]] - 1 === board.columns[pieces[p][j]]) whiteScore--
         }
     }
 
 
     for (let i = 0; i < pieces[N].length; i++) {
         // N-N
-        // whiteScore += 7 - AI.CENTERMANHATTAN[pieces[N][i]] // Hacia el centro
 
         for (let j = i + 1; j < pieces[N].length; j++) {
             let distance = Math.abs(pieces[N][i] - pieces[N][j])
@@ -2284,7 +2307,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // N-B
-        for (let j = i + 1; j < pieces[B].length; j++) {
+        for (let j = 0; j < pieces[B].length; j++) {
             let distance = Math.abs(pieces[N][i] - pieces[B][j])
     
             // Defended
@@ -2300,7 +2323,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // N-R
-        for (let j = i + 1; j < pieces[R].length; j++) {
+        for (let j = 0; j < pieces[R].length; j++) {
             let distance = Math.abs(pieces[N][i] - pieces[R][j])
     
             // Defended
@@ -2313,7 +2336,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // N-Q
-        for (let j = i + 1; j < pieces[R].length; j++) {
+        for (let j = 0; j < pieces[R].length; j++) {
             let distance = Math.abs(pieces[N][i] - pieces[R][j])
     
             // Defended
@@ -2321,13 +2344,22 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // N-K
+
+        // N-k
+        for (let j = 0; j < pieces[k].length; j++) {
+            let distance = pieces[N][i] - pieces[k][j]
+
+            // Defended
+            if (distance === 47 || distance === 48 || distance === 49) {
+                whiteScore++
+            }
+        }
     }
 
     for (let i = 0; i < pieces[B].length; i++) {
         // B-B
-        // whiteScore += 7 - AI.CENTERMANHATTAN[pieces[B][i]] // Hacia el centro
 
-        for (let j = i + 1; j < pieces[B].length; j++) {
+        for (let j = 0; j < pieces[B].length; j++) {
 
             // Adjacent diagonal
             let adjDiagonal1 = Math.abs(board.diagonals1[pieces[B][i]] - board.diagonals1[pieces[B][j]]) === 1
@@ -2339,20 +2371,18 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // B-R
-        for (let i = 0; i < pieces[B].length; i++) {
-            for (let j = i + 1; j < pieces[R].length; j++) {
-                // Same diagonal
-                let diagonalMatch1 = (board.diagonals1[pieces[B][i]] === board.diagonals1[pieces[R][j]])
-                let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[R][j]])
-    
-                if (diagonalMatch1 || diagonalMatch2) {
-                    whiteScore++
-                }
+        for (let j = 0; j < pieces[R].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[B][i]] === board.diagonals1[pieces[R][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[R][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                whiteScore++
             }
         }
 
         // B-Q
-        for (let j = i + 1; j < pieces[Q].length; j++) {
+        for (let j = 0; j < pieces[Q].length; j++) {
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[B][i]] === board.diagonals1[pieces[Q][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[Q][j]])
@@ -2363,11 +2393,44 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // B-K
-        for (let j = i + 1; j < pieces[K].length; j++) {
+        for (let j = 0; j < pieces[K].length; j++) {
             let distance = pieces[B][i] - pieces[K][j]
     
             // Pawn shield
             if (distance === -15 || distance === -16 || distance === -17) whiteScore++
+        }
+
+        // B-r
+        for (let j = 0; j < pieces[r].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[B][i]] === board.diagonals1[pieces[r][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[r][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                whiteScore++
+            }
+        }
+
+        // B-q
+        for (let j = 0; j < pieces[q].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[B][i]] === board.diagonals1[pieces[q][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[q][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                whiteScore++
+            }
+        }
+
+        // B-k
+        for (let j = 0; j < pieces[k].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[B][i]] === board.diagonals1[pieces[k][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[k][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                whiteScore++
+            }
         }
     }
 
@@ -2386,7 +2449,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // R-Q
-        for (let j = i + 1; j < pieces[Q].length; j++) {
+        for (let j = 0; j < pieces[Q].length; j++) {
             // Same column
             let columnMatch = (board.columns[pieces[R][i]] === board.columns[pieces[Q][j]])
     
@@ -2399,25 +2462,39 @@ AI.getPositional = (board, pieces)=>{
         }
         
         // R-K
-        for (let j = i + 1; j < pieces[K].length; j++) {
+        for (let j = 0; j < pieces[K].length; j++) {
             if (pieces[K][j] > 116 && pieces[R][i] < 117) whiteScore++
     
             if (pieces[K][j] < 115 && pieces[R][i] > 114) whiteScore++
         }
 
-        // Q-Q
+        // R-q
+        for (let j = 0; j < pieces[q].length; j++) {
+            // Same column
+            let columnMatch = (board.columns[pieces[R][i]] === board.columns[pieces[q][j]])
     
-        // Q-K
+            if (columnMatch) whiteScore++
+    
+            // Same rank
+            let rankMatch = (board.ranksW[pieces[R][i]] === board.ranksW[pieces[q][j]])
+    
+            if (rankMatch) whiteScore++
+        }
+
+        // R-k
+        for (let j = 0; j < pieces[k].length; j++) {
+            // 7th
+            let rankMatch = (board.ranksW[pieces[R][i]] + 1 === board.ranksW[pieces[k][j]])
+    
+            if (rankMatch) {
+                whiteScore++
+            }
+        }
     }
 
 
     for (let i = 0; i < pieces[p].length; i++) {
         // p-p
-        // if (AI.phase <= MIDGAME) {
-        //     blackScore += 7 - AI.CENTERMANHATTAN[pieces[p][i]] // Hacia el centro
-        // } else {
-        //     blackScore += 7 - board.ranksB[pieces[p][i]] // Avance
-        // }
 
         for (let j = i + 1; j < pieces[p].length; j++) {
             let distance = Math.abs(pieces[p][i] - pieces[p][j])
@@ -2429,7 +2506,7 @@ AI.getPositional = (board, pieces)=>{
             if (distance === 1) blackScore++
 
             // Doubled
-            if (board.columns[pieces[p][i]] === board.columns[pieces[p][j]]) blackScore--
+            if (board.columns[pieces[p][i]] === board.columns[pieces[p][j]]) blackScore-=2
         }
 
         // p-n
@@ -2441,10 +2518,17 @@ AI.getPositional = (board, pieces)=>{
     
             // Semi Outpost
             if (distance === 16) blackScore++
+
+            // Blocks own knight moves
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore--
         }
 
         // p-b
         for (let j = 0; j < pieces[b].length; j++) {
+            let distance = pieces[p][i] - pieces[b][j]
+
+            if (distance === -16) blackScore-=2
+
             let diagonalMatch1 = (board.diagonals1[pieces[p][i]] === board.diagonals1[pieces[b][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[p][i]] === board.diagonals2[pieces[b][j]])
     
@@ -2467,27 +2551,54 @@ AI.getPositional = (board, pieces)=>{
         // p-q
 
         // p-k
-        for (let j = i + 1; j < pieces[k].length; j++) {
+        for (let j = 0; j < pieces[k].length; j++) {
             let distance = pieces[p][i] - pieces[k][j]
     
             // Pawn shield
             if (distance === 15 || distance === 16 || distance === 17) blackScore+=3
         }
+
+        //p-N
+        for (let j = 0; j < pieces[N].length; j++) {
+            let distance = pieces[p][i] - pieces[N][j]
+    
+            // Pawn shield
+            if (distance === -50 || distance === -48 || distance === -46 || distance === -35 || distance === -29) {
+                blackScore++
+            }
+        }
+
+        // p-B
+        for (let j = 0; j < pieces[B].length; j++) {
+            let diagonalMatch1 = (board.diagonals1[pieces[P][i]] === board.diagonals1[pieces[B][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[P][i]] === board.diagonals2[pieces[B][j]])
+    
+            if (diagonalMatch1 || diagonalMatch2) {
+                blackScore++
+            }
+        }
+
+        // p-P
+        for (let j = 0; j < pieces[P].length; j++) {
+            // Blocked column
+            if (board.columns[pieces[p][i]] === board.columns[pieces[P][j]]) blackScore--
+            if (board.columns[pieces[p][i]] + 1 === board.columns[pieces[P][j]]) blackScore--
+            if (board.columns[pieces[p][i]] - 1 === board.columns[pieces[P][j]]) blackScore--
+        }
     }
 
     for (let i = 0; i < pieces[n].length; i++) {
         // n-n
-        // blackScore += 7 - AI.CENTERMANHATTAN[pieces[n][i]] // Hacia el centro
 
         for (let j = i + 1; j < pieces[n].length; j++) {
             let distance = Math.abs(pieces[n][i] - pieces[n][j])
 
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore++
         }
 
         // n-b
-        for (let j = i + 1; j < pieces[b].length; j++) {
+        for (let j = 0; j < pieces[b].length; j++) {
             let distance = Math.abs(pieces[n][i] - pieces[b][j])
     
             // Defended
@@ -2503,7 +2614,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // n-r
-        for (let j = i + 1; j < pieces[r].length; j++) {
+        for (let j = 0; j < pieces[r].length; j++) {
             let distance = Math.abs(pieces[n][i] - pieces[r][j])
     
             // Defended
@@ -2516,7 +2627,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // n-q
-        for (let j = i + 1; j < pieces[r].length; j++) {
+        for (let j = 0; j < pieces[r].length; j++) {
             let distance = Math.abs(pieces[n][i] - pieces[r][j])
     
             // Defended
@@ -2524,12 +2635,21 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // n-k
+
+        // n-K
+        for (let j = 0; j < pieces[K].length; j++) {
+            let distance = pieces[n][i] - pieces[K][j]
+
+            // Defended
+            if (distance === -47 || distance === -48 || distance === -49) {
+                blackScore++
+            }
+        }
     }
 
 
     for (let i = 0; i < pieces[b].length; i++) {
         // b-b
-        // blackScore += 7 - AI.CENTERMANHATTAN[pieces[b][i]] // Hacia el centro
 
         for (let j = i + 1; j < pieces[b].length; j++) {
 
@@ -2543,7 +2663,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // b-r
-        for (let j = i + 1; j < pieces[r].length; j++) {
+        for (let j = 0; j < pieces[r].length; j++) {
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[r][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[r][j]])
@@ -2554,7 +2674,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // b-q
-        for (let j = i + 1; j < pieces[q].length; j++) {
+        for (let j = 0; j < pieces[q].length; j++) {
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[q][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[q][j]])
@@ -2565,11 +2685,44 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // b-k
-        for (let j = i + 1; j < pieces[k].length; j++) {
+        for (let j = 0; j < pieces[k].length; j++) {
             let distance = pieces[b][i] - pieces[k][j]
     
             // Pawn shield
             if (distance === 15 || distance === 16 || distance === 17) blackScore++
+        }
+
+        // b-R
+        for (let j = i + 1; j < pieces[R].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[R][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[R][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                blackScore++
+            }
+        }
+
+        // b-Q
+        for (let j = i + 1; j < pieces[Q].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[Q][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[Q][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                blackScore++
+            }
+        }
+
+        // b-K
+        for (let j = i + 1; j < pieces[K].length; j++) {
+            // Same diagonal
+            let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[K][j]])
+            let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[K][j]])
+
+            if (diagonalMatch1 || diagonalMatch2) {
+                blackScore++
+            }
         }
     }
 
@@ -2588,7 +2741,7 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // r-q
-        for (let j = i + 1; j < pieces[q].length; j++) {
+        for (let j = 0; j < pieces[q].length; j++) {
             // Same column
             let columnMatch = (board.columns[pieces[r][i]] === board.columns[pieces[q][j]])
     
@@ -2601,18 +2754,39 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // r-k
-        for (let j = i + 1; j < pieces[k].length; j++) {
+        for (let j = 0; j < pieces[k].length; j++) {
             if (pieces[k][j] > 4 && pieces[r][i] < 5) blackScore++
     
             if (pieces[k][j] < 3 && pieces[r][i] > 2) blackScore++
         }
 
-        // q-q
+        // r-Q
+        for (let j = 0; j < pieces[Q].length; j++) {
+            // Same column
+            let columnMatch = (board.columns[pieces[r][i]] === board.columns[pieces[Q][j]])
     
-        // q-k
+            if (columnMatch) blackScore++
+    
+            // Same rank
+            let rankMatch = (board.ranksW[pieces[r][i]] === board.ranksW[pieces[Q][j]])
+    
+            if (rankMatch) blackScore++
+        }
+
+        // r-K
+        for (let j = 0; j < pieces[K].length; j++) {
+            // 7th
+            let rankMatch = (board.ranksB[pieces[r][i]] + 1 === board.ranksB[pieces[K][j]])
+    
+            if (rankMatch) {
+                blackScore++
+            }
+        }
     }
 
-    return 10*(whiteScore - blackScore)
+    let score = whiteScore - blackScore
+
+    return score
 }
 
 AI.logisticTable = new Map()
