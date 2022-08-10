@@ -3323,39 +3323,43 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             // éxito en otras posiciones.
             if (!AI.history[ply]) ply = AI.totaldepth
 
-            let hvalue = 100 + AI.history[ply][move.piece][move.to] | 0
+            let hvalue = AI.history[ply][move.piece][move.to] | 0
 
-            if (hvalue) {
-                move.score += hvalue
+            move.score += hvalue
 
-                sortedMoves.push(move)
+            sortedMoves.push(move)
 
-                continue
-            } else {
+            // if (hvalue > 0) {
+            //     move.score += hvalue
 
-                // unsortedMoves.push(move)
-                // continue
+            //     sortedMoves.push(move)
 
-                if (AI.phase <= MIDGAME) {
-                    if (turn === WHITE) {
-                        move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
-                    } else {
-                        move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
-                    }
-                } else {
-                    if (turn === WHITE) {
-                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
-                    } else {
-                        move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
-                    }
-                }
+            //     continue
+            // } else {
 
-                move.score = Math.random() * 40 | 0
+            //     // unsortedMoves.push(move)
+            //     // continue
 
-                sortedMoves.push(move)
+            //     if (AI.phase <= MIDGAME) {
+            //         if (turn === WHITE) {
+            //             move.score += AI.PSQT_OPENING[ABS[move.piece]][move.to] - AI.PSQT_OPENING[ABS[move.piece]][move.from]
+            //         } else {
+            //             move.score += AI.PSQT_OPENING[ABS[move.piece]][112^move.to] - AI.PSQT_OPENING[ABS[move.piece]][112^move.from]
+            //         }
+            //     } else {
+            //         if (turn === WHITE) {
+            //             move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][move.from]
+            //         } else {
+            //             move.score += AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.to] - AI.PSQT_LATE_ENDGAME[ABS[move.piece]][112^move.from]
+            //         }
+            //     }
 
-                continue
-            }
+            //     move.score = Math.random() * 40 | 0
+
+            //     sortedMoves.push(move)
+
+            //     continue
+            // }
         }
     }
 
@@ -3551,8 +3555,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     
     AI.nodes++
     
-    // Date.now es un algoritmo que consume mucho tiempo; por esa razón revisa cada 1000 nodos
-    if (AI.iteration > AI.mindepth[AI.phase] && AI.nodes % 1000 === 0) {
+    // Date.now es un algoritmo que consume mucho tiempo; por esa razón revisa cada 5000 nodos
+    if (AI.iteration > AI.mindepth[AI.phase] && AI.nodes % 5000 === 0) {
         if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
         }
@@ -3745,70 +3749,66 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
             let inCheckAfterMove = board.isKingInCheck()
 
-            if (incheck || inCheckAfterMove) {
-                R = 0
-                E = 0
-            } else {
-                if (prune && !move.killer1 && !move.castleSide) {
-                    // Futility Pruning
-                    if (move.isCapture) {
-                        if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
-                            board.unmakeMove(move)
-                            continue
-                        }
-                    } else {
-                        if (staticeval + MARGIN3*depth < alpha) {
-                            board.unmakeMove(move)
-                            continue
-                        }
+            if (prune && !move.killer1 && !move.castleSide) {
+                // Futility Pruning
+                if (move.isCapture) {
+                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
+                        board.unmakeMove(move)
+                        continue
                     }
-                    // if (depth <= 3) {
-                    // }
-        
-                    // if (cutNode && i > 12 && !move.isCapture && !move.castleSide/* && staticeval > alpha - VERYSMALLMARGIN*/) {
-                    //     let limit = i > 20? 0.9 : 0.85
-                    //     if (Math.random() < limit) {
-                    //         AI.rnodes++
-                    //          board.unmakeMove(move)
-                    //         continue
-                    //     }
-                    // }
-                }
-
-                if (!mateE) {
-                    R += AI.LMR_TABLE[depth][legal]
-                }
-
-                // if (pvNode || incheck || inCheckAfterMove) R--
-
-                if (!incheck && !inCheckAfterMove) {
-                    if (cutNode) R++
-
-                    if (AI.history[ply][piece][move.to] < 0) R++
-
-                    // Moves count reductions, inspired in Stockfish - Not fully tested
-                    if (legal > maxMoves) {
-                        AI.maxMovesCount++
-                        R++
-                    }
-                    
-                    if (!move.isCapture) {
-                        // Bad moves reductions
-                        if (AI.phase <= EARLY_ENDGAME) {
-                            // console.log('no')
-                            if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-                                R+=4
-                            }
-                            
-                            if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-                                R+=4
-                            }
-                        }
+                } else {
+                    if (staticeval + MARGIN3*depth < alpha) {
+                        board.unmakeMove(move)
+                        continue
                     }
                 }
-
-                if (R < 0) R = 0
+                // if (depth <= 3) {
+                // }
+    
+                // if (cutNode && i > 12 && !move.isCapture && !move.castleSide/* && staticeval > alpha - VERYSMALLMARGIN*/) {
+                //     let limit = i > 20? 0.9 : 0.85
+                //     if (Math.random() < limit) {
+                //         AI.rnodes++
+                //          board.unmakeMove(move)
+                //         continue
+                //     }
+                // }
             }
+
+            if (!mateE) {
+                R += AI.LMR_TABLE[depth][legal]
+            }
+
+            if (pvNode || incheck || inCheckAfterMove) R--
+
+            if (cutNode) R++
+
+            if (AI.history[ply][piece][move.to] < 0) R++
+            
+            if (prune) {
+
+                // Moves count reductions, inspired in Stockfish - Not fully tested
+                if (legal > maxMoves) {
+                    AI.maxMovesCount++
+                    R++
+                }
+                
+                if (!move.isCapture) {
+                    // Bad moves reductions
+                    if (AI.phase <= EARLY_ENDGAME) {
+                        // console.log('no')
+                        if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
+                            R+=4
+                        }
+                        
+                        if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
+                            R+=4
+                        }
+                    }
+                }
+            }
+
+            if (R < 0) R = 0
             
             // // Enhanced Transposition Cut-Off +16 ELO
             // let ttETC = AI.ttGet(board.turn, board.hashkey)
@@ -3862,7 +3862,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             
             if (score > alpha) {
                 // Fail-high
-                if (AI.iteration < 4? depth > 2 && score >= beta : score >= beta) {
+                if (score >= beta) {
                     if (legal === 1) {
                         AI.fhf++
                     }
