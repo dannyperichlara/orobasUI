@@ -13,3 +13,5 @@ r1bq1rk1/p2nbpp1/1p2p3/3pP2Q/5B1P/2P2N2/PP3PP1/R3K2R b KQ - 3 14 (f6)
 r1bqk1nr/ppp2ppp/2n5/2bp4/PP5P/2P5/3QPPP1/RNB1KBNR b KQkq b3 0 7 (pierde el alfil)
 
 r5r1/8/1p2Qnq1/p4p2/1PPPp1kP/P3P3/3B1P1P/2RR1K2 w - - 1 29
+
+rnbqk2r/ppp1bppp/4pn2/3p2B1/3P4/4P3/PPPN1PPP/R2QKBNR w KQkq - 1 5 (salta la evaluación por todos lados)

@@ -1971,7 +1971,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     this.evalnodes++
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let tempoBonus = 0 // sign * (AI.PAR[AI.phase][35] - 1.643*ply) | 0 // y = -1,6435x + 43,043
+    let tempoBonus = 10 // sign * (AI.PAR[AI.phase][35] - 1.643*ply) | 0 // y = -1,6435x + 43,043
 
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     
@@ -2181,7 +2181,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     let positional = AI.getPositional(board, pieces)
 
-    score += 4 * positional + psqt / 2 | 0
+    score += 4*positional + 4*psqt | 0
 
     // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
@@ -3440,17 +3440,18 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
             board.unmakeMove(move)
 
             if (score >= beta) {
-                // AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
+                AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
                 return score
             }
-
+            
             if (score > alpha) {
                 alpha = score
             }
         }
     }
-
+    
     if (incheck && !legal) {
+        AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, EMPTYMOVE)
         return -MATE + ply
     }
 
@@ -3798,11 +3799,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     if (AI.phase <= EARLY_ENDGAME) {
                         // console.log('no')
                         if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-                            R+=4
+                            R++
                         }
                         
                         if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-                            R+=4
+                            R++
                         }
                     }
                 }
