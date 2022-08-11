@@ -3785,9 +3785,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (cutNode) R++
 
             if (AI.history[ply][piece][move.to] < 0) R++
-            
-            if (prune) {
 
+            if (cutNode) {
                 // Moves count reductions, inspired in Stockfish - Not fully tested
                 if (legal > maxMoves) {
                     AI.maxMovesCount++
@@ -3808,6 +3807,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     }
                 }
             }
+            
 
             if (R < 0) R = 0
             
