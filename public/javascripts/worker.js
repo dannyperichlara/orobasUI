@@ -1470,7 +1470,6 @@ AI.DEFENDED_VALUES = []
 // ]
 
 importScripts('psqtbonus.js')
-importScripts('pawnbonus.js')
 importScripts('piecedistancebonus.js')
 importScripts('parameters.js')
 
@@ -3766,14 +3765,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 // if (depth <= 3) {
                 // }
     
-                // if (cutNode && i > 12 && !move.isCapture && !move.castleSide/* && staticeval > alpha - VERYSMALLMARGIN*/) {
-                //     let limit = i > 20? 0.9 : 0.85
-                //     if (Math.random() < limit) {
-                //         AI.rnodes++
-                //          board.unmakeMove(move)
-                //         continue
-                //     }
-                // }
+                if (cutNode && i > 12 && !move.isCapture && !move.castleSide && !inCheckAfterMove) {
+                    let limit = i > 20? 0.9 : 0.85
+                    if (Math.random() < limit) {
+                        AI.rnodes++
+                         board.unmakeMove(move)
+                        break
+                        // continue
+                    }
+                }
             }
 
             if (!mateE) {
@@ -3835,7 +3835,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     return alphaOriginal
                 }
 
-                score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
+                score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
 
                 if (score > alpha) {
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
@@ -4122,40 +4122,6 @@ AI.search = function (board, options) {
         let depth = 1
         let alpha = -INFINITY
         let beta = INFINITY
-
-        // board.squareOrder = board.squareOrder.sort((a,b)=>{
-        //     return Math.random() > 0.5? 1 : -1
-        // })
-
-        // //Search checkmates for both turns without opposite moves
-        // let mate = false
-        // let depthForMate = 0
-        // let mateScore = 0
-
-        // while (!mate && depthForMate < 6 && depthForMate < AI.totaldepth) {
-        //     mateScore = AI.PVS(board, -Infinity, Infinity, depthForMate, 1, false, 0, WHITE)
-
-        //     console.log('white', depth, mateScore)
-
-        //     if (Math.abs(mateScore) > VPAWN*10) mate = true
-
-        //     depthForMate++
-        // }
-
-        // mateScore = 0
-        // mate = false
-        // depthForMate = 0
-        // while (!mate && depthForMate < 6 && depthForMate < AI.totaldepth) {
-        //     mateScore = AI.PVS(board, -Infinity, Infinity, depthForMate, 1, false, 0, BLACK)
-
-        //     console.log('black', depth, mateScore)
-
-        //     if (Math.abs(mateScore) > VPAWN*10) mate = true
-
-        //     depthForMate++
-        // }
-
-        // AI.createTables(board, true, true, false, false)
 
         AI.effectiveEvaluations = 0
 
