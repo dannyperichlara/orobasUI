@@ -10,14 +10,14 @@ AI.PSQT_OPENING[PAWN] = [
 ]
 
 AI.PSQT_OPENING[KNIGHT] = [
-  -2,	-1,	-1,	-1,	-1,	-1,	-1,	-2,	null,	null,	null,	null,	null,	null,	null,	null,
-  -1,	0,	0,	0,	0,	0,	0,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
-  -1,	0,	1,	1,	1,	1,	0,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
-  -1,	0,	1,	2,	2,	1,	0,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
-  -1,	0,	1,	2,	2,	1,	0,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
-  -1,	0,	1,	1,	1,	1,	0,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
-  -1,	0,	0,	0,	0,	0,	0,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
-  -2,	-1,	-1,	-1,	-1,	-1,	-1,	-2,	null,	null,	null,	null,	null,	null,	null,	null,
+  -9,	-1,	-1,	-1,	-1,	-1,	-1,	-9,	null,	null,	null,	null,	null,	null,	null,	null,
+  -8,	0,	0,	0,	0,	0,	0,	-8,	null,	null,	null,	null,	null,	null,	null,	null,
+  -7,	0,	1,	1,	1,	1,	0,	-7,	null,	null,	null,	null,	null,	null,	null,	null,
+  -6,	0,	1,	2,	2,	1,	0,	-6,	null,	null,	null,	null,	null,	null,	null,	null,
+  -6,	0,	1,	2,	2,	1,	0,	-6,	null,	null,	null,	null,	null,	null,	null,	null,
+  -7,	0,	1,	1,	1,	1,	0,	-7,	null,	null,	null,	null,	null,	null,	null,	null,
+  -8,	0,	0,	0,	0,	0,	0,	-8,	null,	null,	null,	null,	null,	null,	null,	null,
+  -9,	-1,	-1,	-1,	-1,	-1,	-1,	-9,	null,	null,	null,	null,	null,	null,	null,	null,
 ]
 
 AI.PSQT_OPENING[BISHOP] = [
@@ -66,9 +66,9 @@ AI.PSQT_OPENING[KING] = [
 
 AI.PSQT_LATE_ENDGAME[PAWN] = [
   0,	0,	0,	0,	0,	0,	0,	0,	null,	null,	null,	null,	null,	null,	null,	null,
-  3,	3,	3,	3,	3,	3,	3,	3,	null,	null,	null,	null,	null,	null,	null,	null,
-  2,	2,	2,	2,	2,	2,	2,	2,	null,	null,	null,	null,	null,	null,	null,	null,
-  1,	1,	1,	1,	1,	1,	1,	1,	null,	null,	null,	null,	null,	null,	null,	null,
+  4,	3,	3,	3,	3,	3,	3,	4,	null,	null,	null,	null,	null,	null,	null,	null,
+  3,	2,	2,	2,	2,	2,	2,	3,	null,	null,	null,	null,	null,	null,	null,	null,
+  2,	1,	1,	1,	1,	1,	1,	2,	null,	null,	null,	null,	null,	null,	null,	null,
   0,	0,	0,	0,	0,	0,	0,	0,	null,	null,	null,	null,	null,	null,	null,	null,
   -1,	-1,	-1,	-1,	-1,	-1,	-1,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
   -2,	-2,	-2,	-2,	-2,	-2,	-2,	-2,	null,	null,	null,	null,	null,	null,	null,	null,
