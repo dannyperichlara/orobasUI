@@ -1321,7 +1321,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 20 // +132 ELO
+    nullWindowFactor: 4 // +132 ELO
 }
 
 // ÍNDICES
@@ -2180,7 +2180,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     let positional = AI.getPositional(board, pieces)
 
-    score += 8 * positional + 10 * psqt | 0
+    score += positional + psqt | 0
 
     // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
@@ -2305,10 +2305,9 @@ AI.getPositional = (board, pieces)=>{
         // N-N
 
         for (let j = i + 1; j < pieces[N].length; j++) {
-            let distance = Math.abs(pieces[N][i] - pieces[N][j])
+            let distance = manhattanDistance(board, pieces[N][i], pieces[N][j])
 
-            // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore++
+            whiteScore += -distance
         }
 
         // N-B
@@ -2602,10 +2601,9 @@ AI.getPositional = (board, pieces)=>{
         // n-n
 
         for (let j = i + 1; j < pieces[n].length; j++) {
-            let distance = Math.abs(pieces[n][i] - pieces[n][j])
+            let distance = manhattanDistance(board, pieces[n][i], pieces[n][j])
 
-            // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore++
+            blackScore += -distance
         }
 
         // n-b
@@ -3515,7 +3513,7 @@ AI.ttGet = function (turn, hashkey) {
 }
 
 AI.saveHistory = function (ply, move, value) {
-    let ahead = 6 //plies ahead
+    let ahead = 12 //plies ahead
     let limit = this.totaldepth - ahead
     
     for (let i = 0; i < ahead; i++) {
@@ -3631,11 +3629,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let prune = cutNode && !incheck/* && ply > 2*/ && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
-        // // //Futility pruning
-        // if (depth < 10 && staticeval - MARGIN2*depth >= beta) {
-        //     AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
-        //     return staticeval
-        // }
+        // //Futility pruning
+        if (depth < 9 && staticeval - MARGIN3*depth >= beta) {
+            // AI.ttSave(turn, hashkey, staticeval, LOWERBOUND, depth, EMPTYMOVE)
+            return staticeval
+        }
         
         // Null move pruning
         // if (staticeval >= beta && AI.phase < LATE_ENDGAME) {
@@ -3669,7 +3667,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         //     }
         // }
         
-        // // Beta razoring
+        // Beta razoring
         // if (staticeval + MARGIN2 < beta) { // likely a fail-low node ?
         //     if (depth <= 3) {
         //         let score = AI.quiescenceSearch(board, alpha, beta, 0, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
@@ -3714,24 +3712,28 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let maxMoves = 3 + depth*depth // For moves count pruning, inspired in Stockfish - Not fully tested
 
+    let nonCaptures = 0
+
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
         let piece = move.piece
 
-        if (/*depth <= 2 &&*/ 2*ply < AI.totaldepth) {
-            // Extensiones
-            E = mateE? 1 : 0
+        if (!move.isCapture) nonCaptures++
+
+        // if (depth <= 2 && 2*ply < AI.totaldepth) {
+        //     // Extensiones
+        //     E = mateE? 1 : 0
     
-            // if (staticeval - MARGIN10 > beta) {
-            //     E = 1
-            // }
+        //     // if (staticeval - MARGIN10 > beta) {
+        //     //     E = 1
+        //     // }
     
-            if (piece === P) {
-                if (move.from < 24) E = 1
-            } else if (piece === p) {
-                if (move.from > 95) E = 1
-            }
-        }
+        //     if (piece === P) {
+        //         if (move.from < 24) E = 1
+        //     } else if (piece === p) {
+        //         if (move.from > 95) E = 1
+        //     }
+        // }
 
         //Reducciones
         let R = 0
@@ -3779,8 +3781,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 // if (depth <= 3) {
                 // }
     
-                if (cutNode && i > 6 && !move.isCapture && !move.castleSide) {
-                    let limit = i > 12? 0.9 : 0.85
+                if (cutNode && nonCaptures > 6 && !move.isCapture && !move.castleSide) {
+                    let limit = nonCaptures > 12? 0.9 : 0.85
                     if (Math.random() < limit) {
                         AI.rnodes++
                         board.unmakeMove(move)
