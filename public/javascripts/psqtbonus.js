@@ -66,9 +66,9 @@ AI.PSQT_OPENING[KING] = [
 
 AI.PSQT_LATE_ENDGAME[PAWN] = [
   0,	0,	0,	0,	0,	0,	0,	0,	null,	null,	null,	null,	null,	null,	null,	null,
-  4,	3,	3,	3,	3,	3,	3,	4,	null,	null,	null,	null,	null,	null,	null,	null,
-  3,	2,	2,	2,	2,	2,	2,	3,	null,	null,	null,	null,	null,	null,	null,	null,
-  2,	1,	1,	1,	1,	1,	1,	2,	null,	null,	null,	null,	null,	null,	null,	null,
+  20,20, 20, 20, 20, 20, 20, 20,	null,	null,	null,	null,	null,	null,	null,	null,
+  8,	8,	8,	8,	8,	8,	8,	8,	null,	null,	null,	null,	null,	null,	null,	null,
+  2,	2,	2,	2,	2,	2,	2,	2,	null,	null,	null,	null,	null,	null,	null,	null,
   0,	0,	0,	0,	0,	0,	0,	0,	null,	null,	null,	null,	null,	null,	null,	null,
   -1,	-1,	-1,	-1,	-1,	-1,	-1,	-1,	null,	null,	null,	null,	null,	null,	null,	null,
   -2,	-2,	-2,	-2,	-2,	-2,	-2,	-2,	null,	null,	null,	null,	null,	null,	null,	null,
