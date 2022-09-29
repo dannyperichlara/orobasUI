@@ -10,7 +10,7 @@ for (let i = 0; i < 10000000; i++) {
 
 console.timeEnd()
 
-let randomNumbers = new Array(8000).fill(0)
+let randomNumbers = new Array(1000000).fill(0)
 
 for (let i = 0; i < randomNumbers.length; i++) {
     randomNumbers[i] = Math.random()
@@ -1292,7 +1292,7 @@ Math.abs = (x) => {
 }
 
 let AI = {
-    version: "3.1.1",
+    version: "3.1.2",
     totaldepth: 48,
     ttNodes: 0,
     collisions: 0,
@@ -1302,10 +1302,11 @@ let AI = {
     pnodes: 0, //Pawn structure nodes
     phnodes: 0, //Pawn hash nodes
     pvnodes: 0, //Pawn attack hash nodes
-    rnodes: 0, //Random pruned nodes
+    rmoves: 0, //Random pruned nodes
     evalhashnodes: 0,
     evalnodes: 0,
     evalTime: 0,
+    totalMoves: 0,
     genMovesTime: 0,
     moveTime: 0,
     status: null,
@@ -1321,7 +1322,7 @@ let AI = {
     f: 0,
     previousls: 0,
     lastscore: 0,
-    nullWindowFactor: 4 // +132 ELO
+    nullWindowFactor: 20// +132 ELO
 }
 
 // ÍNDICES
@@ -1405,69 +1406,6 @@ AI.PIECE_VALUES = [
 
 AI.PSQT_OPENING =  [null]
 AI.PSQT_LATE_ENDGAME =  [null]
-AI.MOB = new Array(7).fill([0,0,0])
-
-AI.PAR = []
-
-AI.FACTOR = []
-
-AI.DEFENDED_VALUES = []
-
-// AI.PAR = [
-//     40, //0 center control
-//     20, //1 outer center lever
-//     15, //2 outer center lever 2
-//     40, //3 knight mobility blocker
-//     20, //4 Blocks knight mobility
-//     12, //5 Semi outpost
-//     20, //6 bishop x-rays
-//     10, //7 pawn in front of outpost bishop
-//     20, //8 outpost bishop in rank 6
-//     15, //9 knight semi outpost
-//     10, //10 enemy pawn in front of outpost knight
-//     20, //11 outpost knight in rank 6
-//     20, //12 Rook x-rays
-//     10, //13 defended rook in rank 5
-//     20, //14 queen x-rays
-//     20, //15 is king under attack1
-//     20, //16 is king under attack2
-//     20, //17 is king under attack3,
-//     10, //18 pawns at same squares as bishops
-//     10, //19 Expensive center control ---
-//     10, //20 Occupied by 1 ---
-//     5,  //21 Occupied by 2 ---
-//     10, //22 incentive for keeping queens and rooks in advantage ---
-//     10, //23 blocked pawns with knights ---
-//     5,  //24 pawn span midgame --- 
-//     10, //25 pawn span endgame ---
-//     10, //26 adjacent bishops
-//     10, //27 Rook battery
-
-//     //Shield
-//     10, //28 King in center
-//     15, //29 bishop in front of king
-
-//     //Structure
-//     20, //30 pawn imbalance
-//     40, //31 backward pawns
-//     10, //32 space
-
-//      //Bishops
-//     100, //33 in front of pawn at opening
-//      40, //34 blocked by own pawn
-// ]
-
-// AI.FACTOR = [
-    //     100, // 0 BLOCKEDPAWNBONUS
-    //     100, // 1 DEFENDEDPAWNBONUS
-    //     100, // 2 ALIGNEDPAWNBONUS
-    //     100, // 3 NEIGHBOURPAWNBONUS
-    //     100, // 4 LEVERPAWNBONUS
-    //     100, // 5 PASSERSBONUS
-    //     100, // 6 DOUBLEDPENALTY
-    //     100, // 7 OUTPOSTBONUSKNIGHT
-    //     100, // 8 OUTPOSTBONUSBISHOP
-// ]
 
 importScripts('psqtbonus.js')
 importScripts('piecedistancebonus.js')
@@ -1524,7 +1462,7 @@ AI.CENTERMANHATTAN = [
     6, 5, 4, 3, 3, 4, 5, 6,  null,  null,  null,  null,  null,  null,  null,  null,
 ]
 
-let manhattanDistance = (board, sq1, sq2)=> {
+AI.manhattanDistance = (board, sq1, sq2)=> {
     sq1 = board.board64[sq1] // from 0x88 to 64
     sq2 = board.board64[sq2] // from 0x88 to 64
     let file1, file2, rank1, rank2;
@@ -1539,7 +1477,7 @@ let manhattanDistance = (board, sq1, sq2)=> {
 }
 
 // Chebyshev distance
-let distance = (board, sq1, sq2)=>{
+AI.distance = (board, sq1, sq2)=>{
     sq1 = board.board64[sq1] // from 0x88 to 64
     sq2 = board.board64[sq2] // from 0x88 to 64
 
@@ -1650,313 +1588,6 @@ AI.randomizePSQT = function () {
     }
 }
 
-AI.microeval = {
-    [P]: (board, i)=> {
-        let positionalScore = 0
-        //Defended
-        if (board.board[i+15] === P || board.board[i+17] === P) {
-            positionalScore += AI.DEFENDEDPAWNBONUS[i]
-        }
-
-        //Aligned
-        if (board.board[i+1] === P || board.board[i-1] === P) {
-            positionalScore += AI.ALIGNEDPAWNBONUS[i]
-        }
-
-        //Neighbour
-        if (board.board[i+2] === P || board.board[i-2] === P) {
-            positionalScore += AI.NEIGHBOURPAWNBONUS[i]
-        }
-
-        //Levers
-        if (board.board[i-15] === p || board.board[i-17] === p) {
-            positionalScore += AI.LEVERPAWNBONUS[i]
-        }
-
-        //Knight mobility blocker
-        if (board.board[i-50] === n || board.board[i-46] === n) {
-            positionalScore += AI.PAR[AI.phase][3]
-        }
-
-
-        if (AI.phase <= MIDGAME) {
-            //Center control
-            if (i === 68 && board.board[51] === 0) positionalScore+=AI.PAR[AI.phase][0]
-            if (i === 67 && board.board[52] === 0) positionalScore+=AI.PAR[AI.phase][0]
-
-            // Outer central lever
-            if (i === 66 && (board.board[51] === p || board.board[51] === 0)) {
-                positionalScore+=AI.PAR[AI.phase][1]
-
-                if (board.board[81] === P || board.board[83] === P) positionalScore += AI.PAR[AI.phase][2]
-            } 
-            
-            if (i === 69 && (board.board[52] === p || board.board[52] === 0)) {
-                positionalScore+=AI.PAR[AI.phase][1]
-
-                if (board.board[84] === P || board.board[86] === P) positionalScore += AI.PAR[AI.phase][2]
-            }
-        }
-
-        return positionalScore
-    },
-
-    [p]: (board,i)=>{
-        let positionalScore = 0
-
-        //Defended
-        if (board.board[i-15] === p || board.board[i-17] === p) {
-            positionalScore -= AI.DEFENDEDPAWNBONUS[112^i]
-        }
-
-        //Aligned
-        if (board.board[i+1] === p || board.board[i-1] === p) {
-            positionalScore -= AI.ALIGNEDPAWNBONUS[112^i]
-        }
-
-        //Neighbour
-        if (board.board[i+2] === p || board.board[i-2] === p) {
-            positionalScore -= AI.NEIGHBOURPAWNBONUS[112^i]
-        }
-
-        //Levers
-        if (board.board[i+15] === P || board.board[i+17] === P) {
-            positionalScore -= AI.LEVERPAWNBONUS[112^i]
-        }
-
-        //Knight mobility blocker
-        if (board.board[i+50] === N || board.board[i+46] === N) {
-            positionalScore -= AI.PAR[AI.phase][3]
-        }
-
-        if (AI.phase <= MIDGAME) {
-            //Center control
-            if (i === 51 && board.board[68] === 0) positionalScore-=AI.PAR[AI.phase][0]
-            if (i === 52 && board.board[67] === 0) positionalScore-=AI.PAR[AI.phase][0]
-
-            //Outer central lever
-            if (i === 50 && (board.board[67] === P || board.board[67] === 0)) {
-                positionalScore-=AI.PAR[AI.phase][1]
-                if (board.board[33] === p || board.board[35] === p) positionalScore -= AI.PAR[AI.phase][2]
-            } 
-            if (i === 53 && (board.board[68] === P || board.board[68] === 0)) {
-                positionalScore-=AI.PAR[AI.phase][1]
-                if (board.board[36] === p || board.board[38] === p) positionalScore -= AI.PAR[AI.phase][2]
-            } 
-        }
-
-        return positionalScore
-    },
-
-    [B]: (board, i)=>{
-        let positionalScore = 0
-
-        if (AI.phase === OPENING) {
-            // In front of pawn at opening
-            if ((i === 83 || i === 84) && board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][33]
-
-            // Bishop blocked by own pawns
-            if (board.board[i-15] === P) positionalScore -= AI.PAR[AI.phase][34]
-            if (board.board[i-17] === P) positionalScore -= AI.PAR[AI.phase][34]
-        }
-
-        // Blocks knight mobility
-        if (board.board[i-48] === n) positionalScore += AI.PAR[AI.phase][4]
-
-        //Semi outpost
-        if (AI.phase <= MIDGAME && board.ranksW[i] >= 3 && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][5]
-
-        //X-Rays
-        if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
-            positionalScore += AI.PAR[AI.phase][6]
-        } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
-            positionalScore += AI.PAR[AI.phase][6]
-        }
-
-        if (board.board[i + 15] === P || board.board[i + 17] === P) {
-            positionalScore += AI.OUTPOSTBONUSBISHOP[i]
-
-            //pawn in front of outpost bishop
-            if (board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][7]
-
-            //outpost bishop in rank 6
-            if (board.ranksW[i] === 6) positionalScore += AI.PAR[AI.phase][8]
-        }
-
-        return positionalScore
-    },
-
-    [b]: (board, i)=>{
-        let positionalScore = 0
-
-        if (AI.phase === OPENING) {
-            // In front of pawn at opening
-            if ((i === 35 || i === 36) && board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][33]
-
-            // Bishop blocked by own pawns
-            if (board.board[i+15] === p) positionalScore += AI.PAR[AI.phase][34]
-            if (board.board[i+17] === p) positionalScore += AI.PAR[AI.phase][34]
-        }
-
-        // Blocks knight mobility
-        if (board.board[i+48] === N) positionalScore -= AI.PAR[AI.phase][4]
-
-        //Semi outpost
-        if (board.ranksB[i] >= 3 && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][5]
-
-        // X-Rays
-        if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
-            positionalScore -= AI.PAR[AI.phase][6]
-        } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
-            positionalScore -= AI.PAR[AI.phase][6]
-        }
-
-        if (board.board[i - 15] === p || board.board[i - 17] === p) {
-            positionalScore -= AI.OUTPOSTBONUSBISHOP[112^i]
-
-            //pawn in front of outpost bishop
-            if (board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][7]
-
-            //outpost bishop in rank 6
-            if (board.ranksB[i] === 6) positionalScore -= AI.PAR[AI.phase][8]
-        }
-
-        return positionalScore
-    },
-
-    [N]: (board, i)=>{
-        let positionalScore = 0
-
-        // Semi outpost
-        if (AI.phase <= EARLY_ENDGAME && board.board[i-16] === P) positionalScore+=AI.PAR[AI.phase][9]
-
-        if (board.board[i + 15] === P || board.board[i + 17] === P) {
-            positionalScore += AI.OUTPOSTBONUSKNIGHT[i]
-
-            //enemy pawn in front of outpost knight
-            if (board.board[i-16] === p) positionalScore += AI.PAR[AI.phase][10]
-
-            //outpost knight in rank 6
-            if (board.ranksW[i] === 6) positionalScore += AI.PAR[AI.phase][11]
-        }
-
-        return positionalScore
-    },
-
-    [n]: (board, i)=>{
-        let positionalScore = 0
-
-        // Semi outpost
-        if (AI.phase <= EARLY_ENDGAME && board.board[i+16] === p) positionalScore-=AI.PAR[AI.phase][9]
-
-        if (board.board[i - 15] === p || board.board[i - 17] === p) {
-            positionalScore -= AI.OUTPOSTBONUSKNIGHT[112^i]
-
-            if (board.board[i+16] === P) positionalScore -= AI.PAR[AI.phase][10]
-
-            if (board.ranksB[i] === 6) positionalScore -= AI.PAR[AI.phase][11]
-        }
-
-        return positionalScore
-    },
-
-    [R]: (board, i)=>{
-        let positionalScore = 0
-
-        // X-Rays
-        if (board.columns[i] === board.columns[board.blackKingIndex]) positionalScore += AI.PAR[AI.phase][12]
-        if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) positionalScore += AI.PAR[AI.phase][12]
-
-        //defended rook in rank 5
-        if (board.ranksW[i] === 5) {
-            if (board.board[i + 15] === P || board.board[i + 17] === P) positionalScore += AI.PAR[AI.phase][13]
-        }
-
-        //Rook in 7th
-        if (board.ranksW[board.blackKingIndex] - board.ranksW[i] === 1 ) {
-            positionalScore += 40
-        }
-
-        return positionalScore
-    },
-
-    [r]: (board, i)=>{
-        let positionalScore = 0
-
-        // X-Rays
-        if (board.columns[i] === board.columns[board.whiteKingIndex]) positionalScore -= AI.PAR[AI.phase][12]
-        if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) positionalScore -= AI.PAR[AI.phase][12]
-
-        //defended rook in rank 5
-        if (board.ranksB[i] === 5) {
-            if (board.board[i - 15] === p || board.board[i - 17] === p) positionalScore -= AI.PAR[AI.phase][13]
-        }
-
-        //Rook in 7th
-        if (board.ranksB[board.whiteKingIndex] - board.ranksB[i] === 1 ) {
-            positionalScore -= 40
-        }
-
-        return positionalScore
-    },
-
-    [Q]: (board, i)=>{
-        let positionalScore = 0
-
-        if (board.diagonals1[i] === board.diagonals1[board.blackKingIndex]) {
-            positionalScore += AI.PAR[AI.phase][14]
-        } else if (board.diagonals2[i] === board.diagonals2[board.blackKingIndex]) {
-            positionalScore += AI.PAR[AI.phase][14]
-        }
-
-        if (board.columns[i] === board.columns[board.blackKingIndex]) {
-            positionalScore += AI.PAR[AI.phase][14]
-        } else if (board.ranksW[i] === board.ranksW[board.blackKingIndex]) {
-            positionalScore += AI.PAR[AI.phase][14]
-        }
-
-        return positionalScore
-    },
-
-    [q]: (board, i)=>{
-        let positionalScore = 0
-
-        if (board.diagonals1[i] === board.diagonals1[board.whiteKingIndex]) {
-            positionalScore -= AI.PAR[AI.phase][14]
-        } else if (board.diagonals2[i] === board.diagonals2[board.whiteKingIndex]) {
-            positionalScore -= AI.PAR[AI.phase][14]
-        }
-
-        if (board.columns[i] === board.columns[board.whiteKingIndex]) {
-            positionalScore -= AI.PAR[AI.phase][14]
-        } else if (board.ranksB[i] === board.ranksB[board.whiteKingIndex]) {
-            positionalScore -= AI.PAR[AI.phase][14]
-        }
-
-        return positionalScore
-    },
-
-    [K]: (board, i)=>{
-        let positionalScore = 0
-
-        // if (board.whiteKingIndex === 118 && board.board[119] === R) positionalScore -= VPAWN
-        // if (board.whiteKingIndex === 117 && board.board[119] === R) positionalScore -= VPAWN2
-        // if (board.whiteKingIndex === 117 && board.board[118] === R) positionalScore -= VPAWN
-
-        return positionalScore
-    },
-
-    [k]: (board, i)=>{
-        let positionalScore = 0
-
-        // if (board.blackKingIndex === 6 && board.board[7] === r) positionalScore += VPAWN
-        // if (board.blackKingIndex === 5 && board.board[7] === r) positionalScore += VPAWN2
-        // if (board.blackKingIndex === 5 && board.board[6] === r) positionalScore += VPAWN
-
-        return positionalScore
-    }
-}
-
 // FUNCIÓN DE EVALUACIÓN DE LA POSICIÓN
 AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) {
     let advance = 100 * (1 - AI.totalmaterial / AI.maxMaterialValue)
@@ -1970,7 +1601,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     this.evalnodes++
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let tempoBonus = 0// sign * (30 - 1.643*ply) | 0 // y = -1,6435x + 43,043
+    let tempoBonus = AI.PAR[40]
 
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     
@@ -2124,7 +1755,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     if (AI.phase === LATE_ENDGAME && alpha > VPAWN*5) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
-        let distanceBetweenKings = 8 - manhattanDistance(board, board.whiteKingIndex, board.blackKingIndex)
+        let distanceBetweenKings = 8 - AI.manhattanDistance(board, board.whiteKingIndex, board.blackKingIndex)
 
         let mopup = 40*(kingToTheCorner + distanceBetweenKings)
 
@@ -2208,13 +1839,13 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[P][i] - pieces[P][j])
 
             // Defended
-            if (distance === 15 || distance === 17) whiteScore++
+            if (distance === 15 || distance === 17) whiteScore+=AI.PAR[0]
 
             // Aligned
-            if (distance === 1) whiteScore++
+            if (distance === 1) whiteScore+=AI.PAR[1]
 
             // Doubled
-            if (board.columns[pieces[P][i]] === board.columns[pieces[P][j]]) whiteScore--
+            if (board.columns[pieces[P][i]] === board.columns[pieces[P][j]]) whiteScore-=AI.PAR[2]
         }
 
         // P-N
@@ -2222,13 +1853,13 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[P][i] - pieces[N][j]
     
             // Outpost
-            if (distance === 15 || distance === 17) whiteScore++
+            if (distance === 15 || distance === 17) whiteScore+=AI.PAR[3]
     
             // Semi Outpost
-            if (distance === -16) whiteScore++
+            if (distance === -16) whiteScore+=AI.PAR[4]
 
             // Blocks own knight moves
-            if (distance === -33 || distance === -31 || distance === -18 || distance === -14) whiteScore--
+            if (distance === -33 || distance === -31 || distance === -18 || distance === -14) whiteScore-=AI.PAR[5]
         }
 
         // P-B
@@ -2238,9 +1869,9 @@ AI.getPositional = (board, pieces)=>{
 
             if (distance === 16) {
                 if (AI.phase <= MIDGAME) {
-                    whiteScore -= 10
+                    whiteScore -= AI.PAR[6]
                 } else {
-                    whiteScore -= 2
+                    whiteScore -= AI.PAR[7]
                 }
             }
 
@@ -2249,9 +1880,9 @@ AI.getPositional = (board, pieces)=>{
     
             if (diagonalMatch1 || diagonalMatch2) {
                 if (pieces[P][i] > pieces[B][j]) {
-                    whiteScore++
+                    whiteScore+=AI.PAR[8]
                 } else {
-                    whiteScore--
+                    whiteScore-=AI.PAR[9]
                 }
             }
         }
@@ -2260,7 +1891,7 @@ AI.getPositional = (board, pieces)=>{
         for (let j = 0; j < pieces[R].length; j++) {
             let columnMatch = (board.columns[pieces[P][i]] === board.columns[pieces[R][j]])
     
-            if (columnMatch) whiteScore--
+            if (columnMatch) whiteScore-=AI.PAR[10]
         }
 
         // P-Q
@@ -2270,7 +1901,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[P][i] - pieces[K][j]
     
             // Pawn shield
-            if (distance === -15 || distance === -16 || distance === -17) whiteScore+=3
+            if (distance === -15 || distance === -16 || distance === -17) whiteScore+=AI.PAR[11]
         }
 
         //P-n
@@ -2278,7 +1909,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[P][i] - pieces[n][j]
     
             // Pawn shield
-            if (distance === 50 || distance === 48 || distance === 46 || distance === 35 || distance === 29) whiteScore++
+            if (distance === 50 || distance === 48 || distance === 46 || distance === 35 || distance === 29) whiteScore+=AI.PAR[12]
         }
 
         // P-b
@@ -2287,16 +1918,16 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[P][i]] === board.diagonals2[pieces[b][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[13]
             }
         }
 
         // P-p
         for (let j = 0; j < pieces[p].length; j++) {
             // Blocked column
-            if (board.columns[pieces[P][i]] === board.columns[pieces[p][j]]) whiteScore--
-            if (board.columns[pieces[P][i]] + 1 === board.columns[pieces[p][j]]) whiteScore--
-            if (board.columns[pieces[P][i]] - 1 === board.columns[pieces[p][j]]) whiteScore--
+            if (board.columns[pieces[P][i]] === board.columns[pieces[p][j]]) whiteScore-=AI.PAR[14]
+            if (board.columns[pieces[P][i]] + 1 === board.columns[pieces[p][j]]) whiteScore-=AI.PAR[15]
+            if (board.columns[pieces[P][i]] - 1 === board.columns[pieces[p][j]]) whiteScore-=AI.PAR[16]
         }
     }
 
@@ -2305,9 +1936,9 @@ AI.getPositional = (board, pieces)=>{
         // N-N
 
         for (let j = i + 1; j < pieces[N].length; j++) {
-            let distance = manhattanDistance(board, pieces[N][i], pieces[N][j])
+            let distance = AI.distance(board, pieces[N][i], pieces[N][j])
 
-            whiteScore += -distance
+            whiteScore += -distance * AI.PAR[17]
         }
 
         // N-B
@@ -2315,14 +1946,14 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[N][i] - pieces[B][j])
     
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore+=AI.PAR[18]
     
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[N][i]] === board.diagonals1[pieces[B][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[N][i]] === board.diagonals2[pieces[B][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[19]
             }
         }
 
@@ -2331,12 +1962,12 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[N][i] - pieces[R][j])
     
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore+=AI.PAR[20]
     
             // Same column
             let columnMatch = (board.columns[pieces[N][i]] === board.columns[pieces[R][j]])
     
-            if (columnMatch) whiteScore++
+            if (columnMatch) whiteScore+=AI.PAR[21]
         }
 
         // N-Q
@@ -2344,7 +1975,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[N][i] - pieces[R][j])
     
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore+=AI.PAR[22]
         }
 
         // N-K
@@ -2355,7 +1986,7 @@ AI.getPositional = (board, pieces)=>{
 
             // Defended
             if (distance === 47 || distance === 48 || distance === 49) {
-                whiteScore++
+                whiteScore+=AI.PAR[23]
             }
         }
     }
@@ -2363,14 +1994,14 @@ AI.getPositional = (board, pieces)=>{
     for (let i = 0; i < pieces[B].length; i++) {
         // B-B
 
-        for (let j = 0; j < pieces[B].length; j++) {
+        for (let j = i+1; j < pieces[B].length; j++) {
 
             // Adjacent diagonal
             let adjDiagonal1 = Math.abs(board.diagonals1[pieces[B][i]] - board.diagonals1[pieces[B][j]]) === 1
             let adjDiagonal2 = Math.abs(board.diagonals2[pieces[B][i]] - board.diagonals2[pieces[B][j]]) === 1
 
             if (adjDiagonal1 || adjDiagonal2) {
-                whiteScore++
+                whiteScore+=AI.PAR[24]
             }
         }
 
@@ -2381,7 +2012,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[R][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[25]
             }
         }
 
@@ -2392,7 +2023,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[Q][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[26]
             }
         }
 
@@ -2401,7 +2032,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[B][i] - pieces[K][j]
     
             // Pawn shield
-            if (distance === -15 || distance === -16 || distance === -17) whiteScore++
+            if (distance === -15 || distance === -16 || distance === -17) whiteScore+=AI.PAR[27]
         }
 
         // B-r
@@ -2411,7 +2042,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[r][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[28]
             }
         }
 
@@ -2422,7 +2053,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[q][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[29]
             }
         }
 
@@ -2433,7 +2064,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[B][i]] === board.diagonals2[pieces[k][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                whiteScore++
+                whiteScore+=AI.PAR[30]
             }
         }
     }
@@ -2444,12 +2075,12 @@ AI.getPositional = (board, pieces)=>{
             // Same column
             let columnMatch = (board.columns[pieces[R][i]] === board.columns[pieces[R][j]])
 
-            if (columnMatch) whiteScore++
+            if (columnMatch) whiteScore+=AI.PAR[31]
 
             // Same rank
             let rankMatch = (board.ranksW[pieces[R][i]] === board.ranksW[pieces[R][j]])
 
-            if (rankMatch) whiteScore++
+            if (rankMatch) whiteScore+=AI.PAR[32]
         }
 
         // R-Q
@@ -2457,19 +2088,19 @@ AI.getPositional = (board, pieces)=>{
             // Same column
             let columnMatch = (board.columns[pieces[R][i]] === board.columns[pieces[Q][j]])
     
-            if (columnMatch) whiteScore++
+            if (columnMatch) whiteScore+=AI.PAR[33]
     
             // Same rank
             let rankMatch = (board.ranksW[pieces[R][i]] === board.ranksW[pieces[Q][j]])
     
-            if (rankMatch) whiteScore++
+            if (rankMatch) whiteScore+=AI.PAR[34]
         }
         
         // R-K
         for (let j = 0; j < pieces[K].length; j++) {
-            if (pieces[K][j] > 116 && pieces[R][i] < 117) whiteScore++
+            if (pieces[K][j] > 116 && pieces[R][i] < 117) whiteScore+=AI.PAR[35]
     
-            if (pieces[K][j] < 115 && pieces[R][i] > 114) whiteScore++
+            if (pieces[K][j] < 115 && pieces[R][i] > 114) whiteScore+=AI.PAR[36]
         }
 
         // R-q
@@ -2477,12 +2108,12 @@ AI.getPositional = (board, pieces)=>{
             // Same column
             let columnMatch = (board.columns[pieces[R][i]] === board.columns[pieces[q][j]])
     
-            if (columnMatch) whiteScore++
+            if (columnMatch) whiteScore+=AI.PAR[37]
     
             // Same rank
             let rankMatch = (board.ranksW[pieces[R][i]] === board.ranksW[pieces[q][j]])
     
-            if (rankMatch) whiteScore++
+            if (rankMatch) whiteScore+=AI.PAR[38]
         }
 
         // R-k
@@ -2491,7 +2122,7 @@ AI.getPositional = (board, pieces)=>{
             let rankMatch = (board.ranksW[pieces[R][i]] + 1 === board.ranksW[pieces[k][j]])
     
             if (rankMatch) {
-                whiteScore++
+                whiteScore+=AI.PAR[39]
             }
         }
     }
@@ -2504,13 +2135,13 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[p][i] - pieces[p][j])
 
             // Defended
-            if (distance === 15 || distance === 17) blackScore++
+            if (distance === 15 || distance === 17) blackScore+=AI.PAR[0]
 
             // Aligned
-            if (distance === 1) blackScore++
+            if (distance === 1) blackScore+=AI.PAR[1]
 
             // Doubled
-            if (board.columns[pieces[p][i]] === board.columns[pieces[p][j]]) blackScore--
+            if (board.columns[pieces[p][i]] === board.columns[pieces[p][j]]) blackScore-=AI.PAR[2]
         }
 
         // p-n
@@ -2518,13 +2149,13 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[p][i] - pieces[n][j]
     
             // Outpost
-            if (distance === -15 || distance === -17) blackScore++
+            if (distance === -15 || distance === -17) blackScore+=AI.PAR[4]
     
             // Semi Outpost
-            if (distance === 16) blackScore++
+            if (distance === 16) blackScore+=AI.PAR[4]
 
             // Blocks own knight moves
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore--
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore-=AI.PAR[5]
         }
 
         // p-b
@@ -2533,9 +2164,9 @@ AI.getPositional = (board, pieces)=>{
 
             if (distance === -16) {
                 if (AI.phase <= MIDGAME) {
-                    blackScore-=10
+                    blackScore-=AI.PAR[6]
                 } else {
-                    blackScore-=2
+                    blackScore-=AI.PAR[7]
                 }
             }
 
@@ -2544,9 +2175,9 @@ AI.getPositional = (board, pieces)=>{
     
             if (diagonalMatch1 || diagonalMatch2) {
                 if (pieces[p][i] < pieces[b][j]) {
-                    blackScore++
+                    blackScore+=AI.PAR[8]
                 } else {
-                    blackScore--
+                    blackScore-=AI.PAR[9]
                 }
             }
         }
@@ -2555,7 +2186,7 @@ AI.getPositional = (board, pieces)=>{
         for (let j = 0; j < pieces[r].length; j++) {
             let columnMatch = (board.columns[pieces[p][i]] === board.columns[pieces[r][j]])
     
-            if (columnMatch) blackScore--
+            if (columnMatch) blackScore+=AI.PAR[10]
         }
 
         // p-q
@@ -2565,7 +2196,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[p][i] - pieces[k][j]
     
             // Pawn shield
-            if (distance === 15 || distance === 16 || distance === 17) blackScore+=3
+            if (distance === 15 || distance === 16 || distance === 17) blackScore+=AI.PAR[11]
         }
 
         //p-N
@@ -2574,7 +2205,7 @@ AI.getPositional = (board, pieces)=>{
     
             // Pawn shield
             if (distance === -50 || distance === -48 || distance === -46 || distance === -35 || distance === -29) {
-                blackScore++
+                blackScore+=AI.PAR[12]
             }
         }
 
@@ -2584,16 +2215,16 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[P][i]] === board.diagonals2[pieces[B][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[13]
             }
         }
 
         // p-P
         for (let j = 0; j < pieces[P].length; j++) {
             // Blocked column
-            if (board.columns[pieces[p][i]] === board.columns[pieces[P][j]]) blackScore--
-            if (board.columns[pieces[p][i]] + 1 === board.columns[pieces[P][j]]) blackScore--
-            if (board.columns[pieces[p][i]] - 1 === board.columns[pieces[P][j]]) blackScore--
+            if (board.columns[pieces[p][i]] === board.columns[pieces[P][j]]) blackScore-=AI.PAR[14]
+            if (board.columns[pieces[p][i]] + 1 === board.columns[pieces[P][j]]) blackScore-=AI.PAR[15]
+            if (board.columns[pieces[p][i]] - 1 === board.columns[pieces[P][j]]) blackScore-=AI.PAR[16]
         }
     }
 
@@ -2601,9 +2232,9 @@ AI.getPositional = (board, pieces)=>{
         // n-n
 
         for (let j = i + 1; j < pieces[n].length; j++) {
-            let distance = manhattanDistance(board, pieces[n][i], pieces[n][j])
+            let distance = AI.distance(board, pieces[n][i], pieces[n][j])
 
-            blackScore += -distance
+            blackScore += -distance * AI.PAR[17]
         }
 
         // n-b
@@ -2611,14 +2242,14 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[n][i] - pieces[b][j])
     
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore+=AI.PAR[18]
     
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[n][i]] === board.diagonals1[pieces[b][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[n][i]] === board.diagonals2[pieces[b][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[19]
             }
         }
 
@@ -2627,12 +2258,12 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[n][i] - pieces[r][j])
     
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore+=AI.PAR[20]
     
             // Same column
             let columnMatch = (board.columns[pieces[n][i]] === board.columns[pieces[r][j]])
     
-            if (columnMatch) blackScore++
+            if (columnMatch) blackScore+=AI.PAR[21]
         }
 
         // n-q
@@ -2640,7 +2271,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = Math.abs(pieces[n][i] - pieces[r][j])
     
             // Defended
-            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore++
+            if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore+=AI.PAR[22]
         }
 
         // n-k
@@ -2651,7 +2282,7 @@ AI.getPositional = (board, pieces)=>{
 
             // Defended
             if (distance === -47 || distance === -48 || distance === -49) {
-                blackScore++
+                blackScore+=AI.PAR[23]
             }
         }
     }
@@ -2667,7 +2298,7 @@ AI.getPositional = (board, pieces)=>{
             let adjDiagonal2 = Math.abs(board.diagonals2[pieces[b][i]] - board.diagonals2[pieces[b][j]]) === 1
 
             if (adjDiagonal1 || adjDiagonal2) {
-                blackScore++
+                blackScore+=AI.PAR[24]
             }
         }
 
@@ -2678,7 +2309,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[r][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[25]
             }
         }
 
@@ -2689,7 +2320,7 @@ AI.getPositional = (board, pieces)=>{
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[q][j]])
     
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[26]
             }
         }
 
@@ -2698,39 +2329,39 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[b][i] - pieces[k][j]
     
             // Pawn shield
-            if (distance === 15 || distance === 16 || distance === 17) blackScore++
+            if (distance === 15 || distance === 16 || distance === 17) blackScore+=AI.PAR[27]
         }
 
         // b-R
-        for (let j = i + 1; j < pieces[R].length; j++) {
+        for (let j = 0; j < pieces[R].length; j++) {
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[R][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[R][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[28]
             }
         }
 
         // b-Q
-        for (let j = i + 1; j < pieces[Q].length; j++) {
+        for (let j = 0; j < pieces[Q].length; j++) {
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[Q][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[Q][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[29]
             }
         }
 
         // b-K
-        for (let j = i + 1; j < pieces[K].length; j++) {
+        for (let j = 0; j < pieces[K].length; j++) {
             // Same diagonal
             let diagonalMatch1 = (board.diagonals1[pieces[b][i]] === board.diagonals1[pieces[K][j]])
             let diagonalMatch2 = (board.diagonals2[pieces[b][i]] === board.diagonals2[pieces[K][j]])
 
             if (diagonalMatch1 || diagonalMatch2) {
-                blackScore++
+                blackScore+=AI.PAR[30]
             }
         }
     }
@@ -2741,12 +2372,12 @@ AI.getPositional = (board, pieces)=>{
             // Same column
             let columnMatch = (board.columns[pieces[r][i]] === board.columns[pieces[r][j]])
 
-            if (columnMatch) blackScore++
+            if (columnMatch) blackScore+=AI.PAR[31]
 
             // Same rank
             let rankMatch = (board.ranksW[pieces[r][i]] === board.ranksW[pieces[r][j]])
 
-            if (rankMatch) blackScore++
+            if (rankMatch) blackScore+=AI.PAR[32]
         }
 
         // r-q
@@ -2754,19 +2385,19 @@ AI.getPositional = (board, pieces)=>{
             // Same column
             let columnMatch = (board.columns[pieces[r][i]] === board.columns[pieces[q][j]])
     
-            if (columnMatch) blackScore++
+            if (columnMatch) blackScore+=AI.PAR[33]
     
             // Same rank
             let rankMatch = (board.ranksW[pieces[r][i]] === board.ranksW[pieces[q][j]])
     
-            if (rankMatch) blackScore++
+            if (rankMatch) blackScore+=AI.PAR[34]
         }
 
         // r-k
         for (let j = 0; j < pieces[k].length; j++) {
-            if (pieces[k][j] > 4 && pieces[r][i] < 5) blackScore++
+            if (pieces[k][j] > 4 && pieces[r][i] < 5) blackScore+=AI.PAR[35]
     
-            if (pieces[k][j] < 3 && pieces[r][i] > 2) blackScore++
+            if (pieces[k][j] < 3 && pieces[r][i] > 2) blackScore+=AI.PAR[36]
         }
 
         // r-Q
@@ -2774,12 +2405,12 @@ AI.getPositional = (board, pieces)=>{
             // Same column
             let columnMatch = (board.columns[pieces[r][i]] === board.columns[pieces[Q][j]])
     
-            if (columnMatch) blackScore++
+            if (columnMatch) blackScore+=AI.PAR[37]
     
             // Same rank
             let rankMatch = (board.ranksW[pieces[r][i]] === board.ranksW[pieces[Q][j]])
     
-            if (rankMatch) blackScore++
+            if (rankMatch) blackScore+=AI.PAR[38]
         }
 
         // r-K
@@ -2788,12 +2419,12 @@ AI.getPositional = (board, pieces)=>{
             let rankMatch = (board.ranksB[pieces[r][i]] + 1 === board.ranksB[pieces[K][j]])
     
             if (rankMatch) {
-                blackScore++
+                blackScore+=AI.PAR[39]
             }
         }
     }
 
-    let score = whiteScore - blackScore
+    let score = (whiteScore - blackScore) | 0
 
     return score
 }
@@ -3713,6 +3344,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let maxMoves = 3 + depth*depth // For moves count pruning, inspired in Stockfish - Not fully tested
 
     let nonCaptures = 0
+    AI.totalMoves += moves.length
 
     for (let i = 0, len = moves.length; i < len; i++) {
         let move = moves[i]
@@ -3765,7 +3397,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
             let inCheckAfterMove = board.isKingInCheck()
 
-            if (!E && prune && !move.killer1 && !move.castleSide && !inCheckAfterMove) {
+            if (!E && prune && !move.killer1 && !move.killer2 && !move.castleSide && !inCheckAfterMove) {
                 // Futility Pruning
                 if (move.isCapture) {
                     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
@@ -3781,10 +3413,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 // if (depth <= 3) {
                 // }
     
-                if (cutNode && nonCaptures > 6 && !move.isCapture && !move.castleSide) {
-                    let limit = nonCaptures > 12? 0.9 : 0.85
+                if (nonCaptures > 3 && !move.castleSide) {
+                    let limit = nonCaptures > 6? 0.9 : 0.8
                     if (Math.random() < limit) {
-                        AI.rnodes++
+                        AI.rmoves++
                         board.unmakeMove(move)
                         continue
                     }
@@ -4106,13 +3738,14 @@ AI.search = function (board, options) {
         AI.etcNodes = 0
         AI.evalhashnodes = 0
         AI.evalnodes = 0
-        AI.rnodes = 0
+        AI.rmoves = 0
         AI.evalTime = 0
         AI.moveTime = 0
         AI.iteration = 0
         AI.PV = AI.getPV(board, 1)
         AI.stop = false
         AI.maxMovesCount = 0
+        AI.totalMoves = 0
 
         AI.changeinPV = true
 
@@ -4145,13 +3778,6 @@ AI.search = function (board, options) {
         if (true) {
             //Iterative Deepening
             for (; depth <= AI.totaldepth; ) {
-
-                // console.log(AI.mostCommonSquares)
-
-                // board.squareOrder = board.squareOrder.map((a,b)=>{
-                //     return AI.mostCommonSquares[b] - AI.mostCommonSquares[a]
-                // })
-
                 // console.log(board.hashkey)
                 if (AI.stop && AI.bestmove) break
 
@@ -4161,12 +3787,13 @@ AI.search = function (board, options) {
 
                 let ttEntry = AI.ttGet(board.turn, board.hashkey)
 
-                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth > depth) {
+                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth >= depth) {
                     AI.f = ttEntry.score
                     AI.bestmove = ttEntry.move
                 }
                 
                 let mtdfScore = AI.MTDF(board, AI.f, depth)
+
                 if (!AI.stop) AI.f = mtdfScore
                 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
@@ -4193,10 +3820,9 @@ AI.search = function (board, options) {
 
                 score100 = AI.lastscore * (100/VPAWN)
 
-                // sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
-                sigmoid = 1 / (1 + Math.exp(0.5 * -score100 / 100))
+                sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
 
-                postMessage({sigmoid})
+                postMessage({sigmoid, score: score100})
             
                 depth++
             }
@@ -4224,7 +3850,7 @@ AI.search = function (board, options) {
         AI.searchTime = AI.searchTime1 - AI.searchTime0
         console.log('Sorting % time: ', (AI.sortingTime / AI.searchTime) * 100 | 0,
                     'Evaluation % time: ', (AI.evalTime / AI.searchTime) * 100 | 0,
-                    'Random Nodes Pruned (%): ', (AI.rnodes / AI.nodes) * 100 | 0,
+                    'Random Moves Pruned (%): ', (AI.rmoves / AI.totalMoves) * 100 | 0,
                     'ETC (%): ', (AI.etcNodes/AI.nodes*1000 | 0) / 10,
                     'Collisions (%): ', (AI.collisions/AI.ttGets*1000 | 0) / 10,
                     'Pawn Collisions (%): ', (AI.pawncollisions/AI.pnodes*1000 | 0) / 10,

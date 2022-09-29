@@ -44,6 +44,7 @@
       <input id="loadfen" style="width:50%" rows="5"></input><br>
       <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
       <div id="depth"></div>
+      <div id="score">sdfsdfdsf</div>
       <div id="pgn" style="font-size: 0.5rem; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
     </div>
 
@@ -179,9 +180,11 @@ let analyze = function(callback) {
     worker.onmessage = function(event){
         let sigmoid = 100*event.data.sigmoid
         let depth = event.data.depth
+        let score = event.data.score
 
         if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
         if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
+        if (score) document.getElementById('score').innerText = 'Score ' + score
         if (callback) callback(event.data)
       }
 
