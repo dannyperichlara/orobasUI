@@ -1,7 +1,7 @@
 AI.DEFENDED_VALUES = []
 AI.PAWNSHIELD = [0,0,0,0]
 
-AI.PAR = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,37,3,3,50,0,0,18]
+AI.PAR = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,37,3,3,50,0,0,18].fill(1)
 
 AI.PASSERSBONUS = [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,102,112,159,128,103,117,86,168,null,null,null,null,null,null,null,null,99,103,41,12,23,81,25,47,null,null,null,null,null,null,null,null,50,46,46,42,23,27,36,53,null,null,null,null,null,null,null,null,9,35,23,8,33,60,25,13,null,null,null,null,null,null,null,null,4,17,0,23,3,1,12,15,null,null,null,null,null,null,null,null,25,1,3,18,18,3,10,5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
 

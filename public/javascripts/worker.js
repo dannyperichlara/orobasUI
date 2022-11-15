@@ -1292,7 +1292,7 @@ Math.abs = (x) => {
 }
 
 let AI = {
-    version: "3.1.2",
+    version: "4.0.0",
     totaldepth: 48,
     ttNodes: 0,
     collisions: 0,
@@ -1609,7 +1609,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
     if (evalEntry && evalEntry.hashkey === board.hashkey) {
         this.evalhashnodes++
-        return sign * Math.round((evalEntry.score + tempoBonus) / AI.nullWindowFactor)
+        return sign * ((evalEntry.score + tempoBonus) / AI.nullWindowFactor | 0)
     }
     
     // let t0 = Date.now()
@@ -1690,8 +1690,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         let index = turn === WHITE? i : (112^i)
         let enemyKingPosition = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         
-        openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
-        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
+        // openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
+        // endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
+
+        openingPsqt += sign*(7 - AI.manhattanDistance(board, i, enemyKingPosition))
+        endgamePsqt += sign*(7 - AI.manhattanDistance(board, i, 52))
     }
     
     AI.totalmaterial = tempTotalMaterial
@@ -1719,7 +1722,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
 
-    let positional = pvNode? AI.getPositional(board, pieces) : 0
+    let positional = AI.getPositional(board, pieces)
 
     let structure = AI.getStructure(board, pieces[P], pieces[p])
     // console.log(pieces[P])
@@ -2918,13 +2921,12 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
 }
 
 AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove) {
-    
     // // Avoids QS explosion
     // if (ply > AI.iteration + 4) {
     //     // console.log('Oops')
     //     return alpha
     // }
-    
+
     AI.qsnodes++
 
     let turn = board.turn
@@ -3111,7 +3113,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             if (ttEntry.score < beta) beta = ttEntry.score
         }
 
-        if (/*depth > 0 && */alpha >= beta) {
+        if (depth > 0 && alpha >= beta) {
             return ttEntry.score
         }
     }
@@ -3276,12 +3278,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         //             }
         //         }
         //     }
-        // }
+        // }4
+        // }4
 
         // let m0 = (new Date()).getTime()
         if (board.makeMove(move)) {
             // AI.moveTime += (new Date()).getTime() - m0
             legal++
+
+            if (!move.isCapture) AI.passiveMoves++
 
             let inCheckAfterMove = board.isKingInCheck()
 
@@ -3290,11 +3295,13 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 if (move.isCapture) {
                     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
                         board.unmakeMove(move)
+                        if (!move.isCapture) AI.passiveMoves--
                         continue
                     }
                 } else {
                     if (staticeval + MARGIN3*depth < alpha) {
                         board.unmakeMove(move)
+                        if (!move.isCapture) AI.passiveMoves--
                         continue
                     }
                 }
@@ -3306,6 +3313,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     if (Math.random() < limit) {
                         AI.rmoves++
                         board.unmakeMove(move)
+                        if (!move.isCapture) AI.passiveMoves--
                         continue
                     }
                 }
@@ -3315,7 +3323,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 R += AI.LMR_TABLE[depth][legal]
             }
 
-            // if (pvNode || incheck || inCheckAfterMove) R--
+            if (pvNode || incheck || inCheckAfterMove) R--
 
             if (cutNode) R++
 
@@ -3367,6 +3375,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 // El primer movimiento se busca con ventana total y sin reducciones
                 if (AI.stop) {
                     board.unmakeMove(move)
+                    if (!move.isCapture) AI.passiveMoves--
                     return alphaOriginal
                 }
 
@@ -3374,6 +3383,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             } else {
                 if (AI.stop) {
                     board.unmakeMove(move)
+                    if (!move.isCapture) AI.passiveMoves--
                     return alphaOriginal
                 }
 
@@ -3384,8 +3394,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
                 }
             }
-
-            // board.unmakeMove(move)
 
             if (AI.stop) return alphaOriginal //tested ok
             
@@ -3418,6 +3426,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     }
 
                     board.unmakeMove(move)
+                    if (!move.isCapture) AI.passiveMoves--
                     
                     return score
                 }
@@ -3434,6 +3443,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             }
 
             board.unmakeMove(move)
+            if (!move.isCapture) AI.passiveMoves--
         } else {
             illegalMoves++
         }
@@ -3633,6 +3643,7 @@ AI.search = function (board, options) {
         AI.stop = false
         AI.maxMovesCount = 0
         AI.totalMoves = 0
+        AI.passiveMoves = 0
 
         AI.changeinPV = true
 
