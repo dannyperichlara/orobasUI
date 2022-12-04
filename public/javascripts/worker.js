@@ -111,6 +111,19 @@ let orobas = {
         0,	1,	2,	3,	4,	5,	6,	7,
     ],
 
+    board0x88straight: [
+        0,	1,	2,	3,	4,	5,	6,	7,
+        16,	17,	18,	19,	20,	21,	22,	23,
+        32,	33,	34,	35,	36,	37,	38,	39,
+        48,	49,	50,	51,	52,	53,	54,	55,
+        64,	65,	66,	67,	68,	69,	70,	71,
+        80,	81,	82,	83,	84,	85,	86,	87,
+        96,	97,	98,	99,	100,101,102,103,
+        112,113,114,115,116,117,118,119,
+    ],
+
+    n65: new Array(65).fill(0).map((e,i)=>i),
+
     ranksW: [
         7,	7,	7,	7,	7,	7,	7,	7,	null,	null,	null,	null,	null,	null,	null,	null,
         6,	6,	6,	6,	6,	6,	6,	6,	null,	null,	null,	null,	null,	null,	null,	null,
@@ -1663,47 +1676,45 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     // for (let i = 0; i < 120; i++) {
-    for (let square = 0; square < 64; square++) {
-        // if (i & 0x88) {
-        //     i+=7
-        //     continue
-        // }
-        let i = board.board0x88[square]
+    // for (let square = 0; square < 64; square++) {
+    board.n65.reduce((acc,cur,square)=>{
+        let i = board.board0x88straight[square - 1]
 
         let piece = board.board[i]
         
         if (!piece) {
-            continue
-        }
-
-        pieces[piece].push(i)
-
-        pieceCount[piece]++
-
-        let turn = board.color(piece)
-        let sign = turn === WHITE? 1 : -1
-
-        if (AI.phase <= MIDGAME) {
-            if (piece === B && board.board[i + 16] === P) score -= VPAWN
-            if (piece === b && board.board[i - 16] === p) score += VPAWN
-        }
-
-        // MATERIAL
-        openingMaterial += AI.PIECE_VALUES[OPENING][piece]
-        endgameMaterial += AI.PIECE_VALUES[LATE_ENDGAME][piece]
-
-        // The original algorithm only considerd non-pawn material; because Orobas defines 4 phases, we include all material in order to allow the pass from Opening to Midgame when material value decreases more than 2%. See AI.PHASELIMITS
-        tempTotalMaterial += ABS[piece] === P? 0 : AI.PIECE_VALUES[OPENING][ABS[piece]]
-
-        let piecetype = ABS[piece]
-
-        let index = turn === WHITE? i : (112^i)
-        let enemyKingPosition = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
-        
-        openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - 8*AI.manhattanDistance(board, i, enemyKingPosition))
-        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - 8*AI.manhattanDistance(board, i, turn === WHITE? 52 : 68))
-    }
+            // return 0
+            // continue
+        } else {
+            pieces[piece].push(i)
     
+            pieceCount[piece]++
+    
+            if (AI.phase <= MIDGAME) {
+                if (piece === B && board.board[i + 16] === P) score -= VPAWN
+                if (piece === b && board.board[i - 16] === p) score += VPAWN
+            }
+    
+            // MATERIAL
+            openingMaterial += AI.PIECE_VALUES[OPENING][piece]
+            endgameMaterial += AI.PIECE_VALUES[LATE_ENDGAME][piece]
+    
+            // The original algorithm only considerd non-pawn material; because Orobas defines 4 phases, we include all material in order to allow the pass from Opening to Midgame when material value decreases more than 2%. See AI.PHASELIMITS
+            tempTotalMaterial += ABS[piece] === P? 0 : AI.PIECE_VALUES[OPENING][ABS[piece]]
+    
+            let piecetype = ABS[piece]
+            let turn = board.color(piece)
+            let sign = turn === WHITE? 1 : -1
+            let index = turn === WHITE? i : (112^i)
+            let enemyKingPosition = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
+            
+            openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - 8*AI.manhattanDistance(board, i, enemyKingPosition))
+            endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - 8*AI.manhattanDistance(board, i, turn === WHITE? 52 : 68))
+        }
+
+        // return 0
+    })
+
     AI.totalmaterial = tempTotalMaterial
 
     let mgFactor = AI.totalmaterial / AI.maxMaterialValue
