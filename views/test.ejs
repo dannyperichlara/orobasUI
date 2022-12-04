@@ -28,10 +28,10 @@
     <span>
       <label>Segundos</label> 
       <select name="seconds" id="seconds">
-        <option value="0.1">0.1</option>
+        <option value="0.1" selected>0.1</option>
         <option value="0.2">0.2</option>
         <option value="0.3">0.3</option>
-        <option value="0.5" selected>0.5</option>
+        <option value="0.5">0.5</option>
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
@@ -51,7 +51,7 @@
     <script>
         "use strict"
 
-        let n = 20
+        let n = 50
 
         let results
         let totalgames
@@ -77,7 +77,7 @@
         console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${winLossRatio}`, "font-size: 16px")
         console.log(`%cΔELO: ${eloDelta}`, "font-size: 16px")
 
-        if (totalgames >= 1000) throw new Error(0);
+        if (totalgames >= 200) throw new Error(0);
         
         var board = null
 var game = new Chess()
@@ -283,10 +283,11 @@ let analyze = function(callback) {
         if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
         if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
       }
+
       if (callback) callback(event.data)
     }
 
-    worker.postMessage({fen, seconds})
+    worker.postMessage({fen, options: {seconds, print: false}})
 }
 
 let undo = function () {
