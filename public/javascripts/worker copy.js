@@ -4,14 +4,13 @@
 
 console.time()
 
-
 for (let i = 0; i < 10000000; i++) {
     Math.random()
 }
 
 console.timeEnd()
 
-let randomNumbers = new Array(10000).fill(0)
+let randomNumbers = new Array(10000000).fill(0)
 
 for (let i = 0; i < randomNumbers.length; i++) {
     randomNumbers[i] = Math.random()
@@ -20,7 +19,7 @@ for (let i = 0; i < randomNumbers.length; i++) {
 let randomIndex = 0
 
 Math.random = ()=>{
-    return randomNumbers[randomIndex++ % 10000]
+    return randomNumbers[randomIndex++ % 8000]
 }
 
 console.time()
@@ -1293,7 +1292,7 @@ Math.abs = (x) => {
 }
 
 let AI = {
-    version: "4.1.2",
+    version: "3.1.2",
     totaldepth: 48,
     ttNodes: 0,
     collisions: 0,
@@ -1313,11 +1312,11 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 40,
+    random: 20,
     phase: 0,
     htlength: 8e6,
     pawntlength: 5e5,
-    mindepth: [10,10,10,10],
+    mindepth: [12,12,12,12],
     secondspermove: 0.2,
     lastmove: null,
     f: 0,
@@ -1683,7 +1682,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         openingMaterial += AI.PIECE_VALUES[OPENING][piece]
         endgameMaterial += AI.PIECE_VALUES[LATE_ENDGAME][piece]
 
-        // The original algorithm only considerd non-pawn material; because Orobas defines 4 phases, we include all material in order to allow the pass from Opening to Midgame when material value decreases more than 2%. See AI.PHASELIMITS
+        // The original algorith only considerd non-pawn material; because Orobas defines 4 phases, we include all material in order to allow the pass from Opening to Midgame when material value decreases more than 2%. See AI.PHASELIMITS
         tempTotalMaterial += ABS[piece] === P? 0 : AI.PIECE_VALUES[OPENING][ABS[piece]]
 
         let piecetype = ABS[piece]
@@ -1692,7 +1691,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         let enemyKingPosition = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         
         openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
-        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - AI.manhattanDistance(board, i, turn === WHITE? 52 : 68))
+        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
     }
     
     AI.totalmaterial = tempTotalMaterial
@@ -3288,26 +3287,26 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
             let inCheckAfterMove = board.isKingInCheck()
 
-            if (!E && prune && !move.killer1 && !move.castleSide && !inCheckAfterMove) {
-                // // Futility Pruning
-                // if (move.isCapture) {
-                //     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
-                //         board.unmakeMove(move)
-                //         if (!move.isCapture) AI.passiveMoves--
-                //         continue
-                //     }
-                // } else {
-                //     if (staticeval + MARGIN3*depth < alpha) {
-                //         board.unmakeMove(move)
-                //         if (!move.isCapture) AI.passiveMoves--
-                //         continue
-                //     }
-                // }
+            if (!E && prune && !move.killer1 && !move.killer2 && !move.castleSide && !inCheckAfterMove) {
+                // Futility Pruning
+                if (move.isCapture) {
+                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
+                        board.unmakeMove(move)
+                        if (!move.isCapture) AI.passiveMoves--
+                        continue
+                    }
+                } else {
+                    if (staticeval + MARGIN3*depth < alpha) {
+                        board.unmakeMove(move)
+                        if (!move.isCapture) AI.passiveMoves--
+                        continue
+                    }
+                }
                 // if (depth <= 3) {
                 // }
     
-                if (nonCaptures > 12 && !move.castleSide) {
-                    let limit = nonCaptures > 20? 0.9 : 0.8
+                if (nonCaptures > 6 && !move.castleSide) {
+                    let limit = nonCaptures > 12? 0.9 : 0.8
                     if (Math.random() < limit) {
                         AI.rmoves++
                         board.unmakeMove(move)
@@ -3315,7 +3314,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                         continue
                     }
                 }
+            }
 
+            if (!mateE) {
+                R += AI.LMR_TABLE[depth][legal]
+            }
+
+            // if (pvNode || incheck || inCheckAfterMove) R--
+
+            if (cutNode) R++
+
+            if (AI.history[ply][piece][move.to] < 0) R++
+
+            if (cutNode) {
                 // Moves count reductions, inspired in Stockfish - Not fully tested
                 if (i > maxMoves) {
                     AI.maxMovesCount++
@@ -3327,32 +3338,18 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     if (AI.phase <= EARLY_ENDGAME) {
                         // console.log('no')
                         if (board.turn === WHITE && piece !== P && (board.board[move.to-17] === p || board.board[move.to-15] === p)) {
-                            R++
+                            R+=4
                         }
                         
                         if (board.turn === BLACK && piece !== p && (board.board[move.to+17] === P || board.board[move.to+15] === P)) {
-                            R++
+                            R+=4
                         }
                     }
                 }
             }
+            
 
-            if (!mateE) {
-                R += AI.LMR_TABLE[depth][legal]
-            }
-
-            if (AI.history[ply][piece][move.to] < -128) R++
-
-            if (AI.history[ply][piece][move.to] < 0) R++
-
-
-            if (pvNode || incheck || inCheckAfterMove) R--
-
-            if (cutNode) R++
-
-            if (R < 0 && !E) R = 0
-
-            if (R > 8) R = 8
+            if (R < 0) R = 0
             
             // // Enhanced Transposition Cut-Off +16 ELO
             // let ttETC = AI.ttGet(board.turn, board.hashkey)
@@ -3685,15 +3682,14 @@ AI.search = function (board, options) {
 
                 let ttEntry = AI.ttGet(board.turn, board.hashkey)
 
-                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth > depth) {
+                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth >= depth) {
                     AI.f = ttEntry.score
                     AI.bestmove = ttEntry.move
-                } else {
-                    let mtdfScore = AI.MTDF(board, AI.f, depth)
-    
-                    if (!AI.stop) AI.f = mtdfScore
                 }
                 
+                let mtdfScore = AI.MTDF(board, AI.f, depth)
+
+                if (!AI.stop) AI.f = mtdfScore
                 
                 score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
@@ -3774,7 +3770,7 @@ AI.search = function (board, options) {
         }
 
         if (!near2mate) {
-            AI.createTables(board, AI.collisions/AI.ttGets > 0.05, AI.collisions/AI.ttGets > 0.05, true, AI.pawncollisions/AI.phnodes > 0.05)
+            AI.createTables(board, AI.collisions/AI.ttGets > 0.01, AI.collisions/AI.ttGets > 0.01, true, AI.pawncollisions/AI.phnodes > 0.01)
         } else {
             console.log('Near to mate!')
         }

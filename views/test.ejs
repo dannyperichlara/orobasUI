@@ -4,11 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="title">Orobas Chess</title>
     <link rel="stylesheet" href="/stylesheets/chessboard-1.0.0.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <title id="title">Orobas Chess Engine v4.0.1</title>
+    <script src="/javascripts/jquery.js"></script>
     <script src="/javascripts/chessboard-1.0.0.min.js"></script>
     <script src="/javascripts/chess.js"></script>
+    <script>
+      let worker = new Worker("/javascripts/worker.js")
+      
+    </script>
 
 </head>
 <body>
@@ -27,8 +31,8 @@
         <option value="0.1">0.1</option>
         <option value="0.2">0.2</option>
         <option value="0.3">0.3</option>
-        <option value="0.5">0.5</option>
-        <option value="1" selected>1</option>
+        <option value="0.5" selected>0.5</option>
+        <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="5">5</option>
@@ -37,31 +41,43 @@
         <option value="30">30</option>
       </select>
     </span>
-    <hr>
-    <textarea id="loadfen" style="width:100%" rows="5"></textarea>
-    <button onclick="loadfen($('#loadfen').val())">Cargar FEN</button>
-    <div id="pgn"></div>
+    <div style="margin: 10px 0 10px 0;">
+      <input id="loadfen" style="width:50%" rows="5"></input> 
+      <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
+      <div id="depth"></div>
+      <div id="pgn" style="font-size: 0.7rem; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
+    </div>
 
     <script>
         "use strict"
 
-        let n = 10
+        let n = 20
 
-        if (!localStorage.orobas) {
-          localStorage.orobas = JSON.stringify({win:0, loss:0, draw:0})
+        let results
+        let totalgames
+        let eloBase
+        let winLossRatio
+        let eloDelta
+
+        let loadResults = ()=>{
+          if (!localStorage.orobas) {
+            localStorage.orobas = JSON.stringify({win:0, loss:0, draw:0})
+          }
+
+          results = JSON.parse(localStorage.orobas)
+          totalgames = results.win+results.draw+results.loss
+          eloBase = 0
+          winLossRatio = parseInt(1000*results.win/results.loss | 0)/1000
+          eloDelta = ((eloBase + 400*(results.win - results.loss))/totalgames) | 0
         }
 
-        let results = JSON.parse(localStorage.orobas)
-        let totalgames = results.win+results.draw+results.loss
-        let eloBase = 0
-        let winLossRatio = parseInt(1000*results.win/results.loss | 0)/1000
-        let eloDelta = ((eloBase + 400*(results.win - results.loss))/totalgames) | 0
+        loadResults()
 
         console.log(`%c Win: ${results.win}\nLoss: ${results.loss | 0}\n%cDraw: ${results.draw}`, "font-size: 24px", "font-size: 24px; color: #444")
         console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${winLossRatio}`, "font-size: 16px")
         console.log(`%cΔELO: ${eloDelta}`, "font-size: 16px")
 
-        if (totalgames >= 200) throw new Error(0);
+        if (totalgames >= 1000) throw new Error(0);
         
         var board = null
 var game = new Chess()
@@ -69,6 +85,8 @@ var $status = $('#status')
 var $fen = $('#fen')
 var $pgn = $('#pgn')
 var $title = $('#title')
+
+let positions = []
 
 let loadfen = function(fen){
   game.load(fen)
@@ -115,62 +133,90 @@ function onDrop (source, target) {
 
 }
 
+// let computerMove = function () {
+//   // const cb = document.querySelector('#move');
+  
+//   if (true) {
+//     analyze(res=>{
+//       if (res.makemove) {
+//         var move = game.move({
+//           from: fromto[res.from],
+//           to: fromto[res.to],
+//           promotion: 'q' // NOTE: always promote to a queen for example simplicity
+//         })
+    
+//         board.position(game.fen())
+  
+//         console.log('movió')
+    
+//         updateStatus()
+  
+//         computerMove()
+//       }
+//     })
+//   }
+// }
+
 let computerMove = function () {
   analyze(res=>{
-    var move = game.move({
-      from: fromto[res.from],
-      to: fromto[res.to],
-      promotion: 'q' // NOTE: always promote to a queen for example simplicity
-    })
-
+    if (res.makemove) {
+      var move = game.move({
+          from: fromto[res.from],
+          to: fromto[res.to],
+          promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      })
+  
+      // Guarda posiciones para Texel tuning
+      if (game.history().length > 4 && Math.abs(res.score) < 3000 && game.history().length % 10 === 0) {
+        positions.push(`${game.fen()} ${res.score}`)
+      }
+      
+      if (game.history().length % n === 1) {
+        board.position(game.fen())
     
+        updateStatus()
+        let total = results.win + results.loss + results.draw
+        let eloDelta = ((eloBase + 400*(results.win - results.loss))/totalgames) | 0
     
-    console.log(res)
-    
-    if (game.history().length % n === 1) {
-      let sigmoid = 100*res.sigmoid
-      document.getElementById('sigmoid').style.width = sigmoid + "%"
-      board.position(game.fen())
-      updateStatus()
-    }
+        $title.html(`${results.win}+${results.loss}+${results.draw}=${total} ΔELO: ${eloDelta} ${res.sigmoid}`)
+        // let sigmoid = 100*res.sigmoid
+        // document.getElementById('sigmoid').style.width = sigmoid + "%"
+      }
+  
+  
+      if (!game.game_over()) { 
+        computerMove()
+      } else {
+        let fenResult
 
-    let total = results.win + results.loss + results.draw
-    let eloDelta = ((eloBase + 400*(results.win - results.loss))/totalgames) | 0
+        loadResults()
 
-    $title.html(`${results.win}+${results.loss}+${results.draw}=${total} ΔELO: ${eloDelta} ${res.sigmoid}`)
-
-    if (!game.game_over()) {
-      // if (game.history().length > 20) {
-      //   if (res.sigmoid>=0.95) {
-      //     results.win++
-      //     localStorage.orobas = JSON.stringify(results)
-      //     location.reload()
-      //     return
-      //   }
-
-      //   if (res.sigmoid<=0.05) {
-      //     results.loss++
-      //     localStorage.orobas = JSON.stringify(results)
-      //     location.reload()
-      //     return
-      //   }
-      // }
-
-      computerMove()
-    } else {
-      if (game.in_draw()) results.draw++
-
-      if (game.in_checkmate()) {
-        if (game.turn() === 'b') {
-          results.win++
-        } else {
-          results.loss++
+        if (game.in_draw()) {
+          results.draw++
+          fenResult = '0.5'
         }
+  
+        if (game.in_checkmate()) {
+          if (game.turn() === 'b') {
+            results.win++
+            fenResult = '1.0'
+          } else {
+            results.loss++
+            fenResult = '0.0'
+          }
+        }
+  
+        localStorage.orobas = JSON.stringify(results)
+
+        positions = positions.map(e=>{
+          return `${e} ${fenResult}`
+        })
+
+        savePositions(positions, ()=>{
+          location.reload()
+        })
       }
 
-      localStorage.orobas = JSON.stringify(results)
-
-      location.reload()
     }
   })
 }
@@ -219,37 +265,43 @@ var config = {
   position: 'start',
   onDragStart: onDragStart,
   onDrop: onDrop,
-  onSnapEnd: onSnapEnd
+  onSnapEnd: onSnapEnd,
 }
 
 let analyze = function(callback) {
     let turn = game.turn() === 'w'? 0 : 1
 
     let fen = game.fen()
-
     let seconds = $('#seconds').val()
 
-    let port = turn === 0? 3666 : 3667 
+    worker.onmessage = function(event){
+      if (game.history().length % n === 1) {
 
-    fetch(`http://${location.hostname}:${port}?fen=` + fen
-                                          + '&seconds=' + seconds,
-    {
-        method: 'GET',
-    }).then(res=>{
-        return res.json()
-    }).then(res=>{
-        // console.log(JSON.stringify(res))
+        let sigmoid = 100*event.data.sigmoid
+        let depth = event.data.depth
+  
+        if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
+        if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
+      }
+      if (callback) callback(event.data)
+    }
 
-        
-
-        if (callback) callback(res)
-    })
+    worker.postMessage({fen, seconds})
 }
 
 let undo = function () {
   game.undo(); board.position(game.fen()); updateStatus()
 }
 
+let savePositions = function(positions, callback) {
+  fetch(`http://${location.hostname}:3665/save?positions=` + JSON.stringify(positions),
+  {
+      method: 'GET',
+  }).then(res=>{
+    console.log(callback)
+    callback()
+  })
+}
 
 board = Chessboard('board', config)
 // loadfen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1 1')

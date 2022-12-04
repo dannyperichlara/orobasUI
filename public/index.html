@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orobas Chess Engine v3.1.2</title>
+    <title>Orobas Chess Engine v4.0.1</title>
     <link rel="stylesheet" href="/stylesheets/chessboard-1.0.0.css">
     <script src="/javascripts/jquery.js"></script>
     <script src="/javascripts/chessboard-1.0.0.min.js"></script>
@@ -20,18 +20,21 @@
       <div id="sigmoid" style="transition: width 0.4s; width: 50%; background-color: #FFF; height: 10px;"></div>
     </div>
     <button style="padding: 10px;" onclick="location.reload()">New</button>
-    <button style="padding: 10px;" onclick="analyze()">Eval (console)</button>
+    <button style="padding: 10px;" onclick="analyze()">Eval</button>
     <button style="padding: 10px;" onclick="computerMove()">Move</button>
     <button style="padding: 10px;" onclick="undo()">Undo</button>
     <button style="padding: 10px;" onclick="board.flip()">Flip</button>
+    <button style="padding: 10px;" onclick="forceMove('w')">W</button>
+    <button style="padding: 10px;" onclick="forceMove('b')">B</button>
     <span>
       <label>Secs</label> 
       <select name="seconds" id="seconds">
         <option value="0.2">0.2</option>
         <option value="0.5">0.5</option>
         <option value="1" >1</option>
+        <option value="1.5" selected>1.5</option>
         <option value="2">2</option>
-        <option value="3" selected>3</option>
+        <option value="3">3</option>
         <option value="4">4</option>
         <option value="5">5</option>
         <option value="10">10</option>
@@ -89,7 +92,7 @@ function onDrop (source, target) {
   var move = game.move({
     from: source,
     to: target,
-    // promotion: 'q' // NOTE: always promote to a queen for example simplicity
+    promotion: 'q' // NOTE: always promote to a queen for example simplicity
   })
 
   // illegal move
@@ -103,21 +106,32 @@ function onDrop (source, target) {
 }
 
 let computerMove = function () {
-  const cb = document.querySelector('#move');
-  
-  if (cb.checked) {
-    analyze(res=>{
-      var move = game.move({
-        from: fromto[res.from],
-        to: fromto[res.to],
-        promotion: 'q' // NOTE: always promote to a queen for example simplicity
-      })
-  
-      board.position(game.fen())
-  
-      updateStatus()
+  analyze(res=>{
+    var move = game.move({
+      from: fromto[res.from],
+      to: fromto[res.to],
+      promotion: 'q' // NOTE: always promote to a queen for example simplicity
     })
+
+    board.position(game.fen())
+
+    updateStatus()
+  })
+}
+
+let forceMove = function (color) {
+  let fen = game.fen().split(' ')
+  fen[3] = '-'
+
+  fen = fen.join(' ')
+
+  if (color === 'w') {
+    game.load(fen.replace(' b ', ' w '))
+  } else {
+    game.load(fen.replace(' w ', ' b '))
   }
+
+  computerMove()
 }
 
 // update the board position after the piece snap
@@ -166,6 +180,7 @@ var config = {
   onDrop: onDrop,
   onSnapEnd: onSnapEnd
 }
+
 board = Chessboard('board', config)
 
 updateStatus()
