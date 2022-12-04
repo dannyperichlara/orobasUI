@@ -1691,8 +1691,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         let index = turn === WHITE? i : (112^i)
         let enemyKingPosition = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         
-        openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
-        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - AI.manhattanDistance(board, i, turn === WHITE? 52 : 68))
+        openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - 8*AI.manhattanDistance(board, i, enemyKingPosition))
+        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - 8*AI.manhattanDistance(board, i, turn === WHITE? 52 : 68))
     }
     
     AI.totalmaterial = tempTotalMaterial
@@ -1852,7 +1852,7 @@ AI.getPositional = (board, pieces)=>{
         for (let j = i + 1; j < pieces[N].length; j++) {
             let distance = AI.distance(board, pieces[N][i], pieces[N][j])
 
-            whiteScore += -distance * AI.PAR[17]
+            if (distance > 1) whiteScore += AI.PAR[17]
         }
 
         // N-B
@@ -1885,8 +1885,8 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // N-Q
-        for (let j = 0; j < pieces[R].length; j++) {
-            let distance = Math.abs(pieces[N][i] - pieces[R][j])
+        for (let j = 0; j < pieces[Q].length; j++) {
+            let distance = Math.abs(pieces[N][i] - pieces[Q][j])
     
             // Defended
             if (distance === 33 || distance === 31 || distance === 18 || distance === 14) whiteScore+=AI.PAR[22]
@@ -2063,7 +2063,7 @@ AI.getPositional = (board, pieces)=>{
             let distance = pieces[p][i] - pieces[n][j]
     
             // Outpost
-            if (distance === -15 || distance === -17) blackScore+=AI.PAR[4]
+            if (distance === -15 || distance === -17) blackScore+=AI.PAR[3]
     
             // Semi Outpost
             if (distance === 16) blackScore+=AI.PAR[4]
@@ -2100,7 +2100,7 @@ AI.getPositional = (board, pieces)=>{
         for (let j = 0; j < pieces[r].length; j++) {
             let columnMatch = (board.columns[pieces[p][i]] === board.columns[pieces[r][j]])
     
-            if (columnMatch) blackScore+=AI.PAR[10]
+            if (columnMatch) blackScore-=AI.PAR[10]
         }
 
         // p-q
@@ -2148,7 +2148,7 @@ AI.getPositional = (board, pieces)=>{
         for (let j = i + 1; j < pieces[n].length; j++) {
             let distance = AI.distance(board, pieces[n][i], pieces[n][j])
 
-            blackScore += -distance * AI.PAR[17]
+            if (distance > 1) blackScore += AI.PAR[17]
         }
 
         // n-b
@@ -2181,8 +2181,8 @@ AI.getPositional = (board, pieces)=>{
         }
 
         // n-q
-        for (let j = 0; j < pieces[r].length; j++) {
-            let distance = Math.abs(pieces[n][i] - pieces[r][j])
+        for (let j = 0; j < pieces[q].length; j++) {
+            let distance = Math.abs(pieces[n][i] - pieces[q][j])
     
             // Defended
             if (distance === 33 || distance === 31 || distance === 18 || distance === 14) blackScore+=AI.PAR[22]
