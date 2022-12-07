@@ -200,7 +200,7 @@ let analyze = function(callback) {
         if (callback) callback(event.data)
       }
 
-    worker.postMessage({fen, seconds})
+    worker.postMessage({fen, options: {seconds, print: true}})
 
 
     // fetch(`http://${location.hostname}:3666?fen=` + fen
