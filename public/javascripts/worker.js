@@ -1689,9 +1689,9 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
         let index = turn === WHITE? i : (112^i)
         let enemyKingPosition = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
-        
-        openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
-        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index] - AI.manhattanDistance(board, i, enemyKingPosition))
+
+        openingPsqt += sign*(AI.PSQT_OPENING[piecetype][index])
+        endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index])
     }
     
     AI.totalmaterial = tempTotalMaterial
@@ -1719,9 +1719,10 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
 
-    let positional = pvNode? AI.getPositional(board, pieces) : 0
+    // let positional = AI.turn === WHITE && pvNode? AI.getPositional(board, pieces) : 0
+    let positional = 0 //AI.getPositional(board, pieces)
 
-    let structure = AI.getStructure(board, pieces[P], pieces[p])
+    let structure = 0//AI.getStructure(board, pieces[P], pieces[p])
     // if (Math.random() > 0.98) console.log(structure, pieces[P], pieces[p])
 
     score += positional + structure + psqt | 0
@@ -3064,19 +3065,19 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     // if (depth > max) console.log('Max depth', max++)
 
-    // let mating_value = MATE - ply;
+    let mating_value = MATE - ply;
 
-    // if (mating_value < beta) {
-    //     beta = mating_value
-    //     if (alpha >= mating_value) return mating_value
-    // }
+    if (mating_value < beta) {
+        beta = mating_value
+        if (alpha >= mating_value) return mating_value
+    }
 
-    // mating_value = -MATE + ply;
+    mating_value = -MATE + ply;
 
-    // if (mating_value > alpha) {
-    //     alpha = mating_value
-    //     if (beta <= mating_value) return mating_value
-    // }
+    if (mating_value > alpha) {
+        alpha = mating_value
+        if (beta <= mating_value) return mating_value
+    }
 
     let turn = board.turn
     let hashkey = board.hashkey
@@ -3570,6 +3571,7 @@ AI.search = function (board, options) {
     AI.collisions = 0
     AI.ttGets = 0.1
     AI.pawncollisions = 0
+    AI.turn = board.turn
 
     if (board.movenumber && board.movenumber <= 1) {
         AI.lastscore = 0
