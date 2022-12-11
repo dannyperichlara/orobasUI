@@ -206,6 +206,7 @@ let orobas = {
         
         this.castlingRights = [castlingRights]    
 
+        this.fen = fen
         this.board = this.fen2board(board)
         
         this.whiteKingIndex = this.board.indexOf(K)
@@ -1312,7 +1313,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 20,
+    random: 0,
     phase: 0,
     htlength: 8e6,
     pawntlength: 5e5,
@@ -1719,13 +1720,11 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         }
     }
 
-    // let positional = AI.turn === WHITE && pvNode? AI.getPositional(board, pieces) : 0
-    let positional = 0 //AI.getPositional(board, pieces)
+    let positional = pvNode? AI.getPositional(board, pieces) : 0
+    let mobility = pvNode? AI.getMobility(board) : 0
+    let structure = AI.getStructure(board, pieces[P], pieces[p])
 
-    let structure = 0//AI.getStructure(board, pieces[P], pieces[p])
-    // if (Math.random() > 0.98) console.log(structure, pieces[P], pieces[p])
-
-    score += positional + structure + psqt | 0
+    score += positional + mobility + structure + psqt | 0
 
     // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
@@ -2365,6 +2364,8 @@ AI.getPawnShield = (board)=>{
     let score = 0
     let bonus = AI.PAR[45]
 
+    // console.log(bonus)
+
     if (board.whiteKingIndex !== 116) {
         score += board.board[board.whiteKingIndex-15] === P? bonus : 0
         score += board.board[board.whiteKingIndex-16] === P? bonus : 0
@@ -2418,17 +2419,17 @@ AI.getMobility = (board)=>{
         board.changeTurn()
     }
 
-    let whiteMobility = 0
+    // Full Mobility (+0 ELO)
+    // Unsafe Mobility (+0 ELO)
+    // Safe Mobility (-59 ELO)
 
-    whiteMobility += AI.MOB[P][0] * (whiteMoves[P].unsafe) + AI.MOB[P][1] * (whiteMoves[P].safe) - AI.MOB[P][2] | 0
+    let whiteMobility = 0
     whiteMobility += AI.MOB[N][0] * (whiteMoves[N].unsafe) + AI.MOB[N][1] * (whiteMoves[N].safe) - AI.MOB[N][2] | 0
     whiteMobility += AI.MOB[B][0] * (whiteMoves[B].unsafe) + AI.MOB[B][1] * (whiteMoves[B].safe) - AI.MOB[B][2] | 0
     whiteMobility += AI.MOB[R][0] * (whiteMoves[R].unsafe) + AI.MOB[R][1] * (whiteMoves[R].safe) - AI.MOB[R][2] | 0
     whiteMobility += AI.MOB[Q][0] * (whiteMoves[Q].unsafe) + AI.MOB[Q][1] * (whiteMoves[Q].safe) - AI.MOB[Q][2] | 0
 
     let blackMobility = 0
-    
-    blackMobility += AI.MOB[P][0] * (blackMoves[p].unsafe) + AI.MOB[P][1] * (blackMoves[p].safe) - AI.MOB[P][2] | 0
     blackMobility += AI.MOB[N][0] * (blackMoves[n].unsafe) + AI.MOB[N][1] * (blackMoves[n].safe) - AI.MOB[N][2] | 0
     blackMobility += AI.MOB[B][0] * (blackMoves[b].unsafe) + AI.MOB[B][1] * (blackMoves[b].safe) - AI.MOB[B][2] | 0
     blackMobility += AI.MOB[R][0] * (blackMoves[r].unsafe) + AI.MOB[R][1] * (blackMoves[r].safe) - AI.MOB[R][2] | 0
@@ -2563,15 +2564,15 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
 
             score += bonus
 
-            //blocked passer
-            let blockerindex = pawnindexW[i] - 16
-            if (board.board[blockerindex] === n || board.board[blockerindex] === b) score-=20
+            // //blocked passer
+            // let blockerindex = pawnindexW[i] - 16
+            // if (board.board[blockerindex] === n || board.board[blockerindex] === b) score-=20
 
-            // Defended passer
-            score += pawnindexB[i] + 15 === P? bonus/4 | 0 : 0
-            score += pawnindexB[i] + 17 === P? bonus/4 | 0 : 0
-            score += pawnindexB[i] -  1 === P? bonus/5 | 0 : 0
-            score += pawnindexB[i] +  1 === P? bonus/5 | 0 : 0
+            // // Defended passer
+            // score += pawnindexB[i] + 15 === P? bonus/4 | 0 : 0
+            // score += pawnindexB[i] + 17 === P? bonus/4 | 0 : 0
+            // score += pawnindexB[i] -  1 === P? bonus/5 | 0 : 0
+            // score += pawnindexB[i] +  1 === P? bonus/5 | 0 : 0
 
             //TODO: passer protected by king
         }
@@ -2614,15 +2615,15 @@ AI.getPassers = (board, pawnindexW, pawnindexB)=>{
 
             score -= bonus
             
-            //blocked passer
-            let blockerindex = pawnindexB[i] + 16
-            if (board.board[blockerindex] === N || board.board[blockerindex] === B) score+=20
+            // //blocked passer
+            // let blockerindex = pawnindexB[i] + 16
+            // if (board.board[blockerindex] === N || board.board[blockerindex] === B) score+=20
 
-            // Defended passer
-            score -= pawnindexB[i] - 15 === p? bonus/4 | 0 : 0
-            score -= pawnindexB[i] - 17 === p? bonus/4 | 0 : 0
-            score -= pawnindexB[i] -  1 === p? bonus/5 | 0 : 0
-            score -= pawnindexB[i] +  1 === p? bonus/5 | 0 : 0
+            // // Defended passer
+            // score -= pawnindexB[i] - 15 === p? bonus/4 | 0 : 0
+            // score -= pawnindexB[i] - 17 === p? bonus/4 | 0 : 0
+            // score -= pawnindexB[i] -  1 === p? bonus/5 | 0 : 0
+            // score -= pawnindexB[i] +  1 === p? bonus/5 | 0 : 0
             
             //TODO: passer protected by king
         }
@@ -3063,28 +3064,34 @@ AI.saveHistory = function (ply, move, value) {
 AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSoFar, lookForMateTurn) {
     if (ply > AI.totaldepth) ply = AI.totaldepth
 
-    // if (depth > max) console.log('Max depth', max++)
-
-    let mating_value = MATE - ply;
-
-    if (mating_value < beta) {
-        beta = mating_value
-        if (alpha >= mating_value) return mating_value
-    }
-
-    mating_value = -MATE + ply;
-
-    if (mating_value > alpha) {
-        alpha = mating_value
-        if (beta <= mating_value) return mating_value
-    }
-
     let turn = board.turn
     let hashkey = board.hashkey
 
     let ttEntry = AI.ttGet(turn, hashkey)
 
     let pvNode = ply === 1 || beta - alpha > 1 || (ttEntry && ttEntry.flag <= EXACT) // PV-Node
+
+    if (depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
+    }
+
+    let mating_value = MATE - ply;
+
+    if (mating_value < beta) {
+        beta = mating_value
+        if (alpha >= mating_value) {
+            return mating_value
+        }
+    }
+
+    mating_value = -MATE + ply;
+
+    if (mating_value > alpha) {
+        alpha = mating_value
+        if (beta <= mating_value) {
+            return mating_value
+        }
+    }
     
     let cutNode = !pvNode
     
@@ -3115,12 +3122,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         if (/*depth > 0 && */alpha >= beta) {
             return ttEntry.score
         }
-    }
-
-    
-    //Búsqueda QS
-    if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
     }
 
     let incheck = board.isKingInCheck()
@@ -3166,18 +3167,17 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         // Null move pruning
         // if (staticeval >= beta && AI.phase < LATE_ENDGAME) {
         if (alpha < MATE - ply && beta > -MATE + ply && AI.phase < LATE_ENDGAME) {
+            let nullR = depth > 6? 4 : 3
+
             // Makes null-move
             board.changeTurn()
             
-            let nullR = depth > 6? 4 : 3
             let nullScore = -AI.PVS(board, -beta, -beta + 1, depth - nullR - 1, ply, false, 0, 0)
 
             // Unmakes null-move
             board.changeTurn()
 
             if (nullScore >= beta) {
-                // AI.ttSave(turn, hashkey, nullScore, LOWERBOUND, depth, EMPTYMOVE)
-
                 return nullScore
             } else {
                 if (nullScore < -MATE + AI.totaldepth) {
@@ -3232,6 +3232,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let maxMoves = 3 + depth*depth // For moves count pruning, inspired in Stockfish - Not fully tested
 
+    let winning = alpha > MARGIN1
+    let losing = beta < -MARGIN1
+
     let nonCaptures = 0
     AI.totalMoves += moves.length
 
@@ -3241,20 +3244,16 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
         if (!move.isCapture) nonCaptures++
 
-        // if (pvNode && 2*ply < AI.totaldepth) {
-        //     // Extensiones
-        //     E = mateE? 1 : 0
-    
-        //     // if (staticeval - MARGIN10 > beta) {
-        //     //     E = 1
-        //     // }
-    
-        //     if (piece === P) {
-        //         if (move.from < 24) E = 1
-        //     } else if (piece === p) {
-        //         if (move.from > 95) E = 1
-        //     }
-        // }
+        if (depth < 2 && 2*ply < AI.totaldepth) {
+            // Extensiones
+            E = mateE? 1 : 0
+
+            // if (piece === P) {
+            //     if (move.from < 24) E = 1
+            // } else if (piece === p) {
+            //     if (move.from > 95) E = 1
+            // }
+        }
 
         //Reducciones
         let R = 0
@@ -3321,18 +3320,17 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 R += AI.LMR_TABLE[depth][legal]
             }
 
-            // if (pvNode || incheck || inCheckAfterMove) R--
-
-            if (cutNode) R++
-
-            if (AI.history[ply][piece][move.to] < 0) R++
-
             if (cutNode) {
-                // Moves count reductions, inspired in Stockfish - Not fully tested
-                if (i > maxMoves) {
-                    AI.maxMovesCount++
-                    R++
-                }
+
+                R++
+
+                if (AI.history[ply][piece][move.to] < 0) R++
+
+                // // Moves count reductions, inspired in Stockfish - Not fully tested
+                // if (i > maxMoves) {
+                //     AI.maxMovesCount++
+                //     R++
+                // }
                 
                 if (!move.isCapture) {
                     // Bad moves reductions
@@ -3620,12 +3618,6 @@ AI.search = function (board, options) {
 
         let isWhite = color === 1
 
-        if (isWhite) {
-            AI.TESTER = true
-        } else {
-            AI.TESTER = false
-        }
-
         AI.nodes = 0
         AI.qsnodes = 0
         AI.enodes = 0
@@ -3727,14 +3719,6 @@ AI.search = function (board, options) {
 
         AI.bestmove = candidateMoves[candidateMoves.length - 2]
 
-        if (options.print) {
-            if (AI.TESTER) {
-                console.info(`_ AI.TESTER ${AI.phase} _____________________________________`)
-            } else {
-                console.info('________________________________________________________________________________')
-            }
-        }
-
         AI.lastmove = AI.bestmove
 
         //zugzwang prevention
@@ -3786,10 +3770,28 @@ AI.createTables(orobas, true, true, true, true)
 onmessage = function (oEvent) {
     AI.originalFEN = oEvent.data.fen
     orobas.loadFen(oEvent.data.fen)
-    AI.search(orobas, {seconds: oEvent.data.options.seconds, print: oEvent.data.options.print}).then(res=>{
-        res.makemove = true
-        postMessage(res);
-    })
+
+    if (oEvent.data.options.static) {
+        console.log('Static')
+
+        let oldNullWindowFactor = AI.nullWindowFactor
+
+        AI.nullWindowFactor = 1
+
+        let score = AI.evaluate(orobas, 1, 0, 1, true, orobas.isKingInCheck(), 0)
+
+        console.log(orobas.fen, score)
+
+        AI.nullWindowFactor = oldNullWindowFactor
+
+        postMessage({score})
+    } else {
+        AI.search(orobas, {seconds: oEvent.data.options.seconds, print: oEvent.data.options.print}).then(res=>{
+            res.makemove = true
+            postMessage(res)
+        })
+    }
+
 };
 
 // module.exports = AI

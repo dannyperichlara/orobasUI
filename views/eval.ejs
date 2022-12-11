@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheets/chessboard-1.0.0.css">
+    <title id="title">Orobas Chess Engine v4.0.1</title>
+    <script src="/javascripts/jquery.js"></script>
+    <script src="/javascripts/chessboard-1.0.0.min.js"></script>
+    <script src="/javascripts/chess.js"></script>
+    <script>
+      let worker = new Worker("/javascripts/worker.js")
+      
+    </script>
+
+</head>
+<body>
+    <div id="board" style="max-width: 100%; width: 520px; margin-bottom: 10px;"></div>
+    <div style="background-color: #000; width: 514px; border: 1px solid #000; margin-bottom: 10px;">
+      <div id="sigmoid" style="transition: width 0.4s; width: 50%; background-color: #FFF; height: 10px;"></div>
+    </div>
+    <button style="padding: 10px; width: 100%" onclick="staticEval()">EVALUACIÓN ESTÁTICA</button>
+    <hr>
+    <button style="padding: 10px;" onclick="location.reload()">Nueva Partida</button>
+    <button style="padding: 10px;" onclick="analyze()">Evaluar (consola)</button>
+    <button style="padding: 10px;" onclick="computerMove()">Mover (AI)</button>
+    <button style="padding: 10px;" onclick="undo()">Deshacer</button>
+    <button style="padding: 10px;" onclick="board.flip()">Flip</button>
+    <span>
+      <label>Segundos</label> 
+      <select name="seconds" id="seconds">
+        <option value="0.1">0.1</option>
+        <option value="0.2">0.2</option>
+        <option value="0.3">0.3</option>
+        <option value="0.4">0.4</option>
+        <option value="0.5" selected>0.5</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+      </select>
+    </span>
+    <div style="margin: 10px 0 10px 0;">
+      <input id="loadfen" style="width:50%" rows="5"></input> 
+      <button onclick="loadfen($('#loadfen').val())">Load FEN</button><br><br>
+      <div id="depth"></div>
+      <div id="pgn" style="font-size: 0.7rem; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;"></div>
+    </div>
+
+    <script>
+        "use strict"
+        
+        var board = null
+var game = new Chess()
+var $status = $('#status')
+var $fen = $('#fen')
+var $pgn = $('#pgn')
+var $title = $('#title')
+
+let positions = []
+
+let loadfen = function(fen){
+  game.load(fen)
+  board.position(game.fen())
+  updateStatus()
+}
+
+let fromto = [
+  'a1','b1','c1','d1','e1','f1','g1','h1',
+  'a2','b2','c2','d2','e2','f2','g2','h2',
+  'a3','b3','c3','d3','e3','f3','g3','h3',
+  'a4','b4','c4','d4','e4','f4','g4','h4',
+  'a5','b5','c5','d5','e5','f5','g5','h5',
+  'a6','b6','c6','d6','e6','f6','g6','h6',
+  'a7','b7','c7','d7','e7','f7','g7','h7',
+  'a8','b8','c8','d8','e8','f8','g8','h8',
+  ]
+
+function onDragStart (source, piece, position, orientation) {
+  // do not pick up pieces if the game is over
+  if (game.game_over()) return false
+
+  // only pick up pieces for the side to move
+  if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+    return false
+  }
+}
+
+function onDrop (source, target) {
+  game.load(board.fen() + '  w KQkq - 0 1')
+  updateStatus()
+
+  console.log(game.fen())
+
+
+  // computerMove()
+
+}
+
+// let computerMove = function () {
+//   // const cb = document.querySelector('#move');
+  
+//   if (true) {
+//     analyze(res=>{
+//       if (res.makemove) {
+//         var move = game.move({
+//           from: fromto[res.from],
+//           to: fromto[res.to],
+//           promotion: 'q' // NOTE: always promote to a queen for example simplicity
+//         })
+    
+//         board.position(game.fen())
+  
+//         console.log('movió')
+    
+//         updateStatus()
+  
+//         computerMove()
+//       }
+//     })
+//   }
+// }
+
+let computerMove = function () {
+  analyze(res=>{
+    if (res.makemove) {
+      var move = game.move({
+          from: fromto[res.from],
+          to: fromto[res.to],
+          promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      })
+  
+      // Guarda posiciones para Texel tuning
+      if (game.history().length > 4 && Math.abs(res.score) < 3000 && game.history().length % 10 === 0) {
+        positions.push(`${game.fen()} ${res.score}`)
+      }
+      
+      board.position(game.fen())
+  
+      updateStatus()
+    }
+  })
+}
+
+// update the board position after the piece snap
+// for castling, en passant, pawn promotion
+function onSnapEnd () {
+  board.position(game.fen())
+}
+
+function updateStatus () {
+  var status = ''
+
+  var moveColor = 'White'
+  if (game.turn() === 'b') {
+    moveColor = 'Black'
+  }
+
+  // checkmate?
+  if (game.in_checkmate()) {
+    status = 'Game over, ' + moveColor + ' is in checkmate.'
+  }
+
+  // draw?
+  else if (game.in_draw()) {
+    status = 'Game over, drawn position'
+  }
+
+  // game still on
+  else {
+    status = moveColor + ' to move'
+
+    // check?
+    if (game.in_check()) {
+      status += ', ' + moveColor + ' is in check'
+    }
+  }
+
+  $status.html(status)
+  $fen.html(game.fen())
+  $pgn.html(game.pgn())
+}
+
+var config = {
+  draggable: true,
+  position: '6k1/8/8/8/8/8/8/6K1',
+  // onDragStart: onDragStart,
+  onDrop: onDrop,
+  // onSnapEnd: onSnapEnd,
+  dropOffBoard: 'trash',
+  sparePieces: true
+}
+
+let analyze = function(callback) {
+    let turn = game.turn() === 'w'? 0 : 1
+
+    let fen = game.fen()
+    let seconds = $('#seconds').val()
+
+    worker.onmessage = function(event){
+      if (event.data.nobestmove) {
+        location.reload()
+      }
+
+      let sigmoid = 100*event.data.sigmoid
+      let depth = event.data.depth
+
+      if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
+      if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
+
+      if (callback) callback(event.data)
+    }
+
+    worker.postMessage({fen, options: {seconds, print: false}})
+}
+
+let getStaticScore = function(callback) {
+    let turn = game.turn() === 'w'? 0 : 1
+
+    let fen = game.fen()
+    let seconds = $('#seconds').val()
+
+    worker.onmessage = function(event){
+      console.log(event.data)
+      if (event.data.nobestmove) {
+        location.reload()
+      }
+
+      let sigmoid = 100*event.data.sigmoid
+      let depth = event.data.depth
+
+      if (sigmoid) document.getElementById('sigmoid').style.width = sigmoid + "%"
+      if (depth) document.getElementById('depth').innerText = 'Depth ' + depth
+
+      if (callback) callback(event.data)
+    }
+
+    worker.postMessage({fen, options: {seconds, print: false, static: true}})
+}
+
+let undo = function () {
+  game.undo(); board.position(game.fen()); updateStatus()
+}
+
+let savePositions = function(positions, callback) {
+  fetch(`http://${location.hostname}:3665/save?positions=` + JSON.stringify(positions),
+  {
+      method: 'GET',
+  }).then(res=>{
+    console.log(callback)
+    callback()
+  })
+}
+
+let staticEval = ()=>{
+  getStaticScore()
+}
+
+board = Chessboard('board', config)
+// loadfen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1 1')
+
+updateStatus()
+
+// computerMove()
+
+</script>
+</body>
+</html>

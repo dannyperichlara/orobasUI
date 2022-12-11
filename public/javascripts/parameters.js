@@ -7,7 +7,7 @@ AI.PARDISTANCE = [8,2,2,8]
 
 AI.PASSERSBONUS = [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,250,240,260,190,240,220,200,360,null,null,null,null,null,null,null,null,70,60,40,-10,30,40,60,60,null,null,null,null,null,null,null,null,10,10,-20,-40,-30,-40,10,0,null,null,null,null,null,null,null,null,0,0,-20,0,-20,20,40,10,null,null,null,null,null,null,null,null,10,10,-10,-10,0,0,10,10,null,null,null,null,null,null,null,null,10,10,-10,-10,-30,0,10,10,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
 
-AI.POV = [100,320,310,460,810,100,240,280,440,880]
+AI.POV = [82, 337, 365, 477, 1025, 94, 281, 297, 512, 936]
 
 AI.MOB = []
 
