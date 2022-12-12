@@ -3301,17 +3301,17 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + MARGIN3*depth < alpha) {
                         board.unmakeMove(move)
                         if (!move.isCapture) AI.passiveMoves--
-                        continue
+                        
+                        return alpha
                     }
                 } else {
                     if (staticeval + MARGIN3*depth < alpha) {
                         board.unmakeMove(move)
                         if (!move.isCapture) AI.passiveMoves--
+
                         continue
                     }
                 }
-                // if (depth <= 3) {
-                // }
     
                 if (nonCaptures > 6 && !move.castleSide) {
                     let limit = nonCaptures > 12? 0.9 : 0.8
