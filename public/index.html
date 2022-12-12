@@ -106,17 +106,21 @@ function onDrop (source, target) {
 }
 
 let computerMove = function () {
-  analyze(res=>{
-    var move = game.move({
-      from: fromto[res.from],
-      to: fromto[res.to],
-      promotion: 'q' // NOTE: always promote to a queen for example simplicity
+  const cb = document.querySelector('#move');
+  
+  if (cb.checked) {
+    analyze(res=>{
+      var move = game.move({
+        from: fromto[res.from],
+        to: fromto[res.to],
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      })
+  
+      board.position(game.fen())
+  
+      updateStatus()
     })
-
-    board.position(game.fen())
-
-    updateStatus()
-  })
+  }
 }
 
 let forceMove = function (color) {

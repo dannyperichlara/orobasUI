@@ -1721,7 +1721,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     let positional = pvNode? AI.getPositional(board, pieces) : 0
-    let mobility = pvNode? AI.getMobility(board) : 0
+    let mobility = 0//pvNode? AI.getMobility(board) : 0
     let structure = AI.getStructure(board, pieces[P], pieces[p])
 
     score += positional + mobility + structure + psqt | 0
@@ -2854,18 +2854,18 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 continue
             }
 
-            // // CRITERIO: Enroque
-            // if (move.castleSide) {
-            //     if (AI.phase === OPENING) {
-            //         move.score += 1e8
-            //     } else {
-            //         move.score += 4e6
-            //     }
+            // CRITERIO: Enroque
+            if (move.castleSide) {
+                if (AI.phase === OPENING) {
+                    move.score += 1e8
+                } else {
+                    move.score += 4e6
+                }
                 
-            //     sortedMoves.push(move)
+                sortedMoves.push(move)
 
-            //     continue
-            // }
+                continue
+            }
             
             // CRITERIO 6: Movimientos históricos
             // Se da preferencia a movimientos posicionales que han tenido 
@@ -3071,10 +3071,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let pvNode = ply === 1 || beta - alpha > 1 || (ttEntry && ttEntry.flag <= EXACT) // PV-Node
 
-    if (depth <= 0) {
-        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
-    }
-
     let mating_value = MATE - ply;
 
     if (mating_value < beta) {
@@ -3091,6 +3087,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         if (beta <= mating_value) {
             return mating_value
         }
+    }
+
+    if (depth <= 0) {
+        return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
     }
     
     let cutNode = !pvNode
@@ -3155,7 +3155,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let enPassantSquare = board.enPassantSquares[board.enPassantSquares.length - 1]
 
-    let prune = cutNode && !incheck/* && ply > 2*/ && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
+    let prune
+    
+    prune = cutNode && !incheck/* && ply > 2*/ && alpha < MATE - AI.totaldepth && allowNullMove && !lookForMateTurn
 
     if (prune) {
         // //Futility pruning
@@ -3239,12 +3241,18 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     AI.totalMoves += moves.length
 
     for (let i = 0, len = moves.length; i < len; i++) {
+        // Moves count reductions, inspired in Stockfish - Not fully tested
+        if (i > maxMoves/* && AI.turn === WHITE*/) {
+            AI.maxMovesCount++
+            return alpha
+        }
+
         let move = moves[i]
         let piece = move.piece
 
         if (!move.isCapture) nonCaptures++
 
-        if (depth < 2 && 2*ply < AI.totaldepth) {
+        if (pvNode && depth < 2 && 2*ply < AI.totaldepth) {
             // Extensiones
             E = mateE? 1 : 0
 
@@ -3325,12 +3333,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 R++
 
                 if (AI.history[ply][piece][move.to] < 0) R++
-
-                // // Moves count reductions, inspired in Stockfish - Not fully tested
-                // if (i > maxMoves) {
-                //     AI.maxMovesCount++
-                //     R++
-                // }
                 
                 if (!move.isCapture) {
                     // Bad moves reductions
@@ -3559,6 +3561,59 @@ AI.MTDF = function (board, f, d) {
     } else {
         return g
     }
+}
+
+AI.BNS = (board, alpha, beta, depth)=>{
+    let moves = board.getMoves()
+
+    let ttEntry = AI.ttGet(board.turn, board.hashkey)
+    
+    moves = AI.sortMoves(board, moves, board.turn, 1, depth, ttEntry)
+
+    let subtreeCount = moves.length
+    let bestNode
+
+    let betterCount = 0
+
+    do {
+        if (AI.stop) console.log('stoooop')
+
+        let test = AI.nextGuess(alpha, beta, subtreeCount) | 0
+
+        betterCount = 0
+
+        for (let i = 0; i < moves.length; i++) {
+            let move = moves[i]
+
+            if (board.makeMove(move)) {
+                let bestVal = -AI.PVS(board, -test, -test + 1, depth - 1, 2, true, 0, false)
+    
+                board.unmakeMove(move)
+    
+                if (bestVal >= test) {
+                    betterCount++
+                    bestNode = move
+                    if (betterCount > 1) break
+                }
+            }
+        }
+        
+        if (betterCount >= 1) {
+            subtreeCount = betterCount
+            alpha = test
+        }
+        
+        if (betterCount === 0) {
+            beta--
+        }
+
+        // console.log(test,alpha,beta)
+
+    } while (beta - alpha > 1 && betterCount !== 1)
+
+    AI.ttSave(board.turn, board.hashkey, alpha, EXACT, depth, bestNode)
+
+    return alpha
 }
 
 
