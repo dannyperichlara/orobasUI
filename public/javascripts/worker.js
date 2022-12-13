@@ -3718,57 +3718,55 @@ AI.search = function (board, options) {
 
         AI.timer = Date.now()
 
-        if (true) {
-            //Iterative Deepening
-            for (; depth <= AI.totaldepth; ) {
-                // console.log(board.hashkey)
-                if (AI.stop && AI.bestmove) break
+        //Iterative Deepening
+        for (; depth <= AI.totaldepth; ) {
+            // console.log(board.hashkey)
+            if (AI.stop && AI.bestmove) break
 
-                AI.iteration++
+            AI.iteration++
 
-                postMessage({depth: depth - 1})
+            postMessage({depth: depth - 1})
 
-                let ttEntry = AI.ttGet(board.turn, board.hashkey)
+            let ttEntry = AI.ttGet(board.turn, board.hashkey)
 
-                if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth >= depth) {
-                    AI.f = ttEntry.score
-                    AI.bestmove = ttEntry.move
-                }
-                
-                let mtdfScore = AI.MTDF(board, AI.f, depth)
-
-                if (!AI.stop) AI.f = mtdfScore
-                
-                score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
-
-                AI.PV = AI.getPV(board, AI.totaldepth)
-
-                if (AI.PV[1]) {
-                    candidateMoves.push(AI.PV[1])
-                }
-
-                // console.log(candidateMoves[candidateMoves.length - 1].key)
-
-                if (AI.stop) break
-
-                AI.lastscore = score
-
-                AI.fhfperc = Math.round(AI.fhf * 100 / AI.fh)
-
-                // console.log(depth, `FHF: ${AI.fhfperc}%`)
-
-                if (AI.PV && !AI.stop && options.print) {
-                    console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0), 'Moves Count Pruning:', AI.maxMovesCount)
-                }
-
-                score100 = AI.lastscore * (100/VPAWN)
-
-                sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
-
-                postMessage({sigmoid, score: score100})
-            
-                depth++
+            if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth >= depth) {
+                AI.f = ttEntry.score
+                AI.bestmove = ttEntry.move
             }
+            
+            let mtdfScore = AI.MTDF(board, AI.f, depth)
+
+            if (!AI.stop) AI.f = mtdfScore
+            
+            score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
+
+            AI.PV = AI.getPV(board, AI.totaldepth)
+
+            if (AI.PV[1]) {
+                candidateMoves.push(AI.PV[1])
+            }
+
+            // console.log(candidateMoves[candidateMoves.length - 1].key)
+
+            if (AI.stop) break
+
+            AI.lastscore = score
+
+            AI.fhfperc = Math.round(AI.fhf * 100 / AI.fh)
+
+            // console.log(depth, `FHF: ${AI.fhfperc}%`)
+
+            if (AI.PV && !AI.stop && options.print) {
+                console.log('FHF', AI.fhfperc, 'Depth:', depth, 'Score:', score, 'Nodes:', AI.nodes+AI.qsnodes, 'PV Nodes', AI.pvnodes, 'Pawn Hit Rate:',(AI.phnodes / AI.pnodes * 100 | 0), 'Moves Count Pruning:', AI.maxMovesCount)
+            }
+
+            score100 = AI.lastscore * (100/VPAWN)
+
+            sigmoid = 1 / (1 + Math.pow(10, -score100 / 354))
+
+            postMessage({sigmoid, score: score100})
+        
+            depth++
         }
 
         AI.bestmove = candidateMoves[candidateMoves.length - 2]
