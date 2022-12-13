@@ -3242,7 +3242,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     for (let i = 0, len = moves.length; i < len; i++) {
         // Moves count reductions, inspired in Stockfish - Not fully tested
-        if (i > maxMoves/* && AI.turn === WHITE*/) {
+        if (i > maxMoves) {
             AI.maxMovesCount++
             return alpha
         }
@@ -3351,7 +3351,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             
 
             if (R < 0) R = 0
-            
+
             // // Enhanced Transposition Cut-Off +16 ELO
             // let ttETC = AI.ttGet(board.turn, board.hashkey)
 
@@ -3393,6 +3393,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
             }
 
+            board.unmakeMove(move)
+
             if (AI.stop) return alphaOriginal //tested ok
             
             if (score > alpha) {
@@ -3420,10 +3422,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     
                     if (!lookForMateTurn && allowNullMove) {
                         AI.ttSave(turn, hashkey, beta, LOWERBOUND, depth, move)
-                        AI.ttSave(board.turn, board.hashkey, -score, UPPERBOUND, depth - 1 + E - R, EMPTYMOVE)
                     }
 
-                    board.unmakeMove(move)
                     if (!move.isCapture) AI.passiveMoves--
                     
                     return score
@@ -3440,7 +3440,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 if (!move.isCapture) { AI.saveHistory(ply, move, -depth*depth) }
             }
 
-            board.unmakeMove(move)
             if (!move.isCapture) AI.passiveMoves--
         } else {
             illegalMoves++
@@ -3796,7 +3795,27 @@ AI.search = function (board, options) {
                     'NPS: ', (AI.nodes + AI.qsnodes) / options.seconds | 0,
         )
 
-        // console.log(AI.bestmove, (AI.moveTime / AI.searchTime) * 100 | 0)
+        console.log(board.hashkey)
+        // Guarda info de cada jugada posible
+        let moves = board.getMoves()
+        let positions = new Map()
+
+        for (let i = 0; i < moves.length; i++) {
+            if (board.makeMove(moves[i])) {
+
+                let ttEntry = AI.ttGet(AI.turn, board.hashkey)
+
+                if (ttEntry) {
+                    positions.set(board.hashkey, {})
+                } else {
+                    console.log('No')
+                }
+
+                board.unmakeMove(moves[i])
+            }
+        }
+
+        console.log(positions)
 
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
