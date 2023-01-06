@@ -3564,6 +3564,29 @@ AI.MTDF = function (board, f, d) {
     }
 }
 
+AI.MTDF2 = function (board, f, d, lowerBound, upperBound) {    
+    //Esta línea permite que el algoritmo funcione como PVS normal
+    // return AI.PVS(board, lowerBound, upperBound, d, 1)
+    
+    let bound = [lowerBound, upperBound] // lower, upper
+    
+    do {
+       let beta = f + (f === bound[0])
+
+       f = AI.PVS(board, beta - 1, beta, d, 1, true)
+       bound[f < beta? 1 : 0] = f
+
+
+    //    console.log(bound)
+    } while (bound[0] < bound[1])
+    
+    return f
+}
+
+AI.nextGuess = (alpha, beta, subtreeCount)=>{
+    return alpha + (beta - alpha) * (subtreeCount - 1) / subtreeCount
+}
+
 AI.BNS = (board, alpha, beta, depth)=>{
     let moves = board.getMoves()
 
@@ -3577,13 +3600,13 @@ AI.BNS = (board, alpha, beta, depth)=>{
     let betterCount = 0
 
     do {
-        if (AI.stop) console.log('stoooop')
-
         let test = AI.nextGuess(alpha, beta, subtreeCount) | 0
 
         betterCount = 0
 
         for (let i = 0; i < moves.length; i++) {
+            if (betterCount > 1) break
+
             let move = moves[i]
 
             if (board.makeMove(move)) {
@@ -3594,9 +3617,10 @@ AI.BNS = (board, alpha, beta, depth)=>{
                 if (bestVal >= test) {
                     betterCount++
                     bestNode = move
-                    if (betterCount > 1) break
+                    
                 }
             }
+            
         }
         
         if (betterCount >= 1) {
@@ -3607,6 +3631,7 @@ AI.BNS = (board, alpha, beta, depth)=>{
         if (betterCount === 0) {
             beta--
         }
+        
 
         // console.log(test,alpha,beta)
 
@@ -3707,8 +3732,8 @@ AI.search = function (board, options) {
         AI.previousls = AI.lastscore
 
         let depth = 1
-        let alpha = -INFINITY
-        let beta = INFINITY
+        let alpha = AI.f - 4
+        let beta = AI.f + 4
 
         AI.effectiveEvaluations = 0
 
@@ -3736,9 +3761,25 @@ AI.search = function (board, options) {
                 AI.bestmove = ttEntry.move
             }
             
-            let mtdfScore = AI.MTDF(board, AI.f, depth)
+            let mtdfScore = AI.MTDF2(board, AI.f, depth, alpha, beta)
 
             if (!AI.stop) AI.f = mtdfScore
+
+            //Aspiration window
+            if (AI.f < alpha) {
+                alpha = -INFINITY
+                continue
+            }
+
+            if (AI.f > beta) {
+                beta = INFINITY
+                continue
+            }
+
+            alpha -= 4
+            beta += 4
+
+
             
             score = AI.nullWindowFactor * (isWhite ? 1 : -1) * AI.f
 
