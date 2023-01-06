@@ -1313,7 +1313,7 @@ let AI = {
     status: null,
     fhf: 0,
     fh: 0,
-    random: 0,
+    random: 100,
     phase: 0,
     htlength: 8e6,
     pawntlength: 5e5,
@@ -3100,9 +3100,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     AI.nodes++
     
     // Date.now es un algoritmo que consume mucho tiempo; por esa razón revisa cada 5000 nodos
-    if (AI.iteration > AI.mindepth[AI.phase] && AI.nodes % 5000 === 0) {
+    if (AI.iteration > AI.mindepth[AI.phase] && pvNode) {
         if (Date.now() > AI.timer + AI.milspermove) {
             AI.stop = true
+
+            return alpha
         }
     }
 
@@ -3552,7 +3554,7 @@ AI.MTDF = function (board, f, d) {
         } else {
             lowerBound = g
         }
-    } while (lowerBound < upperBound)
+    } while (lowerBound < upperBound && !AI.stop)
 
 
     if (AI.stop) {
@@ -3608,7 +3610,7 @@ AI.BNS = (board, alpha, beta, depth)=>{
 
         // console.log(test,alpha,beta)
 
-    } while (beta - alpha > 1 && betterCount !== 1)
+    } while (beta - alpha > 1 && betterCount !== 1 && !AI.stop)
 
     AI.ttSave(board.turn, board.hashkey, alpha, EXACT, depth, bestNode)
 
@@ -3793,7 +3795,7 @@ AI.search = function (board, options) {
                     'NPS: ', (AI.nodes + AI.qsnodes) / options.seconds | 0,
         )
 
-        console.log(board.hashkey)
+        // console.log(board.hashkey)
         // Guarda info de cada jugada posible
         let moves = board.getMoves()
         let positions = new Map()
@@ -3806,14 +3808,14 @@ AI.search = function (board, options) {
                 if (ttEntry) {
                     positions.set(board.hashkey, {})
                 } else {
-                    console.log('No')
+                    // console.log('No')
                 }
 
                 board.unmakeMove(moves[i])
             }
         }
 
-        console.log(positions)
+        // console.log(positions)
 
         resolve({
             n: board.movenumber, phase: AI.phase, depth: AI.iteration - 1, from: board.board64[AI.bestmove.from],
