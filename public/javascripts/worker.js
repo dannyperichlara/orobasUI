@@ -1726,14 +1726,16 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     // let pawnShield = AI.getPawnShield(board)
     let structure = AI.getStructure(board, pieces[P], pieces[p])
-    score += psqt + structure | 0
+    score += structure | 0
 
-    // if (AI.phase === OPENING) {
-    //     let positional = AI.getPositional(board, pieces)
-    //     let mobility = AI.getMobility(board)
+    if (pvNode) {
+        let positional = AI.getPositional(board, pieces)
+        let mobility = AI.getMobility(board)
         
-    //     score += positional /*+ mobility*/ | 0
-    // }
+        score += positional + mobility | 0
+    } else {
+        score += psqt
+    }
 
 
 
@@ -2802,28 +2804,28 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
             
-            // move.score += 1e7 + move.mvvlva
+            move.score += 1e7 + move.mvvlva
             
-            if (move.mvvlva >= 6000) {
-                // CRITERIO 3: La jugada es una captura posiblemente ganadora
+            // if (move.mvvlva >= 6000) {
+            //     // CRITERIO 3: La jugada es una captura posiblemente ganadora
                 
-                if (board.turn === WHITE) {
-                    if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
-                        move.score += 4e6 + move.mvvlva
-                    } else {
-                        move.score += 1e7 + move.mvvlva
-                    }
-                } else {
-                    if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
-                        move.score += 4e6 + move.mvvlva
-                    } else {
-                        move.score += 1e7 + move.mvvlva
-                    }
-                }
-            } else {
-                // CRITERIO 5: La jugada es una captura probablemente perdedora
-                move.score += 4e6 + move.mvvlva
-            }
+            //     if (board.turn === WHITE) {
+            //         if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
+            //             move.score += 4e6 + move.mvvlva
+            //         } else {
+            //             move.score += 1e7 + move.mvvlva
+            //         }
+            //     } else {
+            //         if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
+            //             move.score += 4e6 + move.mvvlva
+            //         } else {
+            //             move.score += 1e7 + move.mvvlva
+            //         }
+            //     }
+            // } else {
+            //     // CRITERIO 5: La jugada es una captura probablemente perdedora
+            //     move.score += 4e6 + move.mvvlva
+            // }
 
             sortedMoves.push(move)
 
@@ -2864,18 +2866,18 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 continue
             }
 
-            // // CRITERIO: Enroque
-            // if (move.castleSide) {
-            //     if (AI.phase === OPENING) {
-            //         move.score += 1e8
-            //     }/* else {
-            //         move.score += 4e6
-            //     }*/
+            // CRITERIO: Enroque
+            if (move.castleSide) {
+                if (AI.phase === OPENING) {
+                    move.score += 1e8
+                } else {
+                    move.score += 4e6
+                }
                 
-            //     sortedMoves.push(move)
+                sortedMoves.push(move)
 
-            //     continue
-            // }
+                continue
+            }
             
             // CRITERIO 6: Movimientos históricos
             // Se da preferencia a movimientos posicionales que han tenido 
@@ -3044,7 +3046,7 @@ AI.ttGet = function (turn, hashkey) {
         } else {
             AI.collisions++
             // console.log('Collision', AI.collisions)
-            // AI.hashTable[turn][hashkey % AI.htlength] = null
+            AI.hashTable[turn][hashkey % AI.htlength] = null
             return null
         }
     } else {
@@ -3057,7 +3059,7 @@ AI.saveHistory = function (ply, move, value) {
     let limit = this.totaldepth - ahead
     
     for (let i = 0; i < ahead; i++) {
-        let plyAhead = ply + 2*i
+        let plyAhead = ply + i
         
         if (plyAhead < limit) {
             if (value < 0) {
@@ -3171,7 +3173,8 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let prune = /*cutNode && */!incheck/* && ply > 2*/ && alpha < MATE - AI.totaldepth && !lookForMateTurn
 
     let nullMoveReduction = 0
-    let pruneLimit = MARGIN3*Math.log(depth) + MARGIN2 | 0
+    
+    let pruneLimit = MARGIN1*Math.log(depth) + MARGIN1 | 0
 
     if (prune) {
         // //Futility pruning
@@ -3312,22 +3315,22 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
             let inCheckAfterMove = board.isKingInCheck()
 
             if (!E && prune && !move.killer1 && !move.killer2 && !move.castleSide && !inCheckAfterMove) {
-                // Futility Pruning
-                if (move.isCapture) {
-                    if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + pruneLimit < alpha) {
-                        board.unmakeMove(move)
-                        if (!move.isCapture) AI.passiveMoves--
+                // // Futility Pruning
+                // if (move.isCapture) {
+                //     if (staticeval + AI.PIECE_VALUES[OPENING][ABS[move.capturedPiece]]/this.nullWindowFactor + pruneLimit < alpha) {
+                //         board.unmakeMove(move)
+                //         if (!move.isCapture) AI.passiveMoves--
                         
-                        return alpha
-                    }
-                } else {
-                    if (staticeval + pruneLimit < alpha) {
-                        board.unmakeMove(move)
-                        if (!move.isCapture) AI.passiveMoves--
+                //         return alpha
+                //     }
+                // } else {
+                //     if (staticeval + pruneLimit < alpha) {
+                //         board.unmakeMove(move)
+                //         if (!move.isCapture) AI.passiveMoves--
 
-                        continue
-                    }
-                }
+                //         continue
+                //     }
+                // }
     
                 if (nonCaptures > 6 && !move.castleSide) {
                     let limit = nonCaptures > 12? 0.9 : 0.8
@@ -3348,7 +3351,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
                 R++
 
-                if (AI.history[ply][piece][move.to] < 0) R++
+                // if (AI.history[ply][piece][move.to] < 0) R++
                 
                 if (!move.isCapture) {
                     // Bad moves reductions
@@ -3770,7 +3773,7 @@ AI.search = function (board, options) {
 
             let ttEntry = AI.ttGet(board.turn, board.hashkey)
 
-            if (ttEntry && ttEntry.flag <= EXACT && ttEntry.depth >= depth) {
+            if (ttEntry && ttEntry.flag <= EXACT) {
                 AI.f = ttEntry.score
                 AI.bestmove = ttEntry.move
             }
@@ -3887,7 +3890,8 @@ AI.search = function (board, options) {
         }
 
         if (!near2mate) {
-            AI.createTables(board, AI.collisions/AI.ttGets > 0.02, AI.collisions/AI.ttGets > 0.02, true, AI.pawncollisions/AI.phnodes > 0.05)
+            // AI.createTables(board, AI.collisions/AI.ttGets > 0.02, AI.collisions/AI.ttGets > 0.02, true, AI.pawncollisions/AI.phnodes > 0.05)
+            AI.createTables(board, 1,1,1,1)
         } else {
             console.log('Near to mate!')
         }
