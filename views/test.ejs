@@ -28,10 +28,10 @@
     <span>
       <label>Segundos</label> 
       <select name="seconds" id="seconds">
-        <option value="0.1">0.1</option>
+        <option value="0.1"selected>0.1</option>
         <option value="0.2">0.2</option>
         <option value="0.3">0.3</option>
-        <option value="0.4" selected>0.4</option>
+        <option value="0.4">0.4</option>
         <option value="0.5">0.5</option>
         <option value="1">1</option>
         <option value="2">2</option>
@@ -78,7 +78,7 @@
         console.log(`%cTotal: ${totalgames} Win/Loss Ratio: ${winLossRatio}`, "font-size: 16px")
         console.log(`%cΔELO: ${eloDelta}`, "font-size: 16px")
 
-        if (totalgames >= 1000) throw new Error(0);
+        // if (totalgames >= 1000) throw new Error(0);
         
         var board = null
 var game = new Chess()
@@ -168,7 +168,7 @@ let computerMove = function () {
       })
   
       // Guarda posiciones para Texel tuning
-      if (game.history().length > 4 && Math.abs(res.score) < 3000 && game.history().length % 10 === 0) {
+      if (game.history().length > 4 && Math.abs(res.score) < 3000 && game.history().length % 5 === 0) {
         positions.push(`${game.fen()} ${res.score}`)
       }
       
