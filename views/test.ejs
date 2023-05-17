@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/stylesheets/chessboard-1.0.0.css">
-    <title id="title">Orobas Chess Engine v4.0.1</title>
+    <title id="title">Orobas Chess Engine v4.1.3</title>
     <script src="/javascripts/jquery.js"></script>
     <script src="/javascripts/chessboard-1.0.0.min.js"></script>
     <script src="/javascripts/chess.js"></script>
@@ -28,8 +28,9 @@
     <span>
       <label>Segundos</label> 
       <select name="seconds" id="seconds">
-        <option value="0.1"selected>0.1</option>
-        <option value="0.2">0.2</option>
+        <option value="0">0</option>
+        <option value="0.1">0.1</option>
+        <option value="0.2" selected>0.2</option>
         <option value="0.3">0.3</option>
         <option value="0.4">0.4</option>
         <option value="0.5">0.5</option>
@@ -168,7 +169,7 @@ let computerMove = function () {
       })
   
       // Guarda posiciones para Texel tuning
-      if (game.history().length > 4 && Math.abs(res.score) < 3000 && game.history().length % 5 === 0) {
+      if (game.history().length > 4 && Math.abs(res.score) < 3000 && game.history().length % 3 === 0) {
         positions.push(`${game.fen()} ${res.score}`)
       }
       
