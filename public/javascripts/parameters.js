@@ -138,6 +138,35 @@ AI.PSQT = [
         
 AI.PHASELIMITS = [ 2, 25, 50 ]
 
+AI.PIECEKINGDISTANCE = {
+  [P]: [
+      0, -118,  0, 0,  23,
+      7,    0, -7, 3, -11,
+      0,    0, -5, 2,   0
+    ],
+  [N]: [
+      0, -56, 120,   74, 17,
+     17,  39,  55,   41, 55,
+     94, 120, 120, -118,  0
+   ],
+  [B]: [
+      0,   2, -24, -66, 9,  20,
+    -12,   6,   0, -12, 8, -34,
+    -72, -73, -13
+  ],
+  [R]: [
+      0,  -1,  6,  5, -4,   9,
+      2,   0,  0, 23, 16, -31,
+      7, -18, 34
+    ],
+  [Q]: [
+      0, -10,   82,  0, 39,
+      7, -26,    0,  0,  0,
+    -10, -30, -120, 33,  0
+  ],
+  [K]: [0,24,12,6,0,-2,-4,-6,-8,-10,-12,-14,-16,-18,-20].map(e=>0),
+}
+
 AI.createPieceValues = ()=>{
 
     AI.PIECE_VALUES[OPENING][0] = 0
@@ -182,6 +211,13 @@ AI.createPieceValues = ()=>{
     AI.PSQT_LATE_ENDGAME[R] = AI.PSQT.slice(1152,1279)
     AI.PSQT_LATE_ENDGAME[Q] = AI.PSQT.slice(1280,1407)
     AI.PSQT_LATE_ENDGAME[K] = AI.PSQT.slice(1408,1535)
+
+    AI.PIECEKINGDISTANCE[p] = AI.PIECEKINGDISTANCE[P].map(e=>-e)
+    AI.PIECEKINGDISTANCE[n] = AI.PIECEKINGDISTANCE[N].map(e=>-e)
+    AI.PIECEKINGDISTANCE[b] = AI.PIECEKINGDISTANCE[B].map(e=>-e)
+    AI.PIECEKINGDISTANCE[r] = AI.PIECEKINGDISTANCE[R].map(e=>-e)
+    AI.PIECEKINGDISTANCE[q] = AI.PIECEKINGDISTANCE[Q].map(e=>-e)
+    AI.PIECEKINGDISTANCE[k] = AI.PIECEKINGDISTANCE[K].map(e=>-e)
 
     // Total material value doesnt count pawns
     AI.maxMaterialValue = 4 * AI.PIECE_VALUES[OPENING][N] +

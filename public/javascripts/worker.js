@@ -38,9 +38,9 @@ for (let i = 0; i < randomNumbers.length; i++) {
 
 let randomIndex = 0
 
-// Math.random = ()=>{
-//     return randomNumbers[randomIndex++ % 8000]
-// }
+Math.random = ()=>{
+    return randomNumbers[randomIndex++ % 32000]
+}
 
 console.time()
 
@@ -1367,9 +1367,10 @@ AI = {
     fh: 0,
     random: 0,
     phase: 0,
-    htlength: 8e6,
-    pawntlength: 1e6,
-    mindepth: [8,10,12,14],
+    htlength: 2e6,
+    pawntlength: 1e5,
+    // mindepth: [8,10,12,14],
+    mindepth: [4,4,4,4],
     secondspermove: 0.2,
     lastmove: null,
     f: 0,
@@ -1461,6 +1462,9 @@ AI.PIECE_VALUES = [
 
 AI.PSQT_OPENING =  [null]
 AI.PSQT_LATE_ENDGAME =  [null]
+
+
+
 
 // importScripts('structurebonus.js')
 // importScripts('psqtbonus.js')
@@ -1573,15 +1577,6 @@ for (let e of ALLINDEX) {
     }
 }
 
-// AI.PSQT = [
-//     Array(64).fill(0),
-//     Array(64).fill(0),
-//     Array(64).fill(0),
-//     Array(64).fill(0),
-//     Array(64).fill(0),
-//     Array(64).fill(0),
-// ]
-
 // CREA TABLAS DE TRASPOSICIÓN / PEONES / HISTORIA
 AI.createTables = function (board, tt, ev, hh, pp) {
     // console.log('Creating tables', tt, ev, hh, pp)
@@ -1649,7 +1644,6 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     // Repetitions (+14 ELO)
     for (let i = board.rephistory.length - 2; i >= 0; i-- ) {
         if (board.hashkey === board.rephistory[i]) {
-            // console.log(total++)
             return DRAW
         }
     }
@@ -1664,7 +1658,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     
     let turn = board.turn
     let sign = turn === WHITE? 1 : -1
-    let tempoBonus = -20//AI.PAR[40]
+    let tempoBonus = 0 //AI.PAR[40]
     
     let evalEntry = AI.evalTable[board.hashkey % this.htlength]
     
@@ -1741,11 +1735,14 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
             if (piece === b && board.board[i - 16] === p) score += VPAWN
         }
 
+        let distance = AI.manhattanDistance(board,i,turn === WHITE? board.blackKingIndex : board.whiteKingIndex)
+
+        pieceKingDistance += AI.PIECEKINGDISTANCE[piece][distance]
+
         // MATERIAL
         openingMaterial += AI.PIECE_VALUES[OPENING][piece]
         endgameMaterial += AI.PIECE_VALUES[LATE_ENDGAME][piece]
 
-        // The original algorith only considerd non-pawn material; because Orobas defines 4 phases, we include all material in order to allow the pass from Opening to Midgame when material value decreases more than 2%. See AI.PHASELIMITS
         tempTotalMaterial += ABS[piece] === P? 0 : AI.PIECE_VALUES[OPENING][ABS[piece]]
 
         let piecetype = ABS[piece]
@@ -1756,7 +1753,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
         endgamePsqt += sign*(AI.PSQT_LATE_ENDGAME[piecetype][index])
 
     }
-    
+
     AI.totalmaterial = tempTotalMaterial
 
     let mgFactor = AI.totalmaterial / AI.maxMaterialValue
@@ -1768,8 +1765,8 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
 
     // Material
     score += material | 0
-    
-    if (AI.phase === LATE_ENDGAME && alpha > 4*VPAWN) {
+
+    if (AI.phase === LATE_ENDGAME && alpha > 3*VPAWN) {
         let opponentKing = turn === WHITE? board.blackKingIndex : board.whiteKingIndex
         let kingToTheCorner = AI.CENTERMANHATTAN[opponentKing] - 3
         let distanceBetweenKings = 8 - AI.manhattanDistance(board, board.whiteKingIndex, board.blackKingIndex)
@@ -1786,15 +1783,7 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     let structure = AI.getStructure(board, pieces[P], pieces[p])
     score += structure | 0
 
-    let positional = 0
-    let mobility = 0
-
-    // if (pvNode) {
-    //     positional = AI.getPositional(board, pieces) // (129 ELO)
-    //     mobility = AI.getMobility(board) // (26 ELO)
-    // }
-    
-    score += psqt + positional + mobility | 0
+    score += psqt + mgFactor * pieceKingDistance | 0
 
     // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
@@ -2829,7 +2818,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
         move.hvalue = 0
         move.killer1 = 0
         move.killer2 = 0
-        move.score = -100 + Math.random()*200 | 0
+        move.score = 0
 
         let ttEntryMove = false
 
@@ -2842,20 +2831,20 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
             continue
         }
 
-        // CRITERION 2: The move is in the previous Principal Variation (107 ELO)
-        if (AI.PV[ply] && AI.PV[ply].key === move.key) {
-            // console.log(move.key)
-            move.pv = true
-            move.score += 2e8
-            sortedMoves.push(move)
-            continue
-        }
+        // // CRITERION 2: The move is in the previous Principal Variation (107 ELO)
+        // if (AI.PV[ply] && AI.PV[ply].key === move.key) {
+        //     // console.log(move.key)
+        //     move.pv = true
+        //     move.score += 2e8
+        //     sortedMoves.push(move)
+        //     continue
+        // }
         
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
-            
+
             // move.score += 1e7 + move.mvvlva
-            
+
             if (move.mvvlva >= 6000) {
 
                 // CRITERION 3: The move is a possibly winning capture.
@@ -2930,7 +2919,7 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
     
                 let hvalue = AI.history[ply][move.piece][move.to] | 0
     
-                move.score += 100 + hvalue
+                move.score += 350 + hvalue
     
                 sortedMoves.push(move)
 
@@ -2951,9 +2940,8 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
                 }
 
                 sortedMoves.push(move)
-
+                
                 continue
-                        
             }
         }
     }
@@ -3131,10 +3119,11 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     let turn = board.turn
     let hashkey = board.hashkey
-
     let ttEntry = AI.ttGet(turn, hashkey)
-
     let pvNode = ply < 4 || beta - alpha > 1 || (ttEntry && ttEntry.flag < UPPERBOUND) // || !allowNullMove // PV-Node
+    let cutNode = !pvNode
+
+
     // let pvNode = beta - alpha > 1
 
     let mating_value = MATE - ply;
@@ -3158,9 +3147,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     if (depth <= 0) {
         return AI.quiescenceSearch(board, alpha, beta, depth, ply, pvNode, illegalMovesSoFar, lookForMateTurn, allowNullMove)
     }
-    
-    let cutNode = !pvNode
-    
+
+    let incheck = board.isKingInCheck()
+    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
+    let enPassantSquare = board.enPassantSquares[board.enPassantSquares.length - 1]
+    let prune = depth < 9 && cutNode && !incheck && alpha < MATE - AI.totaldepth && !lookForMateTurn
+    let pruneLimit = MARGIN3*Math.log(depth) + MARGIN2 | 0
+    let mateE = 0 // Mate threat extension
+
+        
     if (pvNode) AI.pvnodes++
     
     AI.nodes++
@@ -3192,8 +3187,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         }
     }
 
-    let incheck = board.isKingInCheck()
-
     // if (!ttEntry) {
     //     let ttOppositeEntry = AI.ttGet(turn === WHITE? BLACK : WHITE, hashkey)
     
@@ -3217,20 +3210,9 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
     if (AI.stop && AI.iteration > AI.mindepth[AI.phase]) return alpha
     
-    let mateE = 0 // Mate threat extension
-    
-    let staticeval = AI.evaluate(board, ply, alpha, beta, pvNode, incheck, illegalMovesSoFar) | 0
-
-    let enPassantSquare = board.enPassantSquares[board.enPassantSquares.length - 1]
-
-    let prune = cutNode && !incheck && alpha < MATE - AI.totaldepth && !lookForMateTurn
-
-    
-    let pruneLimit = MARGIN3*Math.log(depth) + MARGIN2 | 0
-
     if (prune) {
         // Futility pruning (105 ELO)
-        if (cutNode /*&& depth < 9*/ && staticeval - pruneLimit >= beta) {
+        if (cutNode && staticeval - pruneLimit >= beta) {
             return staticeval
         }
         
@@ -3386,7 +3368,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                             // }
 
                             if (nonCaptures > 6) {
-                                let limit = nonCaptures > 12? 0.9 : 0.8
+                                let limit = nonCaptures > 12? 0.85 : 0.8
                                 if (Math.random() < limit) {
                                     AI.rmoves++
                                     board.unmakeMove(move)
@@ -3432,7 +3414,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                 }
                 
                 //History reductions (70 ELO)
-                if (AI.history[ply][piece][move.to] < 0) R++
+                if (AI.history[ply][piece][move.to] < -8) R++
 
                 // if (pvNode) R--
 
@@ -3637,7 +3619,7 @@ AI.MTDF = function (board, f, d) {
             beta = g
         }
 
-        g = AI.PVS(board, beta - 1, beta, d, 1, true, 0, false)
+        g = AI.PVS(board, beta - 2, beta, d, 1, true, 0, false)
 
         if (g < beta) {
             upperBound = g
@@ -3741,6 +3723,7 @@ AI.search = function (board, options) {
     AI.ttGets = 0.1
     AI.pawncollisions = 0
     AI.turn = board.turn
+    AI.sign = board.turn === WHITE? 1 : -1
 
     if (board.movenumber && board.movenumber <= 1) {
         AI.lastscore = 0
@@ -3928,6 +3911,7 @@ AI.search = function (board, options) {
         if (!near2mate) {
             // AI.createTables(board, AI.collisions/AI.ttGets > 0.02, AI.collisions/AI.ttGets > 0.02, true, AI.pawncollisions/AI.phnodes > 0.05)
             AI.createTables(board, false,false,true,false)
+            // AI.createTables(board, true,true,true,true)
         } else {
             console.log('Near to mate!')
         }
