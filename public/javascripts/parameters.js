@@ -22,7 +22,7 @@ AI.MOB[R] = [[0,500,501,502,503,504,505,506,507,508,509,510,520,530,540].map((e,
 AI.MOB[Q] = [new Array(28).fill(0).map((e,i)=>i), new Array(28).fill(0)]
 AI.MOB[K] = [[0,1,2,3,4,5,6,7,8].map((e,i)=>i), new Array(9).fill(0)]
 
-console.log(AI.MOB)
+console.log('Mobility values', AI.MOB)
 
 AI.PSQT = [
   0,   0,   0,   0,   0,   0,  0,   0,    null,null,null,null,null,null,null,null,
@@ -140,19 +140,19 @@ AI.PHASELIMITS = [ 2, 25, 50 ]
 
 AI.PIECEKINGDISTANCE = {
   [P]: [
-      0, -118,  0, 0,  23,
+      0, -55,  0, 0,  23,
       7,    0, -7, 3, -11,
       0,    0, -5, 2,   0
     ],
   [N]: [
-      0, -56, 120,   74, 17,
+      0, -56, 55,   55, 17,
      17,  39,  55,   41, 55,
-     94, 120, 120, -118,  0
+     55, 55, 55, -5,  0
    ],
   [B]: [
-      0,   2, -24, -66, 9,  20,
+      0,   2, -24, -55, 9,  20,
     -12,   6,   0, -12, 8, -34,
-    -72, -73, -13
+    -55, -55, -13
   ],
   [R]: [
       0,  -1,  6,  5, -4,   9,
@@ -160,9 +160,9 @@ AI.PIECEKINGDISTANCE = {
       7, -18, 34
     ],
   [Q]: [
-      0, -10,   82,  0, 39,
+      0, -10,   55,  0, 39,
       7, -26,    0,  0,  0,
-    -10, -30, -120, 33,  0
+    -10, -30, -55, 33,  0
   ],
   [K]: [0,24,12,6,0,-2,-4,-6,-8,-10,-12,-14,-16,-18,-20].map(e=>0),
 }
@@ -171,32 +171,32 @@ AI.createPieceValues = ()=>{
 
     AI.PIECE_VALUES[OPENING][0] = 0
 
-    AI.PIECE_VALUES[OPENING][p] = -VPAWN*AI.POV[0]/100 | 0
-    AI.PIECE_VALUES[OPENING][n] = -VPAWN*AI.POV[1]/100 | 0
-    AI.PIECE_VALUES[OPENING][b] = -VPAWN*AI.POV[2]/100 | 0
-    AI.PIECE_VALUES[OPENING][r] = -VPAWN*AI.POV[3]/100 | 0
-    AI.PIECE_VALUES[OPENING][q] = -VPAWN*AI.POV[4]/100 | 0
+    AI.PIECE_VALUES[OPENING][p] = -AI.POV[0]
+    AI.PIECE_VALUES[OPENING][n] = -AI.POV[1]
+    AI.PIECE_VALUES[OPENING][b] = -AI.POV[2]
+    AI.PIECE_VALUES[OPENING][r] = -AI.POV[3]
+    AI.PIECE_VALUES[OPENING][q] = -AI.POV[4]
     AI.PIECE_VALUES[OPENING][k] = 0
 
-    AI.PIECE_VALUES[OPENING][P] = VPAWN*AI.POV[0]/100 | 0
-    AI.PIECE_VALUES[OPENING][N] = VPAWN*AI.POV[1]/100 | 0
-    AI.PIECE_VALUES[OPENING][B] = VPAWN*AI.POV[2]/100 | 0
-    AI.PIECE_VALUES[OPENING][R] = VPAWN*AI.POV[3]/100 | 0
-    AI.PIECE_VALUES[OPENING][Q] = VPAWN*AI.POV[4]/100 | 0
+    AI.PIECE_VALUES[OPENING][P] = AI.POV[0]
+    AI.PIECE_VALUES[OPENING][N] = AI.POV[1]
+    AI.PIECE_VALUES[OPENING][B] = AI.POV[2]
+    AI.PIECE_VALUES[OPENING][R] = AI.POV[3]
+    AI.PIECE_VALUES[OPENING][Q] = AI.POV[4]
     AI.PIECE_VALUES[OPENING][K] = 0
 
-    AI.PIECE_VALUES[LATE_ENDGAME][p] = -VPAWN*AI.POV[5]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][n] = -VPAWN*AI.POV[6]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][b] = -VPAWN*AI.POV[7]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][r] = -VPAWN*AI.POV[8]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][q] = -VPAWN*AI.POV[9]/100 | 0
+    AI.PIECE_VALUES[LATE_ENDGAME][p] = -AI.POV[5]
+    AI.PIECE_VALUES[LATE_ENDGAME][n] = -AI.POV[6]
+    AI.PIECE_VALUES[LATE_ENDGAME][b] = -AI.POV[7]
+    AI.PIECE_VALUES[LATE_ENDGAME][r] = -AI.POV[8]
+    AI.PIECE_VALUES[LATE_ENDGAME][q] = -AI.POV[9]
     AI.PIECE_VALUES[LATE_ENDGAME][k] = 0
 
-    AI.PIECE_VALUES[LATE_ENDGAME][P] = VPAWN*AI.POV[5]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][N] = VPAWN*AI.POV[6]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][B] = VPAWN*AI.POV[7]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][R] = VPAWN*AI.POV[8]/100 | 0
-    AI.PIECE_VALUES[LATE_ENDGAME][Q] = VPAWN*AI.POV[9]/100 | 0
+    AI.PIECE_VALUES[LATE_ENDGAME][P] = AI.POV[5]
+    AI.PIECE_VALUES[LATE_ENDGAME][N] = AI.POV[6]
+    AI.PIECE_VALUES[LATE_ENDGAME][B] = AI.POV[7]
+    AI.PIECE_VALUES[LATE_ENDGAME][R] = AI.POV[8]
+    AI.PIECE_VALUES[LATE_ENDGAME][Q] = AI.POV[9]
     AI.PIECE_VALUES[LATE_ENDGAME][K] = 0
 
     AI.PSQT_OPENING[P] = AI.PSQT.slice(0,127)

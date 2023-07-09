@@ -38,9 +38,9 @@ for (let i = 0; i < randomNumbers.length; i++) {
 
 let randomIndex = 0
 
-Math.random = ()=>{
-    return randomNumbers[randomIndex++ % 32000]
-}
+// Math.random = ()=>{
+//     return randomNumbers[randomIndex++ % 8000]
+// }
 
 console.time()
 
@@ -1370,7 +1370,7 @@ AI = {
     htlength: 2e6,
     pawntlength: 1e5,
     // mindepth: [8,10,12,14],
-    mindepth: [4,4,4,4],
+    mindepth: [6,6,6,6],
     secondspermove: 0.2,
     lastmove: null,
     f: 0,
@@ -1477,8 +1477,8 @@ console.log('Max material value', AI.maxMaterialValue)
 
 // CONSTANTES
 const MATE = (AI.maxMaterialValue / 2) / AI.nullWindowFactor | 0
+const DRAW = 0
 const INFINITY = MATE + 1 | 0
-let DRAW = 0
 
 const EMPTYMOVE = {
     key: 0
@@ -1781,9 +1781,12 @@ AI.evaluate = function (board, ply, alpha, beta, pvNode, incheck, illegalMovesSo
     }
 
     let structure = AI.getStructure(board, pieces[P], pieces[p])
+
     score += structure | 0
 
-    score += psqt + mgFactor * pieceKingDistance | 0
+    let mobility = 0
+
+    score += psqt + mgFactor * pieceKingDistance + mobility | 0
 
     // Saves the score in the evaluation table before the tempo bonus
     AI.evalTable[board.hashkey % this.htlength] = {
@@ -2500,8 +2503,6 @@ AI.getMobility = (board)=>{
 
     score = whiteMobility - blackMobility
 
-    // console.log(whiteMobility, blackMobility)
-
     return score
 }
 let max = 0
@@ -2521,13 +2522,17 @@ AI.getStructure = (board, pawnindexW, pawnindexB)=> {
     AI.pnodes++
 
     if (hashentry) {
-        if (hashentry.hashkey === hashkey) {
-            AI.phnodes++
-            return hashentry.score
-        } else {
-            hashentry.hashkey = null
-            AI.pawncollisions++
-        }
+        return hashentry.score
+
+        // No es necesario revisar el hashkey. Al hacerlo se pierden ~30 ELO
+
+        // if (hashentry.hashkey === hashkey) {
+        //     AI.phnodes++
+        //     return hashentry.score
+        // } else {
+        //     hashentry.hashkey = null
+        //     AI.pawncollisions++
+        // }
     }
 
     // let doubled = AI.getDoubled(board, pawnindexW, pawnindexB)
@@ -2795,7 +2800,6 @@ AI.getDefended = (board, pawnindexW, pawnindexB)=>{
     return defendedWhitePawns - defendedBlackPawns | 0
 }
 
-// Move sorting algorithm
 AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
     if (ply > AI.totaldepth) ply = AI.totaldepth
 
@@ -2843,29 +2847,29 @@ AI.sortMoves = function (board, moves, turn, ply, depth, ttEntry) {
         if (move.isCapture) {
             move.mvvlva = AI.MVVLVASCORES[move.piece][move.capturedPiece]
 
-            // move.score += 1e7 + move.mvvlva
+            move.score += 1e7 + move.mvvlva
 
-            if (move.mvvlva >= 6000) {
+            // if (move.mvvlva >= 6000) {
 
-                // CRITERION 3: The move is a possibly winning capture.
+            //     // CRITERION 3: The move is a possibly winning capture.
                 
-                if (board.turn === WHITE) {
-                    if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
-                        move.score += 4e6 + move.mvvlva
-                    } else {
-                        move.score += 1e7 + move.mvvlva
-                    }
-                } else {
-                    if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
-                        move.score += 4e6 + move.mvvlva
-                    } else {
-                        move.score += 1e7 + move.mvvlva
-                    }
-                }
-            } else {
-                // CRITERION 5: The move is a possibly losing capture.
-                move.score += 4e6 + move.mvvlva
-            }
+            //     if (board.turn === WHITE) {
+            //         if (move.piece > P && board.board[move.to - 15] === p || board.board[move.to - 17] === p) {
+            //             move.score += 4e6 + move.mvvlva
+            //         } else {
+            //             move.score += 1e7 + move.mvvlva
+            //         }
+            //     } else {
+            //         if (move.piece > p && board.board[move.to + 15] === P || board.board[move.to + 17] === P) {
+            //             move.score += 4e6 + move.mvvlva
+            //         } else {
+            //             move.score += 1e7 + move.mvvlva
+            //         }
+            //     }
+            // } else {
+            //     // CRITERION 5: The move is a possibly losing capture.
+            //     move.score += 4e6 + move.mvvlva
+            // }
 
             sortedMoves.push(move)
 
@@ -3031,7 +3035,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
             board.unmakeMove(move)
 
             if (score >= beta) {
-                if (!incheck) AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
+                // if (!incheck) AI.ttSave(turn, hashkey, score, LOWERBOUND, depth, move)
                 return score
             }
             
@@ -3042,7 +3046,7 @@ AI.quiescenceSearch = function (board, alpha, beta, depth, ply, pvNode, illegalM
     }
     
     if (incheck && !legal) {
-        if (allowNullMove) AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, EMPTYMOVE)
+        // if (allowNullMove) AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, EMPTYMOVE)
 
         return -MATE + ply
     }
@@ -3155,7 +3159,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
     let pruneLimit = MARGIN3*Math.log(depth) + MARGIN2 | 0
     let mateE = 0 // Mate threat extension
 
-        
+
     if (pvNode) AI.pvnodes++
     
     AI.nodes++
@@ -3299,7 +3303,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
 
         if (!move.isCapture) nonCaptures++
 
-        if (depth < 2 && 2*ply < AI.totaldepth) {
+        if (2*ply < AI.totaldepth) {
             // Extensiones
             E = mateE? 1 : 0
 
@@ -3357,8 +3361,6 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                             
                             return alpha
                         }
-
-                        // if (ply > 10) R+=10
                     } else {
                         if (!move.castleSide) {
                             // if (nonCaptures > 3 && ABS[piece] !== P && depth < 3) {
@@ -3410,13 +3412,15 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     // R++ on Cut-Node (106 ELO)
                     R++
 
+                    if (AI.history[ply][piece][move.to] < -64) R++
+                    if (AI.history[ply][piece][move.to] < -512) R++
                 
                 }
                 
                 //History reductions (70 ELO)
                 if (AI.history[ply][piece][move.to] < -8) R++
 
-                // if (pvNode) R--
+                // if (pvNode) R-- // ~ -200 ELO
 
             }
 
@@ -3458,10 +3462,10 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
                     return alphaOriginal
                 }
 
-                // score = -AI.PVS(board, -alpha - 1, -alpha, depth + E - R - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
                 score = -AI.PVS(board, -beta, -alpha, depth + E - R - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
 
                 if (!AI.stop && score > alpha) {
+                    if (score > beta) E = 1 // +123 ELO!!! WTF
                     R = 0
                     score = -AI.PVS(board, -beta, -alpha, depth + E - 1, ply + 1, allowNullMove, legal - 1, lookForMateTurn)
                 }
@@ -3524,7 +3528,7 @@ AI.PVS = function (board, alpha, beta, depth, ply, allowNullMove, illegalMovesSo
         if (incheck) {
             // Mate
             // if (allowNullMove) AI.ttSave(turn, hashkey, -MATE + ply, EXACT, depth, null)
-            // AI.ttSave(turn, hashkey, -MATE + ply, LOWERBOUND, depth, bestmove)
+            // AI.ttSave(turn, hashkey, -MATE, EXACT, depth, null)
             
             return -MATE + ply
         } else {
